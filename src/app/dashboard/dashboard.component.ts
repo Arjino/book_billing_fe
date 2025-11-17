@@ -30,7 +30,6 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
     MatDividerModule,
     MatFormFieldModule,
     MatInputModule,
-    InvoicePreviewComponent,
     FormsModule,
     MatDialogModule
   ],
