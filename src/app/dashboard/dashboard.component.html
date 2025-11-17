@@ -48,6 +48,17 @@
           <mat-card-content *ngIf="card.component">
             <ng-container [ngComponentOutlet]="card.component"></ng-container>
           </mat-card-content>
+          <!-- Invoice PDF Card -->
+          <mat-card-content *ngIf="card.pdfCard">
+            <div class="flex flex-col gap-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Sale ID</mat-label>
+                <input matInput [(ngModel)]="invoiceSaleId" placeholder="Enter Sale ID">
+              </mat-form-field>
+              <button mat-raised-button color="primary" (click)="onDownloadInvoice()" [disabled]="!invoiceSaleId">Download & Preview PDF</button>
+            </div>
+            <!-- Dialog will open, so inline preview removed -->
+          </mat-card-content>
         </mat-card>
       </ng-container>
     </div>

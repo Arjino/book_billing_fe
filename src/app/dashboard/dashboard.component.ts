@@ -11,6 +11,11 @@ import { AuthService } from '../services/auth.service';
 import { BookingComponent } from '../booking.component';
 import { PartiesComponent } from '../parties.component';
 import { SalesComponent } from '../sales.component';
+import { InvoicePreviewComponent } from '../invoice-preview.component';
+import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-dashboard',
@@ -22,7 +27,12 @@ import { SalesComponent } from '../sales.component';
     MatIconModule,
     MatToolbarModule,
     MatMenuModule,
-    MatDividerModule
+    MatDividerModule,
+    MatFormFieldModule,
+    MatInputModule,
+    InvoicePreviewComponent,
+    FormsModule,
+    MatDialogModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
@@ -30,50 +40,61 @@ import { SalesComponent } from '../sales.component';
 export class DashboardComponent implements OnInit {
   accessToken = signal<string | null>(null);
   isLoggedIn = signal(false);
-cards = [
-  {
-    icon: 'analytics',
-    iconColor: 'text-blue-600',
-    title: 'Analytics',
-    description: 'View your analytics and insights',
-    button: 'View'
-  },
-  {
-    icon: 'people',
-    iconColor: 'text-purple-600',
-    title: 'Users',
-    description: 'Manage users and permissions',
-    button: 'View'
-  },
-  {
-    icon: 'settings',
-    iconColor: 'text-pink-600',
-    title: 'Settings',
-    description: 'Configure your preferences',
-    button: 'View'
-  },
-  {
-    icon: 'book',
-    iconColor: 'text-green-600',
-    title: 'Booking',
-    component: BookingComponent
-  },
-  {
-    icon: 'business',
-    iconColor: 'text-orange-600',
-    title: 'Parties',
-    component: PartiesComponent
-  },
-  {
-    icon: 'shopping_cart',
-    iconColor: 'text-red-600',
-    title: 'Sales',
-    component: SalesComponent
-  }
-];
+  cards = [
+    {
+      icon: 'analytics',
+      iconColor: 'text-blue-600',
+      title: 'Analytics',
+      description: 'View your analytics and insights',
+      button: 'View'
+    },
+    {
+      icon: 'people',
+      iconColor: 'text-purple-600',
+      title: 'Users',
+      description: 'Manage users and permissions',
+      button: 'View'
+    },
+    {
+      icon: 'settings',
+      iconColor: 'text-pink-600',
+      title: 'Settings',
+      description: 'Configure your preferences',
+      button: 'View'
+    },
+    {
+      icon: 'book',
+      iconColor: 'text-green-600',
+      title: 'Booking',
+      component: BookingComponent
+    },
+    {
+      icon: 'business',
+      iconColor: 'text-orange-600',
+      title: 'Parties',
+      component: PartiesComponent
+    },
+    {
+      icon: 'shopping_cart',
+      iconColor: 'text-red-600',
+      title: 'Sales',
+      component: SalesComponent
+    },
+    {
+      icon: 'picture_as_pdf',
+      iconColor: 'text-indigo-600',
+      title: 'Invoice PDF',
+      description: 'Download and preview invoice PDF by Sale ID',
+      pdfCard: true
+    }
+  ];
+  invoiceSaleId: string = '';
+  showInvoicePreview: boolean = false;
+
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -99,6 +120,17 @@ cards = [
     if (token) {
       navigator.clipboard.writeText(token).then(() => {
         alert('Token copied to clipboard!');
+      });
+    }
+  }
+
+  onDownloadInvoice() {
+    if (this.invoiceSaleId) {
+      this.dialog.open(InvoicePreviewComponent, {
+        data: { salesId: this.invoiceSaleId },
+        width: '800px',
+        maxWidth: '95vw',
+        panelClass: 'invoice-dialog'
       });
     }
   }
