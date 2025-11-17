@@ -1,0 +1,75 @@
+
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { CommonModule } from '@angular/common';
+import { MatButtonModule } from '@angular/material/button';
+import { MatTableModule } from '@angular/material/table';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { BookDialogComponent, BookDialogData } from './book-dialog.component';
+import { AuthService } from './services/auth.service';
+
+interface Book {
+  id: number;
+  sku: string;
+  title: string;
+  publisher: string;
+  hsn: string;
+  costPrice: number;
+  salePrice: number;
+  stock: number;
+}
+
+@Component({
+  selector: 'app-booking',
+  templateUrl: './booking.component.html',
+  styleUrls: ['./booking.component.css'],
+  standalone: true,
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule]
+})
+export class BookingComponent implements OnInit {
+  books: Book[] = [];
+
+  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService) {}
+
+  ngOnInit() {
+    this.loadBooks();
+  }
+
+  loadBooks() {
+    this.http.get<Book[]>(
+      'https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/books',
+      { headers: this.authService.getAuthHeaders() }
+    ).subscribe(data => {
+      this.books = data;
+    });
+  }
+
+  addBook() {
+    const dialogRef = this.dialog.open(BookDialogComponent, {
+      width: '400px',
+      data: {
+        id: 0,
+        sku: '',
+        title: '',
+        publisher: '',
+        hsn: '',
+        costPrice: 0,
+        salePrice: 0,
+        stock: 0
+      } as BookDialogData
+    });
+
+    dialogRef.afterClosed().subscribe((result: BookDialogData) => {
+      if (result) {
+        this.http.post(
+          'https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/books',
+          result,
+          { headers: this.authService.getAuthHeaders() }
+        ).subscribe(() => {
+          this.loadBooks();
+        });
+      }
+    });
+  }
+}

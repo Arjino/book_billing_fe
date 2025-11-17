@@ -1,0 +1,45 @@
+@keyframes blob {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+.animate-blob {
+  animation: blob 7s infinite;
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+/* Material Form Field Icon Styling */
+::ng-deep .mat-mdc-form-field {
+  width: 100%;
+}
+
+::ng-deep .mat-mdc-form-field .mdc-notched-outline__leading {
+  border-radius: 4px 0 0 4px !important;
+}
+
+::ng-deep .mat-mdc-form-field .mdc-notched-outline__trailing {
+  border-radius: 0 4px 4px 0 !important;
+}
+
+::ng-deep .mat-mdc-form-field-prefix {
+  margin-right: 8px;
+  color: #6b7280;
+}
+
+::ng-deep .mat-mdc-form-field-suffix {
+  margin-left: 4px;
+}

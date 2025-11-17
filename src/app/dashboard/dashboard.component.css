@@ -1,0 +1,14 @@
+:host {
+      display: block;
+    }
+
+    mat-card-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    mat-icon {
+      display: inline;
+    }

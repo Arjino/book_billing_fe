@@ -1,0 +1,94 @@
+<h2 mat-dialog-title>Add Sale</h2>
+<div mat-dialog-content>
+  <form #saleForm="ngForm">
+    <div class="mb-2">
+      <label>Invoice No:</label>
+      <input [(ngModel)]="data.invoiceNo" name="invoiceNo" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Party:</label>
+      <select [(ngModel)]="data.party" name="party" required class="border p-1 rounded w-full">
+        <option value="">Select Party</option>
+        <option *ngFor="let p of parties" [ngValue]="p">{{ p.name }}</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label>Date:</label>
+      <input type="date" [(ngModel)]="data.date" name="date" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Payment Status:</label>
+      <select [(ngModel)]="data.paymentStatus" name="paymentStatus" class="border p-1 rounded w-full">
+        <option value="Pending">Pending</option>
+        <option value="Paid">Paid</option>
+        <option value="Partial">Partial</option>
+      </select>
+    </div>
+
+    <!-- Items Section -->
+    <div class="mt-4 border p-2 rounded">
+      <h3 class="font-bold mb-2">Items</h3>
+      <button type="button" (click)="addItem()" class="mb-2 px-3 py-1 bg-blue-500 text-white rounded">Add Item</button>
+      
+      <table class="w-full border" *ngIf="data.items.length">
+        <thead>
+          <tr>
+            <th class="border p-1">Book</th>
+            <th class="border p-1">Qty</th>
+            <th class="border p-1">Rate</th>
+            <th class="border p-1">Amount</th>
+            <th class="border p-1">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of data.items; let i = index">
+            <td class="border p-1">
+              <select [(ngModel)]="item.book" [name]="'book_' + i" class="w-full border">
+                <option value="">Select Book</option>
+                <option *ngFor="let b of books" [ngValue]="b">{{ b.title }}</option>
+              </select>
+            </td>
+            <td class="border p-1">
+              <input type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" (change)="calculateAmount(item)" class="w-full border" />
+            </td>
+            <td class="border p-1">
+              <input type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" (change)="calculateAmount(item)" class="w-full border" />
+            </td>
+            <td class="border p-1">{{ item.amount }}</td>
+            <td class="border p-1">
+              <button type="button" (click)="removeItem(i)" class="px-2 py-1 bg-red-500 text-white rounded">Remove</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Totals Section -->
+    <div class="mt-4 border p-2 rounded">
+      <div class="mb-2">
+        <label>Total Amount:</label>
+        <input type="number" [(ngModel)]="data.totalAmount" name="totalAmount" readonly class="border p-1 rounded w-full bg-gray-100" />
+      </div>
+      <div class="mb-2">
+        <label>Discount:</label>
+        <input type="number" [(ngModel)]="data.discount" name="discount" (change)="calculateTotals()" class="border p-1 rounded w-full" />
+      </div>
+      <div class="mb-2">
+        <label>Tax Amount:</label>
+        <input type="number" [(ngModel)]="data.taxAmount" name="taxAmount" (change)="calculateTotals()" class="border p-1 rounded w-full" />
+      </div>
+      <div class="mb-2">
+        <label>Round Off:</label>
+        <input type="number" [(ngModel)]="data.roundOff" name="roundOff" (change)="calculateTotals()" class="border p-1 rounded w-full" />
+      </div>
+      <div class="mb-2">
+        <label class="font-bold">Grand Total:</label>
+        <input type="number" [(ngModel)]="data.grandTotal" name="grandTotal" readonly class="border p-1 rounded w-full bg-gray-100 font-bold" />
+      </div>
+    </div>
+  </form>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+</div>

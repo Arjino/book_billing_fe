@@ -1,0 +1,30 @@
+<div class="p-6">
+  <h2 class="text-xl font-bold mb-4">Sales
+    <button mat-raised-button color="primary" (click)="addSale()" class="ml-4">Add</button>
+  </h2>
+  <table mat-table [dataSource]="sales" class="w-full mb-6" *ngIf="sales.length">
+    <ng-container matColumnDef="id">
+      <th mat-header-cell *matHeaderCellDef>ID</th>
+      <td mat-cell *matCellDef="let s">{{s.id}}</td>
+    </ng-container>
+    <ng-container matColumnDef="invoiceNo">
+      <th mat-header-cell *matHeaderCellDef>Invoice No</th>
+      <td mat-cell *matCellDef="let s">{{s.invoiceNo}}</td>
+    </ng-container>
+    <ng-container matColumnDef="party">
+      <th mat-header-cell *matHeaderCellDef>Party</th>
+      <td mat-cell *matCellDef="let s">{{s.party?.name}}</td>
+    </ng-container>
+    <ng-container matColumnDef="grandTotal">
+      <th mat-header-cell *matHeaderCellDef>Grand Total</th>
+      <td mat-cell *matCellDef="let s">{{s.grandTotal | currency}}</td>
+    </ng-container>
+    <ng-container matColumnDef="paymentStatus">
+      <th mat-header-cell *matHeaderCellDef>Payment Status</th>
+      <td mat-cell *matCellDef="let s">{{s.paymentStatus}}</td>
+    </ng-container>
+    <tr mat-header-row *matHeaderRowDef="['id','invoiceNo','party','grandTotal','paymentStatus']"></tr>
+    <tr mat-row *matRowDef="let row; columns: ['id','invoiceNo','party','grandTotal','paymentStatus'];"></tr>
+  </table>
+  <div *ngIf="!sales.length" class="text-gray-500">No sales found.</div>
+</div>

@@ -1,0 +1,29 @@
+<h2 mat-dialog-title>Add Party</h2>
+<div mat-dialog-content>
+  <form #partyForm="ngForm">
+    <div class="mb-2">
+      <label>Name:</label>
+      <input [(ngModel)]="data.name" name="name" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Type:</label>
+      <input [(ngModel)]="data.type" name="type" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Phone:</label>
+      <input [(ngModel)]="data.phone" name="phone" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Address:</label>
+      <textarea [(ngModel)]="data.address" name="address" required class="border p-1 rounded w-full"></textarea>
+    </div>
+    <div class="mb-2">
+      <label>GSTIN:</label>
+      <input [(ngModel)]="data.gstin" name="gstin" required class="border p-1 rounded w-full" />
+    </div>
+  </form>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+</div>

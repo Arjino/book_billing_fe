@@ -1,0 +1,37 @@
+<h2 mat-dialog-title>Add Book</h2>
+<div mat-dialog-content>
+  <form #bookForm="ngForm">
+    <div class="mb-2">
+      <label>Title:</label>
+      <input [(ngModel)]="data.title" name="title" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>SKU:</label>
+      <input [(ngModel)]="data.sku" name="sku" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Publisher:</label>
+      <input [(ngModel)]="data.publisher" name="publisher" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>HSN:</label>
+      <input [(ngModel)]="data.hsn" name="hsn" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Cost Price:</label>
+      <input type="number" [(ngModel)]="data.costPrice" name="costPrice" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Sale Price:</label>
+      <input type="number" [(ngModel)]="data.salePrice" name="salePrice" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Stock:</label>
+      <input type="number" [(ngModel)]="data.stock" name="stock" required class="border p-1 rounded w-full" />
+    </div>
+  </form>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+</div>

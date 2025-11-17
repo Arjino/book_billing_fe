@@ -1,0 +1,26 @@
+<div class="p-6">
+  <h2 class="text-xl font-bold mb-4">Parties
+    <button mat-raised-button color="primary" (click)="addParty()" class="ml-4">Add</button>
+  </h2>
+  <table mat-table [dataSource]="parties" class="w-full mb-6" *ngIf="parties.length">
+    <ng-container matColumnDef="id">
+      <th mat-header-cell *matHeaderCellDef>ID</th>
+      <td mat-cell *matCellDef="let p">{{p.id}}</td>
+    </ng-container>
+    <ng-container matColumnDef="name">
+      <th mat-header-cell *matHeaderCellDef>Name</th>
+      <td mat-cell *matCellDef="let p">{{p.name}}</td>
+    </ng-container>
+    <ng-container matColumnDef="type">
+      <th mat-header-cell *matHeaderCellDef>Type</th>
+      <td mat-cell *matCellDef="let p">{{p.type}}</td>
+    </ng-container>
+    <ng-container matColumnDef="phone">
+      <th mat-header-cell *matHeaderCellDef>Phone</th>
+      <td mat-cell *matCellDef="let p">{{p.phone}}</td>
+    </ng-container>
+    <tr mat-header-row *matHeaderRowDef="['id','name','type','phone']"></tr>
+    <tr mat-row *matRowDef="let row; columns: ['id','name','type','phone'];"></tr>
+  </table>
+  <div *ngIf="!parties.length" class="text-gray-500">No parties found.</div>
+</div>

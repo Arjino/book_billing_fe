@@ -1,0 +1,73 @@
+<mat-toolbar color="primary" class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 shadow-xl backdrop-blur-md">
+  <div class="flex items-center w-full px-4">
+    <span class="text-3xl font-extrabold tracking-wide text-white">✨ Dashboard</span>
+    <span class="flex-grow"></span>
+    <button mat-icon-button [matMenuTriggerFor]="menu" class="text-white">
+      <mat-icon>account_circle</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu">
+      <button mat-menu-item>
+        <mat-icon>person</mat-icon>
+        <span>Profile</span>
+      </button>
+      <button mat-menu-item>
+        <mat-icon>settings</mat-icon>
+        <span>Settings</span>
+      </button>
+      <mat-divider></mat-divider>
+      <button mat-menu-item (click)="logout()">
+        <mat-icon>logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
+  </div>
+</mat-toolbar>
+
+<div class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 p-8">
+  <div class="max-w-7xl mx-auto">
+    <div class="mb-10 text-center">
+      <h1 class="text-5xl font-extrabold text-gray-800 mb-2">Welcome to Your Dashboard</h1>
+      <p class="text-lg text-gray-600">You're authenticated and ready to explore 🚀</p>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Reusable Card Component -->
+      <ng-container *ngFor="let card of cards">
+        <mat-card class="bg-white/70 backdrop-blur-md rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300">
+          <mat-card-header class="flex items-center space-x-4">
+            <mat-icon class="text-4xl" [ngClass]="card.iconColor">{{ card.icon }}</mat-icon>
+            <mat-card-title class="text-xl font-semibold text-gray-800">{{ card.title }}</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <p class="text-gray-600">{{ card.description }}</p>
+          </mat-card-content>
+          <mat-card-actions *ngIf="card.button">
+            <button mat-raised-button color="primary">{{ card.button }}</button>
+          </mat-card-actions>
+          <mat-card-content *ngIf="card.component">
+            <ng-container [ngComponentOutlet]="card.component"></ng-container>
+          </mat-card-content>
+        </mat-card>
+      </ng-container>
+    </div>
+
+    <!-- Authentication Info -->
+    <mat-card class="mt-12 bg-white/80 backdrop-blur-md rounded-xl shadow-lg p-6">
+      <mat-card-header>
+        <mat-card-title class="text-2xl font-bold text-gray-800">🔐 Authentication Info</mat-card-title>
+      </mat-card-header>
+      <mat-card-content class="space-y-4 mt-4">
+        <p class="text-gray-700">Logged In: <span class="text-green-600 font-semibold">✓ Yes</span></p>
+        <div>
+          <p class="text-gray-700 mb-1">Access Token:</p>
+          <pre class="text-xs font-mono bg-gray-100 p-3 rounded max-h-32 overflow-auto">{{ accessToken() }}</pre>
+        </div>
+        <button mat-raised-button color="accent" (click)="copyToken()">
+          <mat-icon>content_copy</mat-icon>
+          Copy Token
+        </button>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

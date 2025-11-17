@@ -1,0 +1,36 @@
+import { Component, Inject } from '@angular/core';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+
+export interface PartyDialogData {
+  id: number;
+  name: string;
+  type: string;
+  phone: string;
+  address: string;
+  gstin: string;
+}
+
+@Component({
+  selector: 'app-party-dialog',
+  templateUrl: './party-dialog.component.html',
+  styleUrls: ['./party-dialog.component.css'],
+  standalone: true,
+  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule]
+})
+export class PartyDialogComponent {
+  constructor(
+    public dialogRef: MatDialogRef<PartyDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: PartyDialogData
+  ) {}
+
+  onCancel(): void {
+    this.dialogRef.close();
+  }
+
+  onSave(): void {
+    this.dialogRef.close(this.data);
+  }
+}
