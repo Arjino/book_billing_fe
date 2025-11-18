@@ -1,4 +1,4 @@
-export const baseUrl = 'https://your-prod-api-url.com/api';
+export const baseUrl = 'https://silver-trout-549wvw9r9qq3p55-8080.app.github.dev/api';
 
 export const enviort = {
   // Authentication
@@ -12,7 +12,7 @@ export const enviort = {
   partiesUrl: baseUrl + '/parties',
   salesUrl: baseUrl + '/sales',
 
-  // Invoice base
+  // Invoice (download endpoint uses /sales/{id}/invoice/download)
   invoiceBase: baseUrl + '/sales',
 
   // Sales by date
@@ -21,5 +21,5 @@ export const enviort = {
 };
 
 export const environment = {
-  production: true
+  production: false
 };
