@@ -13,7 +13,11 @@ export const enviort = {
   salesUrl: baseUrl + '/sales',
 
   // Invoice (download endpoint uses /sales/{id}/invoice/download)
-  invoiceBase: baseUrl + '/sales'
+  invoiceBase: baseUrl + '/sales',
+
+  // Sales by date
+  salesByDateUrl: baseUrl + '/sales/by-date', // Returns today's sales by default
+  salesByDateRangeUrl: baseUrl + '/sales/by-date' // With startDate and endDate query params
 };
 
 export const environment = {

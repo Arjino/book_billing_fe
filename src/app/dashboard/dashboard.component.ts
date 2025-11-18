@@ -12,10 +12,10 @@ import { BookingComponent } from '../booking.component';
 import { PartiesComponent } from '../parties.component';
 import { SalesComponent } from '../sales.component';
 import { InvoicePreviewComponent } from '../invoice-preview.component';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-dashboard',
@@ -28,10 +28,10 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
     MatToolbarModule,
     MatMenuModule,
     MatDividerModule,
-    MatFormFieldModule,
-    MatInputModule,
+    MatDialogModule,
     FormsModule,
-    MatDialogModule
+    MatFormFieldModule,
+    MatInputModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']

@@ -5,6 +5,12 @@ import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatIconModule } from '@angular/material/icon';
 import { SalesDialogComponent, SalesDialogData } from './sales-dialog.component';
 import { AuthService } from './services/auth.service';
 import { baseUrl, enviort } from '../environments/environment';
@@ -57,12 +63,14 @@ interface Sale {
   templateUrl: './sales.component.html',
   styleUrls: ['./sales.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, FormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule, MatIconModule]
 })
 export class SalesComponent implements OnInit {
   sales: Sale[] = [];
   books: Book[] = [];
   parties: Party[] = [];
+  startDate: string = '';
+  endDate: string = '';
 
   constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService) {}
 
@@ -92,7 +100,7 @@ export class SalesComponent implements OnInit {
 
   loadSales() {
     this.http.get<Sale[]>(
-      enviort.salesUrl,
+      enviort.salesByDateUrl,
       { headers: this.authService.getAuthHeaders() }
     ).subscribe(data => {
       this.sales = data;
@@ -132,5 +140,38 @@ export class SalesComponent implements OnInit {
         });
       }
     });
+  }
+
+  getSalesByDateRange() {
+    if (!this.startDate || !this.endDate) {
+      alert('Please select both start and end dates.');
+      return;
+    }
+
+    const start = this.formatDate(this.startDate);
+    const end = this.formatDate(this.endDate);
+
+    const url = `${enviort.salesByDateRangeUrl}?startDate=${start}&endDate=${end}`;
+
+    this.http.get<Sale[]>(url, { headers: this.authService.getAuthHeaders() }).subscribe({
+      next: (data) => {
+        this.sales = data;
+      },
+      error: (err) => {
+        console.error('Failed to fetch sales by date range:', err);
+        alert('Failed to fetch sales. Please try again.');
+      }
+    });
+  }
+
+  private formatDate(date: string | Date): string {
+    if (typeof date === 'string') {
+      return date;
+    }
+    const d = new Date(date);
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${year}-${month}-${day}`;
   }
 }
