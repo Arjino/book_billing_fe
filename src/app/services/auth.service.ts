@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { baseUrl, enviort } from '../../environments/environment';
 
 export interface AuthRequest {
   username: string;
@@ -21,7 +22,7 @@ export interface ForgotPasswordRequest {
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/auth';
+  private apiUrl = enviort; // contains specific auth URLs (register/login/etc.)
   private accessTokenSubject = new BehaviorSubject<string | null>(null);
   public accessToken$ = this.accessTokenSubject.asObservable();
 
@@ -36,25 +37,25 @@ export class AuthService {
 
   register(username: string, password: string): Observable<AuthResponse> {
     const payload: AuthRequest = { username, password };
-    return this.http.post<AuthResponse>(`${this.apiUrl}/register`, payload).pipe(
+    return this.http.post<AuthResponse>(this.apiUrl.registerUrl, payload).pipe(
       tap(response => this.setTokens(response))
     );
   }
 
   login(username: string, password: string): Observable<AuthResponse> {
     const payload: AuthRequest = { username, password };
-    return this.http.post<AuthResponse>(`${this.apiUrl}/login`, payload).pipe(
+    return this.http.post<AuthResponse>(this.apiUrl.loginUrl, payload).pipe(
       tap(response => this.setTokens(response))
     );
   }
 
   forgotPassword(email: string): Observable<any> {
     const payload: ForgotPasswordRequest = { email };
-    return this.http.post(`${this.apiUrl}/forgot-password`, payload);
+    return this.http.post(this.apiUrl.forgotPasswordUrl, payload);
   }
 
   resetPassword(token: string, newPassword: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/reset-password`, { token, newPassword });
+    return this.http.post(this.apiUrl.resetPasswordUrl, { token, newPassword });
   }
 
   logout(): void {

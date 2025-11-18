@@ -41,27 +41,6 @@ export class DashboardComponent implements OnInit {
   isLoggedIn = signal(false);
   cards = [
     {
-      icon: 'analytics',
-      iconColor: 'text-blue-600',
-      title: 'Analytics',
-      description: 'View your analytics and insights',
-      button: 'View'
-    },
-    {
-      icon: 'people',
-      iconColor: 'text-purple-600',
-      title: 'Users',
-      description: 'Manage users and permissions',
-      button: 'View'
-    },
-    {
-      icon: 'settings',
-      iconColor: 'text-pink-600',
-      title: 'Settings',
-      description: 'Configure your preferences',
-      button: 'View'
-    },
-    {
       icon: 'book',
       iconColor: 'text-green-600',
       title: 'Booking',
@@ -85,7 +64,14 @@ export class DashboardComponent implements OnInit {
       title: 'Invoice PDF',
       description: 'Download and preview invoice PDF by Sale ID',
       pdfCard: true
-    }
+    },
+    {
+      icon: 'analytics',
+      iconColor: 'text-blue-600',
+      title: 'Analytics',
+      description: 'View your analytics and insights',
+      button: 'View'
+    },
   ];
   invoiceSaleId: string = '';
   showInvoicePreview: boolean = false;

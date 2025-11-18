@@ -7,6 +7,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { SalesDialogComponent, SalesDialogData } from './sales-dialog.component';
 import { AuthService } from './services/auth.service';
+import { baseUrl, enviort } from '../environments/environment';
 
 interface Book {
   id: number;
@@ -73,7 +74,7 @@ export class SalesComponent implements OnInit {
 
   loadBooks() {
     this.http.get<Book[]>(
-      'https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/books',
+      enviort.bookingUrl,
       { headers: this.authService.getAuthHeaders() }
     ).subscribe(data => {
       this.books = data;
@@ -82,7 +83,7 @@ export class SalesComponent implements OnInit {
 
   loadParties() {
     this.http.get<Party[]>(
-      'https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/parties',
+      enviort.partiesUrl,
       { headers: this.authService.getAuthHeaders() }
     ).subscribe(data => {
       this.parties = data;
@@ -91,7 +92,7 @@ export class SalesComponent implements OnInit {
 
   loadSales() {
     this.http.get<Sale[]>(
-      'https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/sales',
+      enviort.salesUrl,
       { headers: this.authService.getAuthHeaders() }
     ).subscribe(data => {
       this.sales = data;
@@ -123,7 +124,7 @@ export class SalesComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (result) {
         this.http.post(
-          'https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/sales',
+          enviort.salesUrl,
           result,
           { headers: this.authService.getAuthHeaders() }
         ).subscribe(() => {

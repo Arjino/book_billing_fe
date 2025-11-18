@@ -5,6 +5,7 @@ import { ActivatedRoute } from '@angular/router';
 import { AuthService } from './services/auth.service';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
+import { baseUrl, enviort } from '../environments/environment';
 
 @Component({
   selector: 'app-invoice-preview',
@@ -46,7 +47,7 @@ export class InvoicePreviewComponent implements OnInit {
 
   fetchInvoicePdf(id: string) {
     this.loading = true;
-    this.http.get(`https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/sales/${id}/invoice/download`,
+    this.http.get(`${enviort.invoiceBase}/${id}/invoice/download`,
         { 
         headers: this.authService.getAuthHeaders(),
       responseType: 'blob'

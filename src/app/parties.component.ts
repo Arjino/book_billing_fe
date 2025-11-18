@@ -7,6 +7,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PartyDialogComponent, PartyDialogData } from './party-dialog.component';
 import { AuthService } from './services/auth.service';
+import { baseUrl, enviort } from '../environments/environment';
 
 interface Party {
   id: number;
@@ -35,7 +36,7 @@ export class PartiesComponent implements OnInit {
 
   loadParties() {
     this.http.get<Party[]>(
-      'https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/parties',
+      enviort.partiesUrl,
       { headers: this.authService.getAuthHeaders() }
     ).subscribe(data => {
       this.parties = data;
@@ -58,7 +59,7 @@ export class PartiesComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result: PartyDialogData) => {
       if (result) {
         this.http.post(
-          'https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/parties',
+          enviort.partiesUrl,
           result,
           { headers: this.authService.getAuthHeaders() }
         ).subscribe(() => {

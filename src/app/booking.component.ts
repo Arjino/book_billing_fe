@@ -8,6 +8,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { BookDialogComponent, BookDialogData } from './book-dialog.component';
 import { AuthService } from './services/auth.service';
+import { baseUrl, enviort } from '../environments/environment';
 
 interface Book {
   id: number;
@@ -38,7 +39,7 @@ export class BookingComponent implements OnInit {
 
   loadBooks() {
     this.http.get<Book[]>(
-      'https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/books',
+      enviort.bookingUrl,
       { headers: this.authService.getAuthHeaders() }
     ).subscribe(data => {
       this.books = data;
@@ -63,7 +64,7 @@ export class BookingComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result: BookDialogData) => {
       if (result) {
         this.http.post(
-          'https://congenial-space-happiness-pg6x7x6wqw9c99gx-8080.app.github.dev/api/books',
+          enviort.bookingUrl,
           result,
           { headers: this.authService.getAuthHeaders() }
         ).subscribe(() => {
