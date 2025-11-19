@@ -2,10 +2,10 @@ import { Component, Inject, Input, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
-import { AuthService } from './services/auth.service';
+import { AuthService } from '../services/auth.service';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
-import { baseUrl, enviort } from '../environments/environment';
+import { baseUrl, enviort } from '../../environments/environment';
 
 @Component({
   selector: 'app-invoice-preview',
@@ -34,7 +34,6 @@ export class InvoicePreviewComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Get salesId from route or dialog data
     if (!this.salesId) {
       this.salesId = this.route.snapshot.paramMap.get('id') || undefined;
     }

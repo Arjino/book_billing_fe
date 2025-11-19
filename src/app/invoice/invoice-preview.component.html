@@ -1,0 +1,9 @@
+<div class="p-4">
+  <h2 class="text-lg font-bold">Invoice Preview</h2>
+  <div *ngIf="loading">Loading...</div>
+  <div *ngIf="error" class="text-red-600">{{error}}</div>
+  <iframe *ngIf="pdfUrl" [src]="pdfUrl" class="w-full h-96 border"></iframe>
+  <div class="mt-4">
+    <button mat-raised-button color="primary" (click)="downloadPdf()">Download PDF</button>
+  </div>
+</div>

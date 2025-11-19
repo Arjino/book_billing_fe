@@ -12,8 +12,8 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { SalesDialogComponent, SalesDialogData } from './sales-dialog.component';
-import { AuthService } from './services/auth.service';
-import { baseUrl, enviort } from '../environments/environment';
+import { AuthService } from '../services/auth.service';
+import { baseUrl, enviort } from '../../environments/environment';
 
 interface Book {
   id: number;
@@ -100,7 +100,7 @@ export class SalesComponent implements OnInit {
 
   loadSales() {
     this.http.get<Sale[]>(
-      enviort.salesByDateUrl,
+      enviort.salesUrl,
       { headers: this.authService.getAuthHeaders() }
     ).subscribe(data => {
       this.sales = data;

@@ -1,4 +1,3 @@
-
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -7,8 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { BookDialogComponent, BookDialogData } from './book-dialog.component';
-import { AuthService } from './services/auth.service';
-import { baseUrl, enviort } from '../environments/environment';
+import { AuthService } from '../services/auth.service';
+import { baseUrl, enviort } from '../../environments/environment';
 
 interface Book {
   id: number;

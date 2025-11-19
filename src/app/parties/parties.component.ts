@@ -6,8 +6,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PartyDialogComponent, PartyDialogData } from './party-dialog.component';
-import { AuthService } from './services/auth.service';
-import { baseUrl, enviort } from '../environments/environment';
+import { AuthService } from '../services/auth.service';
+import { baseUrl, enviort } from '../../environments/environment';
 
 interface Party {
   id: number;
