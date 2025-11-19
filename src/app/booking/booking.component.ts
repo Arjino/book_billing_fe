@@ -1,9 +1,11 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
+import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { BookDialogComponent, BookDialogData } from './book-dialog.component';
 import { AuthService } from '../services/auth.service';
@@ -25,15 +27,19 @@ interface Book {
   templateUrl: './booking.component.html',
   styleUrls: ['./booking.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatIconModule]
 })
 export class BookingComponent implements OnInit {
   books: Book[] = [];
 
-  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService) {}
+  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router) {}
 
   ngOnInit() {
     this.loadBooks();
+  }
+
+  goBack() {
+    this.router.navigate(['/dashboard']);
   }
 
   loadBooks() {

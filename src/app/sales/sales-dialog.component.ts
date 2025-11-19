@@ -18,6 +18,8 @@ export interface SalesDialogData {
   roundOff: number;
   grandTotal: number;
   paymentStatus: string;
+  partialPaymentAmount: number;
+  saleType: string;
   items: any[];
 }
 

@@ -1,0 +1,47 @@
+<h2 mat-dialog-title>Add Transaction</h2>
+<div mat-dialog-content>
+  <form #transactionForm="ngForm">
+    <div class="mb-2">
+      <label>Party:</label>
+      <select [(ngModel)]="data.party" name="party" required class="border p-1 rounded w-full">
+        <option value="">Select Party</option>
+        <option *ngFor="let p of parties" [ngValue]="p">{{ p.name }}</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label>Transaction Date:</label>
+      <input type="date" [(ngModel)]="data.transactionDate" name="transactionDate" required class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Transaction Type:</label>
+      <select [(ngModel)]="data.transactionType" name="transactionType" required class="border p-1 rounded w-full">
+        <option value="Complete Payment">Complete Payment</option>
+        <option value="Partial Payment">Partial Payment</option>
+        <option value="Advance Payment">Advance Payment</option>
+        <option value="Refund">Refund</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label>Amount:</label>
+      <input type="number" [(ngModel)]="data.amount" name="amount" required placeholder="Enter amount" class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Payment Method:</label>
+      <select [(ngModel)]="data.paymentMethod" name="paymentMethod" required class="border p-1 rounded w-full">
+        <option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</option>
+      </select>
+    </div>
+    <div class="mb-2">
+      <label>Reference No (Cheque/Transaction ID):</label>
+      <input [(ngModel)]="data.referenceNo" name="referenceNo" placeholder="e.g., CHQ123456 or UTR" class="border p-1 rounded w-full" />
+    </div>
+    <div class="mb-2">
+      <label>Notes:</label>
+      <textarea [(ngModel)]="data.notes" name="notes" placeholder="Additional notes" class="border p-1 rounded w-full" rows="3"></textarea>
+    </div>
+  </form>
+</div>
+<div mat-dialog-actions>
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" (click)="onSave()">Save Transaction</button>
+</div>

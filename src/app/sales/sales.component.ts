@@ -1,6 +1,7 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
@@ -72,7 +73,7 @@ export class SalesComponent implements OnInit {
   startDate: string = '';
   endDate: string = '';
 
-  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService) {}
+  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router) {}
 
   ngOnInit() {
     this.loadBooks();
@@ -121,6 +122,8 @@ export class SalesComponent implements OnInit {
         roundOff: 0,
         grandTotal: 0,
         paymentStatus: 'Pending',
+        partialPaymentAmount: 0,
+        saleType: '',
         items: []
       } as SalesDialogData,
       disableClose: false
@@ -173,5 +176,9 @@ export class SalesComponent implements OnInit {
     const day = String(d.getDate()).padStart(2, '0');
     const year = d.getFullYear();
     return `${year}-${month}-${day}`;
+  }
+
+  goBack() {
+    this.router.navigate(['/dashboard']);
   }
 }

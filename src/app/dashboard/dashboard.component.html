@@ -1,66 +1,172 @@
-<mat-toolbar color="primary" class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 shadow-xl backdrop-blur-md">
-  <div class="flex items-center w-full px-4">
-    <span class="text-3xl font-extrabold tracking-wide text-white">✨ Dashboard</span>
-    <span class="flex-grow"></span>
-    <button mat-icon-button [matMenuTriggerFor]="menu" class="text-white">
+<!-- Ultra Modern Header -->
+<div class="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-slate-900 via-purple-900 to-slate-900 backdrop-blur-xl border-b border-purple-500/20">
+  <div class="flex items-center justify-between px-8 py-4 max-w-7xl mx-auto w-full">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center">
+        <mat-icon class="text-white text-xl">dashboard</mat-icon>
+      </div>
+      <div>
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Dashboard</h1>
+        <p class="text-xs text-purple-300">Billing Management System</p>
+      </div>
+    </div>
+    <button mat-icon-button [matMenuTriggerFor]="menu" class="text-purple-200 hover:text-purple-100 transition">
       <mat-icon>account_circle</mat-icon>
     </button>
-    <mat-menu #menu="matMenu">
-      <button mat-menu-item>
+    <mat-menu #menu="matMenu" class="modern-menu">
+      <button mat-menu-item class="hover:bg-purple-100">
         <mat-icon>person</mat-icon>
         <span>Profile</span>
       </button>
-      <button mat-menu-item>
+      <button mat-menu-item class="hover:bg-purple-100">
         <mat-icon>settings</mat-icon>
         <span>Settings</span>
       </button>
       <mat-divider></mat-divider>
-      <button mat-menu-item (click)="logout()">
+      <button mat-menu-item (click)="logout()" class="hover:bg-red-100">
         <mat-icon>logout</mat-icon>
         <span>Logout</span>
       </button>
     </mat-menu>
   </div>
-</mat-toolbar>
+</div>
 
-<div class="min-h-screen bg-gradient-to-br from-blue-50 to-purple-100 p-8">
-  <div class="max-w-7xl mx-auto">
-    <div class="mb-10 text-center">
-      <h1 class="text-5xl font-extrabold text-gray-800 mb-2">Welcome to Your Dashboard</h1>
-      <p class="text-lg text-gray-600">You're authenticated and ready to explore 🚀</p>
+<!-- Main Content -->
+<div class="min-h-screen pt-24 pb-12 bg-gradient-to-br from-slate-950 via-purple-900/20 to-slate-950 relative overflow-hidden">
+  <!-- Animated Background Elements -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none">
+    <div class="absolute top-20 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-blob"></div>
+    <div class="absolute bottom-20 right-10 w-72 h-72 bg-pink-500/10 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
+    <div class="absolute top-1/2 left-1/2 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-blob animation-delay-4000"></div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-6 relative z-10">
+    <!-- Welcome Section -->
+    <div class="mb-16 text-center">
+      <h2 class="text-5xl md:text-6xl font-extrabold mb-4">
+        <span class="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">Welcome Back</span>
+      </h2>
+      <p class="text-lg text-purple-200 mb-2">Manage your billing operations effortlessly</p>
+      <div class="flex items-center justify-center gap-2 text-purple-300">
+        <mat-icon class="text-lg">schedule</mat-icon>
+        <span class="text-sm">Last updated: Just now</span>
+      </div>
+    </div>
+
+    <!-- Quick Stats Section -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-12">
+      <div class="bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-400/30 rounded-2xl p-6 backdrop-blur-lg hover:border-purple-400/60 transition-all duration-300">
+        <mat-icon class="text-purple-400 mb-2">shopping_cart</mat-icon>
+        <p class="text-sm text-purple-200 mb-2">Sales</p>
+        <p class="text-3xl font-bold text-white">0</p>
+      </div>
+      <div class="bg-gradient-to-br from-pink-500/20 to-pink-600/20 border border-pink-400/30 rounded-2xl p-6 backdrop-blur-lg hover:border-pink-400/60 transition-all duration-300">
+        <mat-icon class="text-pink-400 mb-2">business</mat-icon>
+        <p class="text-sm text-pink-200 mb-2">Parties</p>
+        <p class="text-3xl font-bold text-white">0</p>
+      </div>
+      <div class="bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-400/30 rounded-2xl p-6 backdrop-blur-lg hover:border-blue-400/60 transition-all duration-300">
+        <mat-icon class="text-blue-400 mb-2">book</mat-icon>
+        <p class="text-sm text-blue-200 mb-2">Bookings</p>
+        <p class="text-3xl font-bold text-white">0</p>
+      </div>
+      <div class="bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 border border-emerald-400/30 rounded-2xl p-6 backdrop-blur-lg hover:border-emerald-400/60 transition-all duration-300">
+        <mat-icon class="text-emerald-400 mb-2">payment</mat-icon>
+        <p class="text-sm text-emerald-200 mb-2">Transactions</p>
+        <p class="text-3xl font-bold text-white">0</p>
+      </div>
     </div>
 
     <!-- Cards Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- Reusable Card Component -->
-      <ng-container *ngFor="let card of cards">
-        <mat-card class="bg-white/70 backdrop-blur-md rounded-xl shadow-xl hover:shadow-2xl transition-all duration-300">
-          <mat-card-header class="flex items-center space-x-4">
-            <mat-icon class="text-4xl" [ngClass]="card.iconColor">{{ card.icon }}</mat-icon>
-            <mat-card-title class="text-xl font-semibold text-gray-800">{{ card.title }}</mat-card-title>
-          </mat-card-header>
-          <mat-card-content>
-            <p class="text-gray-600">{{ card.description }}</p>
-          </mat-card-content>
-          <mat-card-actions *ngIf="card.button">
-            <button mat-raised-button color="primary">{{ card.button }}</button>
-          </mat-card-actions>
-          <mat-card-content *ngIf="card.component">
-            <ng-container [ngComponentOutlet]="card.component"></ng-container>
-          </mat-card-content>
-          <!-- Invoice PDF Card -->
-          <mat-card-content *ngIf="card.pdfCard">
-            <div class="flex flex-col gap-2">
-              <mat-form-field appearance="outline">
-                <mat-label>Sale ID</mat-label>
-                <input matInput [(ngModel)]="invoiceSaleId" placeholder="Enter Sale ID">
-              </mat-form-field>
-              <button mat-raised-button color="primary" (click)="onDownloadInvoice()" [disabled]="!invoiceSaleId">Download & Preview PDF</button>
+    <div>
+      <h3 class="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+        <div class="w-1 h-8 bg-gradient-to-b from-purple-400 to-pink-400 rounded"></div>
+        Management Tools
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Reusable Card Component -->
+        <ng-container *ngFor="let card of cards">
+          <div class="group relative">
+            <!-- Card -->
+            <div class="bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-purple-500/30 rounded-2xl p-6 backdrop-blur-xl hover:border-purple-400/60 transition-all duration-500 hover:-translate-y-2 cursor-pointer relative overflow-hidden h-full">
+              <!-- Glow Effect -->
+              <div class="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-pink-500/0 group-hover:from-purple-500/10 group-hover:to-pink-500/10 transition-all duration-500"></div>
+              
+              <!-- Content -->
+              <div class="relative z-10">
+                <!-- Icon -->
+                <div class="w-14 h-14 bg-gradient-to-br rounded-xl flex items-center justify-center mb-4 transition-all duration-300"
+                     [ngClass]="{'from-purple-500 to-purple-600': card.title === 'Booking',
+                                'from-orange-500 to-orange-600': card.title === 'Parties',
+                                'from-red-500 to-red-600': card.title === 'Sales',
+                                'from-purple-600 to-purple-700': card.title === 'Transactions',
+                                'from-indigo-500 to-indigo-600': card.title === 'Invoice PDF',
+                                'from-blue-500 to-blue-600': card.title === 'Analytics'}">
+                  <mat-icon class="text-white text-2xl">{{ card.icon }}</mat-icon>
+                </div>
+                
+                <!-- Title and Description -->
+                <h4 class="text-xl font-bold text-white mb-2">{{ card.title }}</h4>
+                <p class="text-sm text-purple-200 mb-6 line-clamp-2">{{ card.description }}</p>
+                
+                <!-- PDF Card Content -->
+                <div *ngIf="card.pdfCard" class="space-y-3">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Sale ID</mat-label>
+                    <input matInput [(ngModel)]="invoiceSaleId" placeholder="Enter Sale ID" class="text-white">
+                  </mat-form-field>
+                  <button mat-raised-button color="primary" (click)="onDownloadInvoice()" [disabled]="!invoiceSaleId" class="w-full">
+                    Download PDF
+                  </button>
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="absolute bottom-4 right-4 flex gap-2 items-center z-20">
+                <!-- Add Button -->
+                <button *ngIf="card.route && !card.pdfCard && !card.button" 
+                        mat-mini-fab
+                        color="accent"
+                        class="shadow-lg hover:shadow-xl transition-all duration-300 scale-0 group-hover:scale-100 origin-bottom-right"
+                        (click)="openAddDialog(card)"
+                        [attr.aria-label]="'Add new ' + card.title">
+                  <mat-icon>add</mat-icon>
+                </button>
+                <!-- Navigation Arrow Button -->
+                <button *ngIf="card.route" 
+                        mat-mini-fab
+                        color="primary"
+                        class="shadow-lg hover:shadow-xl transition-all duration-300 scale-0 group-hover:scale-100 origin-bottom-right"
+                        (click)="navigateTo(card.route)"
+                        [attr.aria-label]="'Navigate to ' + card.title">
+                  <mat-icon>arrow_forward</mat-icon>
+                </button>
+              </div>
             </div>
-            <!-- Dialog will open, so inline preview removed -->
-          </mat-card-content>
-        </mat-card>
-      </ng-container>
+          </div>
+        </ng-container>
+      </div>
     </div>
   </div>
 </div>
+
+<!-- Add CSS animations to styles -->
+<style>
+  @keyframes blob {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+  }
+  
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+  
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+  
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+</style>

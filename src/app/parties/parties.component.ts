@@ -1,9 +1,11 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
+import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PartyDialogComponent, PartyDialogData } from './party-dialog.component';
 import { AuthService } from '../services/auth.service';
@@ -23,15 +25,19 @@ interface Party {
   templateUrl: './parties.component.html',
   styleUrls: ['./parties.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatIconModule]
 })
 export class PartiesComponent implements OnInit {
   parties: Party[] = [];
 
-  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService) {}
+  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router) {}
 
   ngOnInit() {
     this.loadParties();
+  }
+
+  goBack() {
+    this.router.navigate(['/dashboard']);
   }
 
   loadParties() {

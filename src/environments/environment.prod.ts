@@ -11,6 +11,7 @@ export const enviort = {
   bookingUrl: baseUrl + '/books',
   partiesUrl: baseUrl + '/parties',
   salesUrl: baseUrl + '/sales',
+  transactionsUrl: baseUrl + '/transactions',
 
   // Invoice (download endpoint uses /sales/{id}/invoice/download)
   invoiceBase: baseUrl + '/sales',

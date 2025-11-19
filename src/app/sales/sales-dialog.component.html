@@ -17,12 +17,26 @@
       <input type="date" [(ngModel)]="data.date" name="date" required class="border p-1 rounded w-full" />
     </div>
     <div class="mb-2">
+      <label>Type of Sale:</label>
+      <select [(ngModel)]="data.saleType" name="saleType" required class="border p-1 rounded w-full">
+        <option value="">Select Sale Type</option>
+        <option value="sale">Sale</option>
+        <option value="purchase">Purchase</option>
+        <option value="return in">Return In</option>
+        <option value="return out">Return Out</option>
+      </select>
+    </div>
+    <div class="mb-2">
       <label>Payment Status:</label>
       <select [(ngModel)]="data.paymentStatus" name="paymentStatus" class="border p-1 rounded w-full">
         <option value="Pending">Pending</option>
         <option value="Paid">Paid</option>
         <option value="Partial">Partial</option>
       </select>
+    </div>
+    <div class="mb-2" *ngIf="data.paymentStatus === 'Partial'">
+      <label>Partial Payment Amount:</label>
+      <input type="number" [(ngModel)]="data.partialPaymentAmount" name="partialPaymentAmount" placeholder="Enter partial payment amount" class="border p-1 rounded w-full" />
     </div>
 
     <!-- Items Section -->
