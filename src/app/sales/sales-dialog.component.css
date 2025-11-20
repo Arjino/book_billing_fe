@@ -1,2 +1,15 @@
 /* minimal styles for dialog inputs */
 input { margin-bottom: 6px; }
+
+/* Make form controls readable on translucent dialog backgrounds */
+input, textarea, select, mat-form-field .mat-input-element {
+	background: rgba(255,255,255,0.03);
+	color: rgba(255,255,255,0.95);
+	border: 1px solid rgba(255,255,255,0.08);
+	padding: 0.5rem;
+	border-radius: 6px;
+}
+
+input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.6); }
+
+button[mat-raised-button] { box-shadow: 0 6px 18px rgba(0,0,0,0.35); }

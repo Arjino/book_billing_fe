@@ -54,30 +54,30 @@
     <!-- Sales Table -->
     <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-red-500/30 rounded-2xl backdrop-blur-xl overflow-hidden">
       <div class="overflow-x-auto">
-        <table mat-table [dataSource]="sales" class="w-full" *ngIf="sales.length">
+        <table mat-table [dataSource]="sales" class="w-full bg-transparent text-white" *ngIf="sales.length">
           <ng-container matColumnDef="id">
             <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">ID</th>
-            <td mat-cell *matCellDef="let s" class="text-red-100 py-4 px-6 border-t border-red-500/20">{{s.id}}</td>
+            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{s.id}}</td>
           </ng-container>
           <ng-container matColumnDef="invoiceNo">
             <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Invoice No</th>
-            <td mat-cell *matCellDef="let s" class="text-red-100 py-4 px-6 border-t border-red-500/20">{{s.invoiceNo}}</td>
+            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{s.invoiceNo}}</td>
           </ng-container>
           <ng-container matColumnDef="party">
             <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Party</th>
-            <td mat-cell *matCellDef="let s" class="text-red-100 py-4 px-6 border-t border-red-500/20">{{s.party?.name}}</td>
+            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{s.party?.name}}</td>
           </ng-container>
           <ng-container matColumnDef="date">
             <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Date</th>
-            <td mat-cell *matCellDef="let s" class="text-red-100 py-4 px-6 border-t border-red-500/20">{{s.date}}</td>
+            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{s.date}}</td>
           </ng-container>
           <ng-container matColumnDef="grandTotal">
             <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Grand Total</th>
-            <td mat-cell *matCellDef="let s" class="text-emerald-400 font-bold py-4 px-6 border-t border-red-500/20">{{s.grandTotal | currency}}</td>
+            <td mat-cell *matCellDef="let s" class="text-emerald-400 bg-transparent font-bold py-4 px-6 border-t border-red-500/20">{{s.grandTotal | currency}}</td>
           </ng-container>
           <ng-container matColumnDef="paymentStatus">
             <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Payment Status</th>
-            <td mat-cell *matCellDef="let s" class="py-4 px-6 border-t border-red-500/20">
+            <td mat-cell *matCellDef="let s" class="bg-transparent py-4 px-6 border-t border-red-500/20">
               <span [ngClass]="s.paymentStatus === 'Paid' ? 'bg-green-500/30 text-green-300' : 'bg-yellow-500/30 text-yellow-300'" class="px-3 py-1 rounded-full text-xs font-semibold">
                 {{s.paymentStatus}}
               </span>

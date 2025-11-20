@@ -31,15 +31,15 @@
         <table mat-table [dataSource]="books" class="w-full" *ngIf="books.length">
           <ng-container matColumnDef="id">
             <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left">ID</th>
-            <td mat-cell *matCellDef="let b" class="text-green-100 py-4 px-6 border-t border-green-500/20">{{b.id}}</td>
+              <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">{{b.id}}</td>
           </ng-container>
           <ng-container matColumnDef="title">
             <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left">Title</th>
-            <td mat-cell *matCellDef="let b" class="text-green-100 py-4 px-6 border-t border-green-500/20">{{b.title}}</td>
+              <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">{{b.title}}</td>
           </ng-container>
           <ng-container matColumnDef="stock">
             <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left">Stock</th>
-            <td mat-cell *matCellDef="let b" class="text-green-100 py-4 px-6 border-t border-green-500/20">{{b.stock}}</td>
+              <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">{{b.stock}}</td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="['id','title','stock']"></tr>
           <tr mat-row *matRowDef="let row; columns: ['id','title','stock'];" class="hover:bg-green-500/10 transition-colors"></tr>

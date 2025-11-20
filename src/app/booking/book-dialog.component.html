@@ -1,37 +1,28 @@
-<h2 mat-dialog-title>Add Book</h2>
-<div mat-dialog-content>
-  <form #bookForm="ngForm">
-    <div class="mb-2">
-      <label>Title:</label>
-      <input [(ngModel)]="data.title" name="title" required class="border p-1 rounded w-full" />
+<div class="modern-dialog w-full max-w-lg text-white">
+  <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#7C3AED,#06B6D4);">
+    <div class="flex items-center gap-3">
+      <mat-icon>menu_book</mat-icon>
+      <h2 class="text-lg font-semibold">Add Book</h2>
     </div>
-    <div class="mb-2">
-      <label>SKU:</label>
-      <input [(ngModel)]="data.sku" name="sku" required class="border p-1 rounded w-full" />
-    </div>
-    <div class="mb-2">
-      <label>Publisher:</label>
-      <input [(ngModel)]="data.publisher" name="publisher" required class="border p-1 rounded w-full" />
-    </div>
-    <div class="mb-2">
-      <label>HSN:</label>
-      <input [(ngModel)]="data.hsn" name="hsn" required class="border p-1 rounded w-full" />
-    </div>
-    <div class="mb-2">
-      <label>Cost Price:</label>
-      <input type="number" [(ngModel)]="data.costPrice" name="costPrice" required class="border p-1 rounded w-full" />
-    </div>
-    <div class="mb-2">
-      <label>Sale Price:</label>
-      <input type="number" [(ngModel)]="data.salePrice" name="salePrice" required class="border p-1 rounded w-full" />
-    </div>
-    <div class="mb-2">
-      <label>Stock:</label>
-      <input type="number" [(ngModel)]="data.stock" name="stock" required class="border p-1 rounded w-full" />
-    </div>
-  </form>
-</div>
-<div mat-dialog-actions>
-  <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+    <button mat-icon-button aria-label="close" (click)="onCancel()"><mat-icon>close</mat-icon></button>
+  </div>
+
+  <div mat-dialog-content class="p-4 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+    <form #bookForm="ngForm">
+      <div class="grid grid-cols-1 gap-3">
+        <input [(ngModel)]="data.title" name="title" required placeholder="Title" class="border p-2 rounded w-full text-white" />
+        <input [(ngModel)]="data.sku" name="sku" required placeholder="SKU" class="border p-2 rounded w-full text-white" />
+        <input [(ngModel)]="data.publisher" name="publisher" required placeholder="Publisher" class="border p-2 rounded w-full text-white" />
+        <input [(ngModel)]="data.hsn" name="hsn" required placeholder="HSN" class="border p-2 rounded w-full text-white" />
+        <input type="number" [(ngModel)]="data.costPrice" name="costPrice" required placeholder="Cost Price" class="border p-2 rounded w-full text-white" />
+        <input type="number" [(ngModel)]="data.salePrice" name="salePrice" required placeholder="Sale Price" class="border p-2 rounded w-full text-white" />
+        <input type="number" [(ngModel)]="data.stock" name="stock" required placeholder="Stock" class="border p-2 rounded w-full text-white" />
+      </div>
+    </form>
+  </div>
+
+  <div mat-dialog-actions class="flex justify-end gap-2 p-3">
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+  </div>
 </div>

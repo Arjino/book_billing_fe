@@ -38,8 +38,7 @@ import { TransactionComponent } from '../transaction/transaction.component';
     MatDialogModule,
     FormsModule,
     MatFormFieldModule,
-    MatInputModule,
-    InvoicePreviewComponent
+    MatInputModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']

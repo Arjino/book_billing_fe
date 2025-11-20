@@ -28,22 +28,22 @@
     <!-- Transactions Table -->
     <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-purple-500/30 rounded-2xl backdrop-blur-xl overflow-hidden">
       <div class="overflow-x-auto">
-        <table mat-table [dataSource]="transactions" class="w-full" *ngIf="transactions.length">
+        <table mat-table [dataSource]="transactions" class="w-full bg-transparent text-white" *ngIf="transactions.length">
           <ng-container matColumnDef="id">
             <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">ID</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-100 py-4 px-6 border-t border-purple-500/20">{{t.id}}</td>
+            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20">{{t.id}}</td>
           </ng-container>
           <ng-container matColumnDef="party">
             <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Party</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-100 py-4 px-6 border-t border-purple-500/20">{{t.party?.name}}</td>
+            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20">{{t.party?.name}}</td>
           </ng-container>
           <ng-container matColumnDef="transactionDate">
             <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Transaction Date</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-100 py-4 px-6 border-t border-purple-500/20">{{t.transactionDate}}</td>
+            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20">{{t.transactionDate}}</td>
           </ng-container>
           <ng-container matColumnDef="transactionType">
             <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Type</th>
-            <td mat-cell *matCellDef="let t" class="py-4 px-6 border-t border-purple-500/20">
+            <td mat-cell *matCellDef="let t" class="bg-transparent py-4 px-6 border-t border-purple-500/20">
               <span [ngClass]="t.transactionType === 'Complete Payment' ? 'bg-green-500/30 text-green-300' : 'bg-yellow-500/30 text-yellow-300'" class="px-3 py-1 rounded-full text-xs font-semibold">
                 {{t.transactionType}}
               </span>
@@ -51,23 +51,23 @@
           </ng-container>
           <ng-container matColumnDef="amount">
             <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Amount</th>
-            <td mat-cell *matCellDef="let t" class="text-emerald-400 font-bold py-4 px-6 border-t border-purple-500/20">{{t.amount | currency}}</td>
+            <td mat-cell *matCellDef="let t" class="text-emerald-400 bg-transparent font-bold py-4 px-6 border-t border-purple-500/20">{{t.amount | currency}}</td>
           </ng-container>
           <ng-container matColumnDef="paymentMethod">
             <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Payment Method</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-100 py-4 px-6 border-t border-purple-500/20">{{t.paymentMethod}}</td>
+            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20">{{t.paymentMethod}}</td>
           </ng-container>
           <ng-container matColumnDef="referenceNo">
             <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Reference No</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-100 py-4 px-6 border-t border-purple-500/20">{{t.referenceNo}}</td>
+            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20">{{t.referenceNo}}</td>
           </ng-container>
           <ng-container matColumnDef="notes">
             <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Notes</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-100 py-4 px-6 border-t border-purple-500/20 line-clamp-2">{{t.notes}}</td>
+            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20 line-clamp-2">{{t.notes}}</td>
           </ng-container>
           <ng-container matColumnDef="action">
             <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Action</th>
-            <td mat-cell *matCellDef="let t" class="py-4 px-6 border-t border-purple-500/20">
+            <td mat-cell *matCellDef="let t" class="bg-transparent py-4 px-6 border-t border-purple-500/20">
               <button mat-icon-button color="warn" title="Delete" class="hover:bg-red-500/20">
                 <mat-icon>delete</mat-icon>
               </button>

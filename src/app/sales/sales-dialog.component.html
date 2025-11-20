@@ -1,107 +1,98 @@
-<h2 mat-dialog-title>Add Sale</h2>
-<div mat-dialog-content>
-  <form #saleForm="ngForm">
-    <div class="mb-2">
-      <label>Invoice No:</label>
-      <input [(ngModel)]="data.invoiceNo" name="invoiceNo" required class="border p-1 rounded w-full" />
+<div class="modern-dialog w-full max-w-2xl text-white">
+  <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#0EA5E9,#7C3AED);">
+    <div class="flex items-center gap-3">
+      <mat-icon>receipt_long</mat-icon>
+      <h2 class="text-lg font-semibold">Add Sale</h2>
     </div>
-    <div class="mb-2">
-      <label>Party:</label>
-      <select [(ngModel)]="data.party" name="party" required class="border p-1 rounded w-full">
-        <option value="">Select Party</option>
-        <option *ngFor="let p of parties" [ngValue]="p">{{ p.name }}</option>
-      </select>
-    </div>
-    <div class="mb-2">
-      <label>Date:</label>
-      <input type="date" [(ngModel)]="data.date" name="date" required class="border p-1 rounded w-full" />
-    </div>
-    <div class="mb-2">
-      <label>Type of Sale:</label>
-      <select [(ngModel)]="data.saleType" name="saleType" required class="border p-1 rounded w-full">
-        <option value="">Select Sale Type</option>
-        <option value="sale">Sale</option>
-        <option value="purchase">Purchase</option>
-        <option value="return in">Return In</option>
-        <option value="return out">Return Out</option>
-      </select>
-    </div>
-    <div class="mb-2">
-      <label>Payment Status:</label>
-      <select [(ngModel)]="data.paymentStatus" name="paymentStatus" class="border p-1 rounded w-full">
-        <option value="Pending">Pending</option>
-        <option value="Paid">Paid</option>
-        <option value="Partial">Partial</option>
-      </select>
-    </div>
-    <div class="mb-2" *ngIf="data.paymentStatus === 'Partial'">
-      <label>Partial Payment Amount:</label>
-      <input type="number" [(ngModel)]="data.partialPaymentAmount" name="partialPaymentAmount" placeholder="Enter partial payment amount" class="border p-1 rounded w-full" />
-    </div>
+    <button mat-icon-button aria-label="close" (click)="onCancel()"><mat-icon>close</mat-icon></button>
+  </div>
 
-    <!-- Items Section -->
-    <div class="mt-4 border p-2 rounded">
-      <h3 class="font-bold mb-2">Items</h3>
-      <button type="button" (click)="addItem()" class="mb-2 px-3 py-1 bg-blue-500 text-white rounded">Add Item</button>
-      <table class="w-full border" *ngIf="data.items.length">
-        <thead>
-          <tr>
-            <th class="border p-1">Book</th>
-            <th class="border p-1">Qty</th>
-            <th class="border p-1">Rate</th>
-            <th class="border p-1">Amount</th>
-            <th class="border p-1">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let item of data.items; let i = index">
-            <td class="border p-1">
-              <select [(ngModel)]="item.book" [name]="'book_' + i" class="w-full border">
-                <option value="">Select Book</option>
-                <option *ngFor="let b of books" [ngValue]="b">{{ b.title }}</option>
-              </select>
-            </td>
-            <td class="border p-1">
-              <input type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" (change)="calculateAmount(item)" class="w-full border" />
-            </td>
-            <td class="border p-1">
-              <input type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" (change)="calculateAmount(item)" class="w-full border" />
-            </td>
-            <td class="border p-1">{{ item.amount }}</td>
-            <td class="border p-1">
-              <button type="button" (click)="removeItem(i)" class="px-2 py-1 bg-red-500 text-white rounded">Remove</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  <div mat-dialog-content class="p-4 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+    <form #saleForm="ngForm">
+      <div class="grid grid-cols-1 gap-3">
+        <input [(ngModel)]="data.invoiceNo" name="invoiceNo" required placeholder="Invoice No" class="border p-2 rounded w-full text-white" />
 
-    <!-- Totals Section -->
-    <div class="mt-4 border p-2 rounded">
-      <div class="mb-2">
-        <label>Total Amount:</label>
-        <input type="number" [(ngModel)]="data.totalAmount" name="totalAmount" readonly class="border p-1 rounded w-full bg-gray-100" />
+        <select [(ngModel)]="data.party" name="party" required class="border p-2 rounded w-full text-white">
+          <option value="">Select Party</option>
+          <option *ngFor="let p of parties" [ngValue]="p">{{ p.name }}</option>
+        </select>
+
+        <input type="date" [(ngModel)]="data.date" name="date" required class="border p-2 rounded w-full text-white" />
+
+        <select [(ngModel)]="data.saleType" name="saleType" required class="border p-2 rounded w-full text-white">
+          <option value="">Select Sale Type</option>
+          <option value="sale">Sale</option>
+          <option value="purchase">Purchase</option>
+          <option value="return in">Return In</option>
+          <option value="return out">Return Out</option>
+        </select>
+
+        <select [(ngModel)]="data.paymentStatus" name="paymentStatus" class="border p-2 rounded w-full text-white">
+          <option value="Pending">Pending</option>
+          <option value="Paid">Paid</option>
+          <option value="Partial">Partial</option>
+        </select>
+
+        <div *ngIf="data.paymentStatus === 'Partial'">
+          <input type="number" [(ngModel)]="data.partialPaymentAmount" name="partialPaymentAmount" placeholder="Partial Payment Amount" class="border p-2 rounded w-full text-white" />
+        </div>
+
+        <!-- Items Section -->
+        <div class="mt-2 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold">Items</h3>
+            <button type="button" (click)="addItem()" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Item</button>
+          </div>
+
+          <table class="w-full" *ngIf="data.items.length">
+            <thead>
+              <tr class="text-sm text-gray-200">
+                <th class="p-2">Book</th>
+                <th class="p-2">Qty</th>
+                <th class="p-2">Rate</th>
+                <th class="p-2">Amount</th>
+                <th class="p-2">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of data.items; let i = index">
+                <td class="p-2">
+                  <select [(ngModel)]="item.book" [name]="'book_' + i" class="w-full border p-2 text-white rounded">
+                    <option value="">Select Book</option>
+                    <option *ngFor="let b of books" [ngValue]="b">{{ b.title }}</option>
+                  </select>
+                </td>
+                <td class="p-2">
+                  <input type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" (change)="calculateAmount(item)" class="w-full border p-2 text-white rounded" />
+                </td>
+                <td class="p-2">
+                  <input type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" (change)="calculateAmount(item)" class="w-full border p-2 text-white rounded" />
+                </td>
+                <td class="p-2">{{ item.amount }}</td>
+                <td class="p-2">
+                  <button type="button" (click)="removeItem(i)" class="px-2 py-1 bg-red-600 text-white rounded">Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Totals Section -->
+        <div class="mt-3 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
+          <input type="number" [(ngModel)]="data.totalAmount" name="totalAmount" readonly placeholder="Total Amount" class="border p-2 rounded w-full text-white" />
+          <div class="grid grid-cols-1 gap-2 mt-2">
+            <input type="number" [(ngModel)]="data.discount" name="discount" (change)="calculateTotals()" placeholder="Discount" class="border p-2 rounded w-full text-white" />
+            <input type="number" [(ngModel)]="data.taxAmount" name="taxAmount" (change)="calculateTotals()" placeholder="Tax Amount" class="border p-2 rounded w-full text-white" />
+            <input type="number" [(ngModel)]="data.roundOff" name="roundOff" (change)="calculateTotals()" placeholder="Round Off" class="border p-2 rounded w-full text-white" />
+            <input type="number" [(ngModel)]="data.grandTotal" name="grandTotal" readonly placeholder="Grand Total" class="border p-2 rounded w-full text-white font-bold" />
+          </div>
+        </div>
       </div>
-      <div class="mb-2">
-        <label>Discount:</label>
-        <input type="number" [(ngModel)]="data.discount" name="discount" (change)="calculateTotals()" class="border p-1 rounded w-full" />
-      </div>
-      <div class="mb-2">
-        <label>Tax Amount:</label>
-        <input type="number" [(ngModel)]="data.taxAmount" name="taxAmount" (change)="calculateTotals()" class="border p-1 rounded w-full" />
-      </div>
-      <div class="mb-2">
-        <label>Round Off:</label>
-        <input type="number" [(ngModel)]="data.roundOff" name="roundOff" (change)="calculateTotals()" class="border p-1 rounded w-full" />
-      </div>
-      <div class="mb-2">
-        <label class="font-bold">Grand Total:</label>
-        <input type="number" [(ngModel)]="data.grandTotal" name="grandTotal" readonly class="border p-1 rounded w-full bg-gray-100 font-bold" />
-      </div>
-    </div>
-  </form>
-</div>
-<div mat-dialog-actions>
-  <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+    </form>
+  </div>
+
+  <div mat-dialog-actions class="flex justify-end gap-2 p-3">
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+  </div>
 </div>

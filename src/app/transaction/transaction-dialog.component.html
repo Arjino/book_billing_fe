@@ -1,47 +1,44 @@
-<h2 mat-dialog-title>Add Transaction</h2>
-<div mat-dialog-content>
-  <form #transactionForm="ngForm">
-    <div class="mb-2">
-      <label>Party:</label>
-      <select [(ngModel)]="data.party" name="party" required class="border p-1 rounded w-full">
-        <option value="">Select Party</option>
-        <option *ngFor="let p of parties" [ngValue]="p">{{ p.name }}</option>
-      </select>
+<div class="modern-dialog w-full max-w-lg text-white">
+  <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#06B6D4,#7C3AED);">
+    <div class="flex items-center gap-3">
+      <mat-icon>payment</mat-icon>
+      <h2 class="text-lg font-semibold">Add Transaction</h2>
     </div>
-    <div class="mb-2">
-      <label>Transaction Date:</label>
-      <input type="date" [(ngModel)]="data.transactionDate" name="transactionDate" required class="border p-1 rounded w-full" />
-    </div>
-    <div class="mb-2">
-      <label>Transaction Type:</label>
-      <select [(ngModel)]="data.transactionType" name="transactionType" required class="border p-1 rounded w-full">
-        <option value="Complete Payment">Complete Payment</option>
-        <option value="Partial Payment">Partial Payment</option>
-        <option value="Advance Payment">Advance Payment</option>
-        <option value="Refund">Refund</option>
-      </select>
-    </div>
-    <div class="mb-2">
-      <label>Amount:</label>
-      <input type="number" [(ngModel)]="data.amount" name="amount" required placeholder="Enter amount" class="border p-1 rounded w-full" />
-    </div>
-    <div class="mb-2">
-      <label>Payment Method:</label>
-      <select [(ngModel)]="data.paymentMethod" name="paymentMethod" required class="border p-1 rounded w-full">
-        <option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</option>
-      </select>
-    </div>
-    <div class="mb-2">
-      <label>Reference No (Cheque/Transaction ID):</label>
-      <input [(ngModel)]="data.referenceNo" name="referenceNo" placeholder="e.g., CHQ123456 or UTR" class="border p-1 rounded w-full" />
-    </div>
-    <div class="mb-2">
-      <label>Notes:</label>
-      <textarea [(ngModel)]="data.notes" name="notes" placeholder="Additional notes" class="border p-1 rounded w-full" rows="3"></textarea>
-    </div>
-  </form>
-</div>
-<div mat-dialog-actions>
-  <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-raised-button color="primary" (click)="onSave()">Save Transaction</button>
+    <button mat-icon-button aria-label="close" (click)="onCancel()"><mat-icon>close</mat-icon></button>
+  </div>
+
+  <div mat-dialog-content class="p-4 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+    <form #transactionForm="ngForm">
+      <div class="grid grid-cols-1 gap-3">
+        <select [(ngModel)]="data.party" name="party" required class="border p-2 rounded w-full text-white">
+          <option value="">Select Party</option>
+          <option *ngFor="let p of parties" [ngValue]="p">{{ p.name }}</option>
+        </select>
+
+        <input type="date" [(ngModel)]="data.transactionDate" name="transactionDate" required class="border p-2 rounded w-full text-white" />
+
+        <select [(ngModel)]="data.transactionType" name="transactionType" required class="border p-2 rounded w-full text-white">
+          <option value="Complete Payment">Complete Payment</option>
+          <option value="Partial Payment">Partial Payment</option>
+          <option value="Advance Payment">Advance Payment</option>
+          <option value="Refund">Refund</option>
+        </select>
+
+        <input type="number" [(ngModel)]="data.amount" name="amount" required placeholder="Amount" class="border p-2 rounded w-full text-white" />
+
+        <select [(ngModel)]="data.paymentMethod" name="paymentMethod" required class="border p-2 rounded w-full text-white">
+          <option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</option>
+        </select>
+
+        <input [(ngModel)]="data.referenceNo" name="referenceNo" placeholder="Reference No (Cheque/UTR)" class="border p-2 rounded w-full text-white" />
+
+        <textarea [(ngModel)]="data.notes" name="notes" placeholder="Notes" class="border p-2 rounded w-full text-white" rows="3"></textarea>
+      </div>
+    </form>
+  </div>
+
+  <div mat-dialog-actions class="flex justify-end gap-2 p-3">
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="onSave()">Save Transaction</button>
+  </div>
 </div>

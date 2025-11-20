@@ -28,22 +28,22 @@
     <!-- Table Container -->
     <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-orange-500/30 rounded-2xl backdrop-blur-xl overflow-hidden">
       <div class="overflow-x-auto">
-        <table mat-table [dataSource]="parties" class="w-full" *ngIf="parties.length">
+        <table mat-table [dataSource]="parties" class="w-full bg-transparent text-white" *ngIf="parties.length">
           <ng-container matColumnDef="id">
             <th mat-header-cell *matHeaderCellDef class="text-orange-300 font-bold py-4 px-6 text-left">ID</th>
-            <td mat-cell *matCellDef="let p" class="text-orange-100 py-4 px-6 border-t border-orange-500/20">{{p.id}}</td>
+            <td mat-cell *matCellDef="let p" class="text-orange-300 bg-transparent py-4 px-6 border-t border-orange-500/20">{{p.id}}</td>
           </ng-container>
           <ng-container matColumnDef="name">
             <th mat-header-cell *matHeaderCellDef class="text-orange-300 font-bold py-4 px-6 text-left">Name</th>
-            <td mat-cell *matCellDef="let p" class="text-orange-100 py-4 px-6 border-t border-orange-500/20">{{p.name}}</td>
+            <td mat-cell *matCellDef="let p" class="text-orange-300 bg-transparent py-4 px-6 border-t border-orange-500/20">{{p.name}}</td>
           </ng-container>
           <ng-container matColumnDef="type">
             <th mat-header-cell *matHeaderCellDef class="text-orange-300 font-bold py-4 px-6 text-left">Type</th>
-            <td mat-cell *matCellDef="let p" class="text-orange-100 py-4 px-6 border-t border-orange-500/20">{{p.type}}</td>
+            <td mat-cell *matCellDef="let p" class="text-orange-300 bg-transparent py-4 px-6 border-t border-orange-500/20">{{p.type}}</td>
           </ng-container>
           <ng-container matColumnDef="phone">
             <th mat-header-cell *matHeaderCellDef class="text-orange-300 font-bold py-4 px-6 text-left">Phone</th>
-            <td mat-cell *matCellDef="let p" class="text-orange-100 py-4 px-6 border-t border-orange-500/20">{{p.phone}}</td>
+            <td mat-cell *matCellDef="let p" class="text-orange-300 bg-transparent py-4 px-6 border-t border-orange-500/20">{{p.phone}}</td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="['id','name','type','phone']"></tr>
           <tr mat-row *matRowDef="let row; columns: ['id','name','type','phone'];" class="hover:bg-orange-500/10 transition-colors"></tr>

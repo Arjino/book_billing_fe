@@ -38,3 +38,22 @@ button[mat-fab] {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Table contrast overrides to ensure dark glass background shows through */
+:host ::ng-deep table.mat-table,
+:host ::ng-deep .mat-table,
+:host ::ng-deep table {
+  background: transparent !important;
+  color: rgba(255,255,255,0.92) !important;
+}
+
+:host ::ng-deep th.mat-header-cell,
+:host ::ng-deep td.mat-cell,
+:host ::ng-deep tr.mat-row {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+:host ::ng-deep .mat-header-row { background: rgba(255,255,255,0.02) !important; }
+:host ::ng-deep .mat-row:hover { background: rgba(255,255,255,0.02) !important; }
+:host ::ng-deep .mat-cell, :host ::ng-deep .mat-header-cell { border-color: rgba(255,255,255,0.06) !important; }

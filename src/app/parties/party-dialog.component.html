@@ -1,29 +1,26 @@
-<h2 mat-dialog-title>Add Party</h2>
-<div mat-dialog-content>
-  <form #partyForm="ngForm">
-    <div class="mb-2">
-      <label>Name:</label>
-      <input [(ngModel)]="data.name" name="name" required class="border p-1 rounded w-full" />
+<div class="modern-dialog w-full max-w-lg text-white">
+  <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#FF7A59,#FF3CAC);">
+    <div class="flex items-center gap-3">
+      <mat-icon>people</mat-icon>
+      <h2 class="text-lg font-semibold">Add Party</h2>
     </div>
-    <div class="mb-2">
-      <label>Type:</label>
-      <input [(ngModel)]="data.type" name="type" required class="border p-1 rounded w-full" />
-    </div>
-    <div class="mb-2">
-      <label>Phone:</label>
-      <input [(ngModel)]="data.phone" name="phone" required class="border p-1 rounded w-full" />
-    </div>
-    <div class="mb-2">
-      <label>Address:</label>
-      <textarea [(ngModel)]="data.address" name="address" required class="border p-1 rounded w-full"></textarea>
-    </div>
-    <div class="mb-2">
-      <label>GSTIN:</label>
-      <input [(ngModel)]="data.gstin" name="gstin" required class="border p-1 rounded w-full" />
-    </div>
-  </form>
-</div>
-<div mat-dialog-actions>
-  <button mat-button (click)="onCancel()">Cancel</button>
-  <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+    <button mat-icon-button aria-label="close" (click)="onCancel()"><mat-icon>close</mat-icon></button>
+  </div>
+
+  <div mat-dialog-content class="p-4 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+    <form #partyForm="ngForm">
+      <div class="grid grid-cols-1 gap-3">
+        <input [(ngModel)]="data.name" name="name" required placeholder="Name" class="border p-2 rounded w-full text-white" />
+        <input [(ngModel)]="data.type" name="type" required placeholder="Type (Customer / Supplier)" class="border p-2 rounded w-full text-white" />
+        <input [(ngModel)]="data.phone" name="phone" required placeholder="Phone" class="border p-2 rounded w-full text-white" />
+        <textarea [(ngModel)]="data.address" name="address" required placeholder="Address" class="border p-2 rounded w-full text-white" rows="3"></textarea>
+        <input [(ngModel)]="data.gstin" name="gstin" required placeholder="GSTIN" class="border p-2 rounded w-full text-white" />
+      </div>
+    </form>
+  </div>
+
+  <div mat-dialog-actions class="flex justify-end gap-2 p-3">
+    <button mat-button (click)="onCancel()">Cancel</button>
+    <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+  </div>
 </div>
