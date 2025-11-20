@@ -13,6 +13,8 @@ export const enviort = {
   salesUrl: baseUrl + '/sales',
   transactionsUrl: baseUrl + '/transactions',
 
+  ledgerUrl: baseUrl + '/ledger/party',
+
   // Invoice base
   invoiceBase: baseUrl + '/sales',
 
