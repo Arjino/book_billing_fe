@@ -1,0 +1,80 @@
+<div class="min-h-screen pt-20 pb-12 bg-gradient-to-br from-slate-950 via-indigo-900/20 to-slate-950 relative overflow-hidden">
+  <div class="max-w-5xl mx-auto px-6 relative z-10">
+    <div class="mb-8 flex items-center justify-between">
+      <div>
+        <h1 class="text-4xl font-extrabold mb-2">
+          <span class="bg-gradient-to-r from-indigo-400 to-sky-400 bg-clip-text text-transparent">Ledger</span>
+        </h1>
+        <p class="text-indigo-200">Party ledger and statements</p>
+      </div>
+    </div>
+
+    <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-indigo-500/30 rounded-2xl p-6 backdrop-blur-xl">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Party</mat-label>
+          <mat-select [(ngModel)]="partyId">
+            <mat-option value="">All</mat-option>
+            <mat-option *ngFor="let p of parties" [value]="p.id">{{p.name}}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div class="flex gap-2">
+          <input type="date" class="border p-2 rounded w-full bg-transparent text-white" [(ngModel)]="startDate" />
+          <input type="date" class="border p-2 rounded w-full bg-transparent text-white" [(ngModel)]="endDate" />
+        </div>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Type</mat-label>
+          <mat-select [(ngModel)]="transactionType">
+            <mat-option value="All">All</mat-option>
+            <mat-option value="Sale">Sale</mat-option>
+            <mat-option value="Purchase">Purchase</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <input type="number" placeholder="Min Amount" class="border p-2 rounded w-full bg-transparent text-white" [(ngModel)]="minAmount" />
+        <input type="number" placeholder="Max Amount" class="border p-2 rounded w-full bg-transparent text-white" [(ngModel)]="maxAmount" />
+        <div class="flex items-center gap-2">
+          <button mat-raised-button color="primary" (click)="applyFilters()">Apply Filters</button>
+          <button mat-stroked-button (click)="applyFilters()">Refresh</button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto bg-[rgba(255,255,255,0.02)] rounded p-4">
+        <table class="w-full text-white results-table">
+          <thead>
+            <tr class="text-sm text-indigo-300">
+              <th class="py-2 px-3 text-left">Date</th>
+              <th class="py-2 px-3 text-left">Ref Type</th>
+              <th class="py-2 px-3 text-left">Ref No / Invoice</th>
+              <th class="py-2 px-3 text-right">Debit (₹)</th>
+              <th class="py-2 px-3 text-right">Credit (₹)</th>
+              <th class="py-2 px-3 text-right">Balance (₹)</th>
+              <th class="py-2 px-3 text-left">Remarks</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let r of results" class="border-t border-indigo-500/10">
+              <td class="py-3 px-3">{{ r.date }}</td>
+              <td class="py-3 px-3">{{ r.refType }}</td>
+              <td class="py-3 px-3">
+                <a *ngIf="r.refType === 'SALE' && r.refId" [routerLink]="['/invoice', r.refId]" class="text-sky-300 hover:underline">{{ r.refId }}</a>
+                <span *ngIf="!(r.refType === 'SALE' && r.refId)">{{ r.refId || '-' }}</span>
+              </td>
+              <td class="py-3 px-3 text-right text-emerald-300">{{ r.debit ? (r.debit | currency) : '-' }}</td>
+              <td class="py-3 px-3 text-right text-emerald-300">{{ r.credit ? (r.credit | currency) : '-' }}</td>
+              <td class="py-3 px-3 text-right font-semibold">{{ r.balance | currency }}</td>
+              <td class="py-3 px-3">{{ r.remarks || '' }}</td>
+            </tr>
+            <tr *ngIf="!results.length">
+              <td colspan="7" class="py-6 text-center text-indigo-300/60">No ledger entries found for selected filters.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

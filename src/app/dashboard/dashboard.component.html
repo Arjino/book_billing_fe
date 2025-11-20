@@ -119,6 +119,19 @@
                     Download PDF
                   </button>
                 </div>
+                <!-- Ledger Card Content -->
+                <div *ngIf="card.title === 'Ledger'" class="space-y-3">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Select Party</mat-label>
+                    <mat-select [(ngModel)]="selectedLedgerParty" class="text-white">
+                      <mat-option *ngFor="let p of parties" [value]="p.id">{{ p.name }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <div class="flex gap-2">
+                    <button mat-raised-button color="primary" class="flex-1" [disabled]="!selectedLedgerParty" (click)="openLedgerForParty(selectedLedgerParty)">Show Ledger</button>
+                    <button mat-stroked-button color="accent" class="flex-1" (click)="navigateTo('/ledger')">Open Ledger Page</button>
+                  </div>
+                </div>
               </div>
 
               <!-- Action Buttons -->

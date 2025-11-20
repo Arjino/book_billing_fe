@@ -15,49 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { SalesDialogComponent, SalesDialogData } from './sales-dialog.component';
 import { AuthService } from '../services/auth.service';
 import { baseUrl, enviort } from '../../environments/environment';
-
-interface Book {
-  id: number;
-  sku: string;
-  title: string;
-  publisher: string;
-  hsn: string;
-  costPrice: number;
-  salePrice: number;
-  stock: number;
-}
-
-interface Party {
-  id: number;
-  name: string;
-  type: string;
-  phone: string;
-  address: string;
-  gstin: string;
-}
-
-interface SalesItem {
-  id: number;
-  sale: any;
-  book: Book;
-  qty: number;
-  rate: number;
-  amount: number;
-}
-
-interface Sale {
-  id: number;
-  invoiceNo: string;
-  party: Party;
-  date: string;
-  totalAmount: number;
-  discount: number;
-  taxAmount: number;
-  roundOff: number;
-  grandTotal: number;
-  paymentStatus: string;
-  items: SalesItem[];
-}
+import { Sale } from '../interface/Sale';
 
 @Component({
   selector: 'app-sales',
@@ -68,37 +26,16 @@ interface Sale {
 })
 export class SalesComponent implements OnInit {
   sales: Sale[] = [];
-  books: Book[] = [];
-  parties: Party[] = [];
   startDate: string = '';
   endDate: string = '';
 
   constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router) {}
 
   ngOnInit() {
-    this.loadBooks();
-    this.loadParties();
     this.loadSales();
   }
 
-  loadBooks() {
-    this.http.get<Book[]>(
-      enviort.bookingUrl,
-      { headers: this.authService.getAuthHeaders() }
-    ).subscribe(data => {
-      this.books = data;
-    });
-  }
-
-  loadParties() {
-    this.http.get<Party[]>(
-      enviort.partiesUrl,
-      { headers: this.authService.getAuthHeaders() }
-    ).subscribe(data => {
-      this.parties = data;
-    });
-  }
-
+  
   loadSales() {
     this.http.get<Sale[]>(
       enviort.salesUrl,
@@ -128,10 +65,6 @@ export class SalesComponent implements OnInit {
       } as SalesDialogData,
       disableClose: false
     });
-
-    dialogRef.componentInstance.books = this.books;
-    dialogRef.componentInstance.parties = this.parties;
-
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (result) {
         this.http.post(

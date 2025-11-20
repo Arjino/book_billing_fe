@@ -1,0 +1,8 @@
+/* Ledger component styles */
+.line-clamp-2 { -webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+
+mat-form-field { width: 100%; }
+
+input, select { background: rgba(255,255,255,0.02); color: #fff; }
+
+.results-table th, .results-table td { border-bottom: 1px solid rgba(255,255,255,0.04); }

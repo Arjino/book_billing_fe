@@ -18,6 +18,7 @@ import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { enviort } from '../../environments/environment';
 import { BookingComponent } from '../booking/booking.component';
 import { PartiesComponent } from '../parties/parties.component';
@@ -38,7 +39,8 @@ import { TransactionComponent } from '../transaction/transaction.component';
     MatDialogModule,
     FormsModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    MatSelectModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
@@ -80,6 +82,13 @@ export class DashboardComponent implements OnInit {
       component: TransactionComponent
     },
     {
+      icon: 'receipt_long',
+      iconColor: 'text-indigo-600',
+      title: 'Ledger',
+      description: 'View party ledger and statements',
+      route: '/ledger'
+    },
+    {
       icon: 'picture_as_pdf',
       iconColor: 'text-indigo-600',
       title: 'Invoice PDF',
@@ -96,6 +105,8 @@ export class DashboardComponent implements OnInit {
   ];
   invoiceSaleId: string = '';
   showInvoicePreview: boolean = false;
+  parties: any[] = [];
+  selectedLedgerParty: any = null;
 
   constructor(
     private authService: AuthService,
@@ -115,6 +126,25 @@ export class DashboardComponent implements OnInit {
       const displayToken = token.substring(0, 20) + '...' + token.substring(token.length - 20);
       this.accessToken.set(displayToken);
     }
+
+    this.loadParties();
+  }
+
+  loadParties() {
+    this.http.get<any[]>(
+      enviort.partiesUrl,
+      { headers: this.authService.getAuthHeaders() }
+    ).subscribe(data => {
+      this.parties = data || [];
+    }, err => {
+      console.error('Failed to load parties for ledger:', err);
+      this.parties = [];
+    });
+  }
+
+  openLedgerForParty(partyId: any) {
+    if (!partyId) return;
+    this.router.navigate(['/ledger'], { queryParams: { partyId } });
   }
 
   logout(): void {

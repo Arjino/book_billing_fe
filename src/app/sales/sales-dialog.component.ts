@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { HttpClient } from '@angular/common/http';
+import { AuthService } from '../services/auth.service';
+import { Book } from '../interface/book';
+import { enviort } from '../../environments/environment';
+import { Party } from '../interface/party';
 
 export interface SalesDialogData {
   id: number;
@@ -31,17 +36,39 @@ export interface SalesDialogData {
   standalone: true,
   imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatIconModule]
 })
-export class SalesDialogComponent {
+export class SalesDialogComponent implements OnInit {
   books: any[] = [];
   parties: any[] = [];
 
   constructor(
     public dialogRef: MatDialogRef<SalesDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: SalesDialogData
+    @Inject(MAT_DIALOG_DATA) public data: SalesDialogData,
+    private http: HttpClient,
+    private authService: AuthService
   ) {}
-
+  ngOnInit() {
+    this.loadBooks();
+    this.loadParties();
+  }
   onCancel(): void {
     this.dialogRef.close();
+  }
+loadBooks() {
+    this.http.get<Book[]>(
+      enviort.bookingUrl,
+      { headers: this.authService.getAuthHeaders() }
+    ).subscribe(data => {
+      this.books = data;
+    });
+  }
+
+  loadParties() {
+    this.http.get<Party[]>(
+      enviort.partiesUrl,
+      { headers: this.authService.getAuthHeaders() }
+    ).subscribe(data => {
+      this.parties = data;
+    });
   }
 
   onSave(): void {
