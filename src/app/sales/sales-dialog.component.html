@@ -10,31 +10,49 @@
   <div mat-dialog-content class="p-4 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <form #saleForm="ngForm">
       <div class="grid grid-cols-1 gap-3">
-        <input [(ngModel)]="data.invoiceNo" name="invoiceNo" required placeholder="Invoice No" class="border p-2 rounded w-full text-white" />
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Invoice No</mat-label>
+          <input matInput [(ngModel)]="data.invoiceNo" name="invoiceNo" required />
+        </mat-form-field>
 
-        <select [(ngModel)]="data.party" name="party" required class="border p-2 rounded w-full text-white">
-          <option value="">Select Party</option>
-          <option *ngFor="let p of parties" [ngValue]="p">{{ p.name }}</option>
-        </select>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Party</mat-label>
+          <mat-select [(ngModel)]="data.party" name="party" required>
+            <mat-option [value]="null">Select Party</mat-option>
+            <mat-option *ngFor="let p of parties" [value]="p">{{ p.name }}</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-        <input type="date" [(ngModel)]="data.date" name="date" required class="border p-2 rounded w-full text-white" />
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Date</mat-label>
+          <input matInput type="date" [(ngModel)]="data.date" name="date" required />
+        </mat-form-field>
 
-        <select [(ngModel)]="data.saleType" name="saleType" required class="border p-2 rounded w-full text-white">
-          <option value="">Select Sale Type</option>
-          <option value="SALE">Sale</option>
-          <option value="PURCHASE">Purchase</option>
-          <option value="RETURN_IN">Return In</option>
-          <option value="RETURN_OUT">Return Out</option>
-        </select>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Sale Type</mat-label>
+          <mat-select [(ngModel)]="data.type" name="type" required>
+            <mat-option [value]="">Select Sale Type</mat-option>
+            <mat-option value="SALE">Sale</mat-option>
+            <mat-option value="PURCHASE">Purchase</mat-option>
+            <mat-option value="RETURN_IN">Return In</mat-option>
+            <mat-option value="RETURN_OUT">Return Out</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-        <select [(ngModel)]="data.paymentStatus" name="paymentStatus" class="border p-2 rounded w-full text-white">
-          <option value="Pending">Pending</option>
-          <option value="Paid">Paid</option>
-          <option value="Partial">Partial</option>
-        </select>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Payment Status</mat-label>
+          <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus">
+            <mat-option value="Pending">Pending</mat-option>
+            <mat-option value="Paid">Paid</mat-option>
+            <mat-option value="Partial">Partial</mat-option>
+          </mat-select>
+        </mat-form-field>
 
         <div *ngIf="data.paymentStatus === 'Partial'">
-          <input type="number" [(ngModel)]="data.partialPaymentAmount" name="partialPaymentAmount" placeholder="Partial Payment Amount" class="border p-2 rounded w-full text-white" />
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Partial Payment Amount</mat-label>
+            <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" />
+          </mat-form-field>
         </div>
 
         <!-- Items Section -->
@@ -57,16 +75,25 @@
             <tbody>
               <tr *ngFor="let item of data.items; let i = index">
                 <td class="p-2">
-                  <select [(ngModel)]="item.book" [name]="'book_' + i" class="w-full border p-2 text-white rounded">
-                    <option value="">Select Book</option>
-                    <option *ngFor="let b of books" [ngValue]="b">{{ b.title }}</option>
-                  </select>
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Book</mat-label>
+                    <mat-select [(ngModel)]="item.book" [name]="'book_' + i">
+                      <mat-option [value]="null">Select Book</mat-option>
+                      <mat-option *ngFor="let b of books" [value]="b">{{ b.title }}</mat-option>
+                    </mat-select>
+                  </mat-form-field>
                 </td>
                 <td class="p-2">
-                  <input type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" (change)="calculateAmount(item)" class="w-full border p-2 text-white rounded" />
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Qty</mat-label>
+                    <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" (change)="calculateAmount(item)" />
+                  </mat-form-field>
                 </td>
                 <td class="p-2">
-                  <input type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" (change)="calculateAmount(item)" class="w-full border p-2 text-white rounded" />
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Rate</mat-label>
+                    <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" (change)="calculateAmount(item)" />
+                  </mat-form-field>
                 </td>
                 <td class="p-2">{{ item.amount }}</td>
                 <td class="p-2">
@@ -79,19 +106,37 @@
 
         <!-- Totals Section -->
         <div class="mt-3 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
-          <input type="number" [(ngModel)]="data.totalAmount" name="totalAmount" readonly placeholder="Total Amount" class="border p-2 rounded w-full text-white" />
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Total Amount</mat-label>
+            <input matInput type="number" [(ngModel)]="data.totalAmount" name="totalAmount" readonly />
+          </mat-form-field>
           <div class="grid grid-cols-1 gap-2 mt-2">
-            <input type="number" [(ngModel)]="data.discount" name="discount" (change)="calculateTotals()" placeholder="Discount" class="border p-2 rounded w-full text-white" />
-            <input type="number" [(ngModel)]="data.taxAmount" name="taxAmount" (change)="calculateTotals()" placeholder="Tax Amount" class="border p-2 rounded w-full text-white" />
-            <input type="number" [(ngModel)]="data.roundOff" name="roundOff" (change)="calculateTotals()" placeholder="Round Off" class="border p-2 rounded w-full text-white" />
-            <input type="number" [(ngModel)]="data.grandTotal" name="grandTotal" readonly placeholder="Grand Total" class="border p-2 rounded w-full text-white font-bold" />
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Discount</mat-label>
+              <input matInput type="number" [(ngModel)]="data.discount" name="discount" (change)="calculateTotals()" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Tax Amount</mat-label>
+              <input matInput type="number" [(ngModel)]="data.taxAmount" name="taxAmount" (change)="calculateTotals()" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Round Off</mat-label>
+              <input matInput type="number" [(ngModel)]="data.roundOff" name="roundOff" (change)="calculateTotals()" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Grand Total</mat-label>
+              <input matInput type="number" [(ngModel)]="data.grandTotal" name="grandTotal" readonly class="font-bold" />
+            </mat-form-field>
           </div>
         </div>
       </div>
     </form>
   </div>
 
-  <div mat-dialog-actions class="flex justify-end gap-2 p-3">
+  <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <button mat-button (click)="onCancel()">Cancel</button>
     <button mat-raised-button color="primary" (click)="onSave()">Save</button>
   </div>

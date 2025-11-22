@@ -10,29 +10,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule, MatIcon } from '@angular/material/icon';
-import { TransactionDialogComponent, TransactionDialogData } from './transaction-dialog.component';
+import { TransactionDialogComponent } from './transaction-dialog.component';
 import { AuthService } from '../services/auth.service';
 import { enviort } from '../../environments/environment';
+import { Party } from '../interface/party';
+import { Transaction } from '../interface/Transaction';
 
-interface Party {
-  id: number;
-  name: string;
-  type: string;
-  phone: string;
-  address: string;
-  gstin: string;
-}
-
-interface Transaction {
-  id: number;
-  party: Party;
-  transactionDate: string;
-  transactionType: string;
-  amount: number;
-  paymentMethod: string;
-  referenceNo: string;
-  notes: string;
-}
 
 @Component({
   selector: 'app-transaction',
@@ -44,7 +27,7 @@ interface Transaction {
 export class TransactionComponent implements OnInit {
   transactions: Transaction[] = [];
   parties: Party[] = [];
-  displayedColumns = ['id', 'party', 'transactionDate', 'transactionType', 'amount', 'paymentMethod', 'referenceNo', 'notes', 'action'];
+  displayedColumns = ['id', 'party', 'paymentDate', 'transactionType', 'amount', 'paymentMethod', 'referenceNo', 'notes', 'action'];
 
   constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router) {}
 
@@ -64,7 +47,7 @@ export class TransactionComponent implements OnInit {
 
   loadTransactions() {
     this.http.get<Transaction[]>(
-      enviort.transactionsUrl,
+      enviort.paymentUrl,
       { headers: this.authService.getAuthHeaders() }
     ).subscribe(
       data => {
@@ -82,23 +65,24 @@ export class TransactionComponent implements OnInit {
       data: {
         id: 0,
         party: null,
-        transactionDate: new Date().toISOString().split('T')[0],
-        transactionType: 'Payment',
-        amount: 0,
-        paymentMethod: 'Cash',
+        paymentDate: new Date().toISOString().split('T')[0],
+        paidAmount: 0,
+        paymentMode: 'Cash',
         referenceNo: '',
-        notes: ''
-      } as TransactionDialogData,
+        remarks: '',
+        totalAmount: 0,
+        dueAmount: 0
+      } as unknown as Transaction,
       disableClose: false
     });
 
     const instance = dialogRef.componentInstance as any;
     instance.parties = this.parties;
 
-    dialogRef.afterClosed().subscribe((result: TransactionDialogData) => {
+    dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
         this.http.post(
-          enviort.transactionsUrl,
+          enviort.paymentUrl,
           result,
           { headers: this.authService.getAuthHeaders() }
         ).subscribe(() => {

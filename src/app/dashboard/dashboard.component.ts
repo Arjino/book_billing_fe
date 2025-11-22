@@ -13,7 +13,7 @@ import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
 import { BookDialogComponent, BookDialogData } from '../booking/book-dialog.component';
 import { PartyDialogComponent, PartyDialogData } from '../parties/party-dialog.component';
 import { SalesDialogComponent, SalesDialogData } from '../sales/sales-dialog.component';
-import { TransactionDialogComponent, TransactionDialogData } from '../transaction/transaction-dialog.component';
+import { TransactionDialogComponent} from '../transaction/transaction-dialog.component';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -24,6 +24,7 @@ import { BookingComponent } from '../booking/booking.component';
 import { PartiesComponent } from '../parties/parties.component';
 import { SalesComponent } from '../sales/sales.component';
 import { TransactionComponent } from '../transaction/transaction.component';
+import { Transaction } from '../interface/Transaction';
 
 @Component({
   selector: 'app-dashboard',
@@ -255,8 +256,8 @@ export class DashboardComponent implements OnInit {
         roundOff: 0,
         grandTotal: 0,
         paymentStatus: 'Pending',
-        partialPaymentAmount: 0,
-        saleType: ''
+        paidAmount: 0,
+        type: ''
       } as unknown as SalesDialogData
     });
 
@@ -283,19 +284,20 @@ export class DashboardComponent implements OnInit {
       data: {
         id: 0,
         party: null,
-        transactionDate: new Date().toISOString().split('T')[0],
-        transactionType: 'Payment',
-        amount: 0,
-        paymentMethod: 'Cash',
+        paymentDate: new Date().toISOString().split('T')[0],
+        paidAmount: 0,
+        paymentMode: 'Cash',
         referenceNo: '',
-        notes: ''
-      } as TransactionDialogData
+        remarks: '',
+        totalAmount: 0,
+        dueAmount: 0
+      } as unknown as Transaction
     });
 
-    dialogRef.afterClosed().subscribe((result: TransactionDialogData) => {
+    dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
         this.http.post(
-          enviort.transactionsUrl,
+          enviort.paymentUrl,
           result,
           { headers: this.authService.getAuthHeaders() }
         ).subscribe(() => {

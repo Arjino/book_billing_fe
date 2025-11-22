@@ -10,16 +10,35 @@
   <div mat-dialog-content class="p-4 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <form #partyForm="ngForm">
       <div class="grid grid-cols-1 gap-3">
-        <input [(ngModel)]="data.name" name="name" required placeholder="Name" class="border p-2 rounded w-full text-white" />
-        <input [(ngModel)]="data.type" name="type" required placeholder="Type (Customer / Supplier)" class="border p-2 rounded w-full text-white" />
-        <input [(ngModel)]="data.phone" name="phone" required placeholder="Phone" class="border p-2 rounded w-full text-white" />
-        <textarea [(ngModel)]="data.address" name="address" required placeholder="Address" class="border p-2 rounded w-full text-white" rows="3"></textarea>
-        <input [(ngModel)]="data.gstin" name="gstin" required placeholder="GSTIN" class="border p-2 rounded w-full text-white" />
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Name</mat-label>
+          <input matInput [(ngModel)]="data.name" name="name" required />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Type (Customer / Supplier)</mat-label>
+          <input matInput [(ngModel)]="data.type" name="type" required />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Phone</mat-label>
+          <input matInput [(ngModel)]="data.phone" name="phone" required />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Address</mat-label>
+          <textarea matInput [(ngModel)]="data.address" name="address" required rows="3"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>GSTIN</mat-label>
+          <input matInput [(ngModel)]="data.gstin" name="gstin" required />
+        </mat-form-field>
       </div>
     </form>
   </div>
 
-  <div mat-dialog-actions class="flex justify-end gap-2 p-3">
+  <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <button mat-button (click)="onCancel()">Cancel</button>
     <button mat-raised-button color="primary" (click)="onSave()">Save</button>
   </div>

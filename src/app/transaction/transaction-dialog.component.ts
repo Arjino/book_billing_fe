@@ -7,17 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-
-export interface TransactionDialogData {
-  id: number;
-  party: any;
-  transactionDate: string;
-  transactionType: string;
-  amount: number;
-  paymentMethod: string;
-  referenceNo: string;
-  notes: string;
-}
+import { Transaction } from '../interface/Transaction';
 
 @Component({
   selector: 'app-transaction-dialog',
@@ -32,7 +22,7 @@ export class TransactionDialogComponent {
 
   constructor(
     public dialogRef: MatDialogRef<TransactionDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: TransactionDialogData
+    @Inject(MAT_DIALOG_DATA) public data: Transaction
   ) {}
 
   onCancel(): void {

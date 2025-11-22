@@ -10,18 +10,45 @@
   <div mat-dialog-content class="p-4 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <form #bookForm="ngForm">
       <div class="grid grid-cols-1 gap-3">
-        <input [(ngModel)]="data.title" name="title" required placeholder="Title" class="border p-2 rounded w-full text-white" />
-        <input [(ngModel)]="data.sku" name="sku" required placeholder="SKU" class="border p-2 rounded w-full text-white" />
-        <input [(ngModel)]="data.publisher" name="publisher" required placeholder="Publisher" class="border p-2 rounded w-full text-white" />
-        <input [(ngModel)]="data.hsn" name="hsn" required placeholder="HSN" class="border p-2 rounded w-full text-white" />
-        <input type="number" [(ngModel)]="data.costPrice" name="costPrice" required placeholder="Cost Price" class="border p-2 rounded w-full text-white" />
-        <input type="number" [(ngModel)]="data.salePrice" name="salePrice" required placeholder="Sale Price" class="border p-2 rounded w-full text-white" />
-        <input type="number" [(ngModel)]="data.stock" name="stock" required placeholder="Stock" class="border p-2 rounded w-full text-white" />
-      </div>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Title</mat-label>
+            <input matInput [(ngModel)]="data.title" name="title" required />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>SKU</mat-label>
+            <input matInput [(ngModel)]="data.sku" name="sku" required />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Publisher</mat-label>
+            <input matInput [(ngModel)]="data.publisher" name="publisher" required />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>HSN</mat-label>
+            <input matInput [(ngModel)]="data.hsn" name="hsn" required />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Cost Price</mat-label>
+            <input matInput type="number" [(ngModel)]="data.costPrice" name="costPrice" required />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Sale Price</mat-label>
+            <input matInput type="number" [(ngModel)]="data.salePrice" name="salePrice" required />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Stock</mat-label>
+            <input matInput type="number" [(ngModel)]="data.stock" name="stock" required />
+          </mat-form-field>
+        </div>
     </form>
   </div>
 
-  <div mat-dialog-actions class="flex justify-end gap-2 p-3">
+  <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <button mat-button (click)="onCancel()">Cancel</button>
     <button mat-raised-button color="primary" (click)="onSave()">Save</button>
   </div>

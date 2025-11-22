@@ -18,3 +18,19 @@ input::placeholder, textarea::placeholder {
 button[mat-raised-button] {
   box-shadow: 0 6px 18px rgba(0,0,0,0.35);
 }
+
+/* Make native selects and options dark so text is visible */
+select, option {
+  background: rgba(10,10,10,0.96);
+  color: rgba(255,255,255,0.95);
+}
+
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.08);
+}
+
+/* Ensure the actions area looks like part of dialog panel when not inlined */
+[mat-dialog-actions] {
+  background: rgba(0,0,0,0.6);
+}

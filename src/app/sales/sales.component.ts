@@ -59,8 +59,8 @@ export class SalesComponent implements OnInit {
         roundOff: 0,
         grandTotal: 0,
         paymentStatus: 'Pending',
-        partialPaymentAmount: 0,
-        saleType: '',
+        paidAmount: 0,
+        type: '',
         items: []
       } as SalesDialogData,
       disableClose: false

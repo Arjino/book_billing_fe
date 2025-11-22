@@ -10,34 +10,45 @@
   <div mat-dialog-content class="p-4 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <form #transactionForm="ngForm">
       <div class="grid grid-cols-1 gap-3">
-        <select [(ngModel)]="data.party" name="party" required class="border p-2 rounded w-full text-white">
-          <option value="">Select Party</option>
-          <option *ngFor="let p of parties" [ngValue]="p">{{ p.name }}</option>
-        </select>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Party</mat-label>
+          <mat-select [(ngModel)]="data.party" name="party" required>
+            <mat-option [value]="null">Select Party</mat-option>
+            <mat-option *ngFor="let p of parties" [value]="p">{{ p.name }}</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-        <input type="date" [(ngModel)]="data.transactionDate" name="transactionDate" required class="border p-2 rounded w-full text-white" />
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Transaction Date</mat-label>
+          <input matInput type="date" [(ngModel)]="data.paymentDate" name="paymentDate" required />
+        </mat-form-field>
 
-        <select [(ngModel)]="data.transactionType" name="transactionType" required class="border p-2 rounded w-full text-white">
-          <option value="Complete Payment">Complete Payment</option>
-          <option value="Partial Payment">Partial Payment</option>
-          <option value="Advance Payment">Advance Payment</option>
-          <option value="Refund">Refund</option>
-        </select>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Amount</mat-label>
+          <input matInput type="number" [(ngModel)]="data.paidAmount" name="amount" required />
+        </mat-form-field>
 
-        <input type="number" [(ngModel)]="data.amount" name="amount" required placeholder="Amount" class="border p-2 rounded w-full text-white" />
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Payment Method</mat-label>
+          <mat-select [(ngModel)]="data.paymentMode" name="paymentMethod" required>
+            <mat-option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</mat-option>
+          </mat-select>
+        </mat-form-field>
 
-        <select [(ngModel)]="data.paymentMethod" name="paymentMethod" required class="border p-2 rounded w-full text-white">
-          <option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</option>
-        </select>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Reference No (Cheque/UTR)</mat-label>
+          <input matInput [(ngModel)]="data.referenceNo" name="referenceNo" />
+        </mat-form-field>
 
-        <input [(ngModel)]="data.referenceNo" name="referenceNo" placeholder="Reference No (Cheque/UTR)" class="border p-2 rounded w-full text-white" />
-
-        <textarea [(ngModel)]="data.notes" name="notes" placeholder="Notes" class="border p-2 rounded w-full text-white" rows="3"></textarea>
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Notes</mat-label>
+          <textarea matInput [(ngModel)]="data.remarks" name="notes" rows="3"></textarea>
+        </mat-form-field>
       </div>
     </form>
   </div>
 
-  <div mat-dialog-actions class="flex justify-end gap-2 p-3">
+  <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <button mat-button (click)="onCancel()">Cancel</button>
     <button mat-raised-button color="primary" (click)="onSave()">Save Transaction</button>
   </div>
