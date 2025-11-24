@@ -13,7 +13,7 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Party</mat-label>
-          <mat-select [(ngModel)]="partyId">
+          <mat-select [(ngModel)]="partyId" (selectionChange)="onPartySelected($event.value)">
             <mat-option value="">All</mat-option>
             <mat-option *ngFor="let p of parties" [value]="p.id">{{p.name}}</mat-option>
           </mat-select>
@@ -44,6 +44,10 @@
       </div>
 
       <div class="overflow-x-auto bg-[rgba(255,255,255,0.02)] rounded p-4">
+        <div class="mb-4 flex items-center justify-between">
+          <div class="text-indigo-200">Last Balance: <span class="font-semibold text-white">{{ lastBalance | currency }}</span></div>
+          <div class="text-indigo-200">Total Amount: <span class="font-semibold text-white">{{ totalAmount | currency }}</span></div>
+        </div>
         <table class="w-full text-white results-table">
           <thead>
             <tr class="text-sm text-indigo-300">

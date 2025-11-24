@@ -6,8 +6,8 @@ export interface Transaction {
   paymentDate: string;
   paidAmount: number;
   paymentMode: string;
-  referenceNo: string;
   totalAmount: number;
   dueAmount: number;
+  invoiceNo:string;
   remarks: string;
 }

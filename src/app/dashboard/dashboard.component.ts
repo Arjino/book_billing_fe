@@ -9,6 +9,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../services/auth.service';
+import { DataStoreService } from '../services/data-store.service';
 import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
 import { BookDialogComponent, BookDialogData } from '../booking/book-dialog.component';
 import { PartyDialogComponent, PartyDialogData } from '../parties/party-dialog.component';
@@ -25,6 +26,7 @@ import { PartiesComponent } from '../parties/parties.component';
 import { SalesComponent } from '../sales/sales.component';
 import { TransactionComponent } from '../transaction/transaction.component';
 import { Transaction } from '../interface/Transaction';
+import { Party } from '../interface/party';
 
 @Component({
   selector: 'app-dashboard',
@@ -106,14 +108,15 @@ export class DashboardComponent implements OnInit {
   ];
   invoiceSaleId: string = '';
   showInvoicePreview: boolean = false;
-  parties: any[] = [];
+  parties: Party[] = [];
   selectedLedgerParty: any = null;
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private dialog: MatDialog,
-    private http: HttpClient
+    private http: HttpClient,
+    private store: DataStoreService
   ) {}
 
   ngOnInit(): void {
@@ -128,20 +131,9 @@ export class DashboardComponent implements OnInit {
       this.accessToken.set(displayToken);
     }
 
-    this.loadParties();
+    this.store.getParties().subscribe(data => this.parties = data || []);
   }
-
-  loadParties() {
-    this.http.get<any[]>(
-      enviort.partiesUrl,
-      { headers: this.authService.getAuthHeaders() }
-    ).subscribe(data => {
-      this.parties = data || [];
-    }, err => {
-      console.error('Failed to load parties for ledger:', err);
-      this.parties = [];
-    });
-  }
+ 
 
   openLedgerForParty(partyId: any) {
     if (!partyId) return;
@@ -202,6 +194,7 @@ export class DashboardComponent implements OnInit {
           { headers: this.authService.getAuthHeaders() }
         ).subscribe(() => {
           alert('Book added successfully!');
+          this.store.refreshBooks();
         },
         (error: any) => {
           console.error('Failed to add book:', error);
@@ -232,6 +225,7 @@ export class DashboardComponent implements OnInit {
           { headers: this.authService.getAuthHeaders() }
         ).subscribe(() => {
           alert('Party added successfully!');
+          this.store.refreshParties();
         },
         (error: any) => {
           console.error('Failed to add party:', error);
@@ -269,6 +263,8 @@ export class DashboardComponent implements OnInit {
           { headers: this.authService.getAuthHeaders() }
         ).subscribe(() => {
           alert('Sale added successfully!');
+          // refresh books cache so UI sees updated stock after sale
+          this.store.refreshBooks();
         },
         (error: any) => {
           console.error('Failed to add sale:', error);
@@ -280,17 +276,17 @@ export class DashboardComponent implements OnInit {
 
   openTransactionDialog() {
     const dialogRef = this.dialog.open(TransactionDialogComponent, {
-      width: '600px',
+      width: '500px',
       data: {
         id: 0,
         party: null,
         paymentDate: new Date().toISOString().split('T')[0],
         paidAmount: 0,
         paymentMode: 'Cash',
-        referenceNo: '',
         remarks: '',
         totalAmount: 0,
-        dueAmount: 0
+        dueAmount: 0,
+        invoiceNo: ''
       } as unknown as Transaction
     });
 

@@ -1,4 +1,4 @@
-<div class="modern-dialog w-full max-w-lg text-white">
+<div class="modern-dialog max-w-lg text-white" >
   <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#06B6D4,#7C3AED);">
     <div class="flex items-center gap-3">
       <mat-icon>payment</mat-icon>
@@ -7,14 +7,14 @@
     <button mat-icon-button aria-label="close" (click)="onCancel()"><mat-icon>close</mat-icon></button>
   </div>
 
-  <div mat-dialog-content class="p-4 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+  <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
     <form #transactionForm="ngForm">
       <div class="grid grid-cols-1 gap-3">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Party</mat-label>
           <mat-select [(ngModel)]="data.party" name="party" required>
             <mat-option [value]="null">Select Party</mat-option>
-            <mat-option *ngFor="let p of parties" [value]="p">{{ p.name }}</mat-option>
+            <mat-option *ngFor="let p of parties" [value]="p" (onSelectionChange)="fetchLedgerForParty(p.id)">{{ p.name }}</mat-option>
           </mat-select>
         </mat-form-field>
 
@@ -24,8 +24,13 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Amount</mat-label>
-          <input matInput type="number" [(ngModel)]="data.paidAmount" name="amount" required />
+          <mat-label>Last Balance</mat-label>
+          <input matInput type="number" [(ngModel)]="data.totalAmount" name="totalAmount" required />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Pay Amount</mat-label>
+          <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
@@ -36,8 +41,8 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Reference No (Cheque/UTR)</mat-label>
-          <input matInput [(ngModel)]="data.referenceNo" name="referenceNo" />
+          <mat-label>Reference No (Cheque/UTR/Invoice No)</mat-label>
+          <input matInput [(ngModel)]="data.invoiceNo" name="referenceNo" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
@@ -48,7 +53,7 @@
     </form>
   </div>
 
-  <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+  <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(179,71,233,0.6)] rounded-b-lg">
     <button mat-button (click)="onCancel()">Cancel</button>
     <button mat-raised-button color="primary" (click)="onSave()">Save Transaction</button>
   </div>

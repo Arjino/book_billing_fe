@@ -15,6 +15,7 @@ import { AuthService } from '../services/auth.service';
 import { enviort } from '../../environments/environment';
 import { Party } from '../interface/party';
 import { Transaction } from '../interface/Transaction';
+import { DataStoreService } from '../services/data-store.service';
 
 
 @Component({
@@ -26,23 +27,12 @@ import { Transaction } from '../interface/Transaction';
 })
 export class TransactionComponent implements OnInit {
   transactions: Transaction[] = [];
-  parties: Party[] = [];
   displayedColumns = ['id', 'party', 'paymentDate', 'transactionType', 'amount', 'paymentMethod', 'referenceNo', 'notes', 'action'];
 
-  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router) {}
+  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router, private store: DataStoreService) {}
 
   ngOnInit() {
-    this.loadParties();
     this.loadTransactions();
-  }
-
-  loadParties() {
-    this.http.get<Party[]>(
-      enviort.partiesUrl,
-      { headers: this.authService.getAuthHeaders() }
-    ).subscribe(data => {
-      this.parties = data;
-    });
   }
 
   loadTransactions() {
@@ -68,17 +58,13 @@ export class TransactionComponent implements OnInit {
         paymentDate: new Date().toISOString().split('T')[0],
         paidAmount: 0,
         paymentMode: 'Cash',
-        referenceNo: '',
         remarks: '',
         totalAmount: 0,
+        invoiceNo: '',
         dueAmount: 0
       } as unknown as Transaction,
       disableClose: false
     });
-
-    const instance = dialogRef.componentInstance as any;
-    instance.parties = this.parties;
-
     dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
         this.http.post(

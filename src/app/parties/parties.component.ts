@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { PartyDialogComponent, PartyDialogData } from './party-dialog.component';
 import { AuthService } from '../services/auth.service';
+import { DataStoreService } from '../services/data-store.service';
 import { baseUrl, enviort } from '../../environments/environment';
 
 interface Party {
@@ -30,10 +31,10 @@ interface Party {
 export class PartiesComponent implements OnInit {
   parties: Party[] = [];
 
-  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router) {}
+  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router, private store: DataStoreService) {}
 
   ngOnInit() {
-    this.loadParties();
+    this.store.getParties().subscribe(data => this.parties = data || []);
   }
 
   goBack() {
@@ -41,12 +42,7 @@ export class PartiesComponent implements OnInit {
   }
 
   loadParties() {
-    this.http.get<Party[]>(
-      enviort.partiesUrl,
-      { headers: this.authService.getAuthHeaders() }
-    ).subscribe(data => {
-      this.parties = data;
-    });
+    this.store.refreshParties();
   }
 
   addParty() {

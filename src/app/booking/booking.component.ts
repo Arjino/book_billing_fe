@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { BookDialogComponent, BookDialogData } from './book-dialog.component';
 import { AuthService } from '../services/auth.service';
+import { DataStoreService } from '../services/data-store.service';
 import { baseUrl, enviort } from '../../environments/environment';
 
 interface Book {
@@ -32,10 +33,10 @@ interface Book {
 export class BookingComponent implements OnInit {
   books: Book[] = [];
 
-  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router) {}
+  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router, private store: DataStoreService) {}
 
   ngOnInit() {
-    this.loadBooks();
+    this.store.getBooks().subscribe(data => this.books = data || []);
   }
 
   goBack() {
@@ -43,12 +44,7 @@ export class BookingComponent implements OnInit {
   }
 
   loadBooks() {
-    this.http.get<Book[]>(
-      enviort.bookingUrl,
-      { headers: this.authService.getAuthHeaders() }
-    ).subscribe(data => {
-      this.books = data;
-    });
+    this.store.refreshBooks();
   }
 
   addBook() {

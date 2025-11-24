@@ -7,7 +7,7 @@
     <button mat-icon-button aria-label="close" (click)="onCancel()"><mat-icon>close</mat-icon></button>
   </div>
 
-  <div mat-dialog-content class="p-4 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+  <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
     <form #saleForm="ngForm">
       <div class="grid grid-cols-1 gap-3">
         <mat-form-field appearance="outline" class="w-full">
@@ -65,38 +65,38 @@
           <table class="w-full" *ngIf="data.items.length">
             <thead>
               <tr class="text-sm text-gray-200">
-                <th class="p-2">Book</th>
-                <th class="p-2">Qty</th>
-                <th class="p-2">Rate</th>
-                <th class="p-2">Amount</th>
-                <th class="p-2">Action</th>
+                <th >Book</th>
+                <th >Qty</th>
+                <th >Rate</th>
+                <th >Amount</th>
+                <th >Action</th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let item of data.items; let i = index">
-                <td class="p-2">
+                <td >
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Book</mat-label>
-                    <mat-select [(ngModel)]="item.book" [name]="'book_' + i">
+                    <mat-select [(ngModel)]="item.book" [name]="'book_' + i" (selectionChange)="onBookSelected($event.value, item)">
                       <mat-option [value]="null">Select Book</mat-option>
                       <mat-option *ngFor="let b of books" [value]="b">{{ b.title }}</mat-option>
                     </mat-select>
                   </mat-form-field>
                 </td>
-                <td class="p-2">
+                <td >
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Qty</mat-label>
                     <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" (change)="calculateAmount(item)" />
                   </mat-form-field>
                 </td>
-                <td class="p-2">
+                <td >
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Rate</mat-label>
                     <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" (change)="calculateAmount(item)" />
                   </mat-form-field>
                 </td>
-                <td class="p-2">{{ item.amount }}</td>
-                <td class="p-2">
+                <td >{{ item.amount }}</td>
+                <td >
                   <button type="button" (click)="removeItem(i)" class="px-2 py-1 bg-red-600 text-white rounded">Remove</button>
                 </td>
               </tr>

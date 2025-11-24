@@ -8,6 +8,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { Transaction } from '../interface/Transaction';
+import { Party } from '../interface/party';
+import { DataStoreService } from '../services/data-store.service';
+import { HttpClient } from '@angular/common/http';
+import { enviort } from '../../environments/environment';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-transaction-dialog',
@@ -17,17 +22,35 @@ import { Transaction } from '../interface/Transaction';
   imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatIconModule]
 })
 export class TransactionDialogComponent {
-  parties: any[] = [];
+  parties: Party[] = [];
   paymentMethods = ['Cash', 'Cheque', 'Bank Transfer', 'Card', 'UPI', 'Other'];
 
   constructor(
     public dialogRef: MatDialogRef<TransactionDialogComponent>,
+    private dataService: DataStoreService,
+    private http: HttpClient,
+    private authService: AuthService,
     @Inject(MAT_DIALOG_DATA) public data: Transaction
-  ) {}
+  ) {
+    this.dataService.getParties().subscribe(party => this.parties = party || []);
+  }
 
   onCancel(): void {
     this.dialogRef.close();
   }
+  fetchLedgerForParty(partyId: any) {
+      if (!partyId) return;
+      this.http.get<any[]>(enviort.ledgerUrl + '/' + partyId, { headers: this.authService.getAuthHeaders() }).subscribe(data => {
+        let results = data || [];
+        // Server returns entries ordered by date desc; last updated balance is first item's balance
+        let lastBalance = (results && results.length) ? (results[results.length-1].balance || 0) : 0;
+        // update totalAmount or Last Balance display accordingly
+        this.data.totalAmount = lastBalance;
+      }, err => {
+        console.error('Failed to load ledger for party:', err);
+        this.data.totalAmount = 0;
+      });
+    }
 
   onSave(): void {
     this.dialogRef.close(this.data);

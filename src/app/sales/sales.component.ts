@@ -14,6 +14,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { SalesDialogComponent, SalesDialogData } from './sales-dialog.component';
 import { AuthService } from '../services/auth.service';
+import { DataStoreService } from '../services/data-store.service';
 import { baseUrl, enviort } from '../../environments/environment';
 import { Sale } from '../interface/Sale';
 
@@ -29,7 +30,7 @@ export class SalesComponent implements OnInit {
   startDate: string = '';
   endDate: string = '';
 
-  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router) {}
+  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router, private store: DataStoreService) {}
 
   ngOnInit() {
     this.loadSales();
@@ -38,7 +39,7 @@ export class SalesComponent implements OnInit {
   
   loadSales() {
     this.http.get<Sale[]>(
-      enviort.salesUrl,
+      enviort.salesByDateUrl,
       { headers: this.authService.getAuthHeaders() }
     ).subscribe(data => {
       this.sales = data;
@@ -73,6 +74,8 @@ export class SalesComponent implements OnInit {
           { headers: this.authService.getAuthHeaders() }
         ).subscribe(() => {
           this.loadSales();
+          // refresh cached books so stock updates after a sale
+          this.store.refreshBooks();
         });
       }
     });

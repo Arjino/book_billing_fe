@@ -11,6 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { enviort } from '../../environments/environment';
+import { DataStoreService } from '../services/data-store.service';
 
 @Component({
   selector: 'app-ledger',
@@ -31,21 +32,47 @@ export class LedgerComponent implements OnInit {
   maxAmount: number | null = null;
 
   results: any[] = [];
+  lastBalance: number = 0;
+  totalAmount: number = 0;
 
-  constructor(private route: ActivatedRoute, private http: HttpClient, private authService: AuthService) {}
+  constructor(private route: ActivatedRoute, private http: HttpClient, private authService: AuthService, private store: DataStoreService) {}
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(q => {
       if (q['partyId']) {
         this.partyId = q['partyId'];
-        this.applyFilters();
+        this.fetchLedgerForParty(this.partyId);
       }
     });
-    this.loadParties();
+    this.store.getParties().subscribe(d => this.parties = d || []);
+  }
+  
+
+  onPartySelected(partyId: any) {
+    this.partyId = partyId;
+    if (partyId) {
+      this.fetchLedgerForParty(partyId);
+    } else {
+      this.results = [];
+      this.lastBalance = 0;
+      this.totalAmount = 0;
+    }
   }
 
-  loadParties() {
-    this.http.get<any[]>(enviort.partiesUrl, { headers: this.authService.getAuthHeaders() }).subscribe(d => this.parties = d || []);
+  fetchLedgerForParty(partyId: any) {
+    if (!partyId) return;
+    this.http.get<any[]>(enviort.ledgerUrl + '/' + partyId, { headers: this.authService.getAuthHeaders() }).subscribe(data => {
+      this.results = data || [];
+      // Server returns entries ordered by date desc; last updated balance is first item's balance
+      this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
+      // update totalAmount or Last Balance display accordingly
+      this.totalAmount = this.lastBalance;
+    }, err => {
+      console.error('Failed to load ledger for party:', err);
+      this.results = [];
+      this.lastBalance = 0;
+      this.totalAmount = 0;
+    });
   }
 
   applyFilters() {

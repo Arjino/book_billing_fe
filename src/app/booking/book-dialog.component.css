@@ -1,13 +1,9 @@
-input {
-  margin-bottom: 8px;
-}
 
 /* Make form controls readable on translucent dialog backgrounds */
 input, textarea, select {
   background: rgba(255,255,255,0.03);
   color: rgba(255,255,255,0.95);
-  border: 1px solid rgba(255,255,255,0.08);
-  padding: 0.5rem;
+  border: 1px solid rgba(179,71,233,0.95);
   border-radius: 6px;
 }
 
@@ -28,9 +24,17 @@ select, option {
 
 select:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(124,58,237,0.08);
+  box-shadow: 0 0 0 3px rgba(179,71,233,0.12);
 }
 
 [mat-dialog-actions] {
-  background: rgba(0,0,0,0.6);
+  background: rgba(179, 71, 233, 0.6);
+}
+
+/* Make mat-form-field outline color stronger so borders look bold */
+:host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline {
+  stroke: rgba(179,71,233,0.95) !important;
+}
+:host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline .mat-form-field-outline-gap {
+  stroke: rgba(179,71,233,0.95) !important;
 }
