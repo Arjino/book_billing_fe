@@ -17,6 +17,7 @@ export const enviort = {
 
   // Invoice base
   invoiceBase: baseUrl + '/sales',
+  saleReturnsUrl: baseUrl + '/sales/returns',
 
   // Sales by date
   salesByDateUrl: baseUrl + '/sales/by-date', // Returns today's sales by default

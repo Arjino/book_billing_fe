@@ -14,6 +14,7 @@ export const enviort = {
   paymentUrl: baseUrl + '/payment',
 
   ledgerUrl: baseUrl + '/ledger/party',
+  saleReturnsUrl: baseUrl + '/sales/returns',
 
   // Invoice (download endpoint uses /sales/{id}/invoice/download)
   invoiceBase: baseUrl + '/sales',
