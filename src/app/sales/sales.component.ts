@@ -67,17 +67,49 @@ export class SalesComponent implements OnInit {
       disableClose: false
     });
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
-      if (result) {
+      if (!result) return;
+
+      // If this is a Return In, call the sale returns endpoint with mapped payload
+      if (result.type === 'RETURN_IN') {
+        const payload: any = {
+          partyId: result.party && result.party.id ? result.party.id : result.party,
+          returnDate: result.date,
+          items: (result.items || []).map((it: any) => ({
+            // Prefer sku when it looks numeric, else fallback to id
+            bookId:  it.book.sku ,
+            qty: it.qty,
+            rate: it.rate
+          }))
+        };
+
         this.http.post(
-          enviort.salesUrl,
-          result,
+          enviort.saleReturnsUrl,
+          payload,
           { headers: this.authService.getAuthHeaders() }
         ).subscribe(() => {
           this.loadSales();
-          // refresh cached books so stock updates after a sale
           this.store.refreshBooks();
+        }, err => {
+          console.error('Failed to post sale return:', err);
+          alert('Failed to submit sale return. Please try again.');
         });
+
+        return;
       }
+
+      // Normal sale
+      this.http.post(
+        enviort.salesUrl,
+        result,
+        { headers: this.authService.getAuthHeaders() }
+      ).subscribe(() => {
+        this.loadSales();
+        // refresh cached books so stock updates after a sale
+        this.store.refreshBooks();
+      }, err => {
+        console.error('Failed to create sale:', err);
+        alert('Failed to create sale. Please try again.');
+      });
     });
   }
 

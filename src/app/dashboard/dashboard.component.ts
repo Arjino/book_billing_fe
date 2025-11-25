@@ -256,21 +256,47 @@ export class DashboardComponent implements OnInit {
     });
 
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
-      if (result) {
+      if (!result) return;
+
+      if (result.type === 'RETURN_IN') {
+        const payload: any = {
+          partyId: result.party && result.party.id ? result.party.id : result.party,
+          returnDate: result.date,
+          items: (result.items || []).map((it: any) => ({
+            bookId:  it.book.sku ,
+            qty: it.qty,
+            rate: it.rate
+          }))
+        };
+
         this.http.post(
-          enviort.salesUrl,
-          result,
+          enviort.saleReturnsUrl,
+          payload,
           { headers: this.authService.getAuthHeaders() }
         ).subscribe(() => {
-          alert('Sale added successfully!');
-          // refresh books cache so UI sees updated stock after sale
+          alert('Sale return added successfully!');
           this.store.refreshBooks();
-        },
-        (error: any) => {
-          console.error('Failed to add sale:', error);
-          alert('Failed to add sale. Please try again.');
+        }, (error: any) => {
+          console.error('Failed to add sale return:', error);
+          alert('Failed to add sale return. Please try again.');
         });
+
+        return;
       }
+
+      this.http.post(
+        enviort.salesUrl,
+        result,
+        { headers: this.authService.getAuthHeaders() }
+      ).subscribe(() => {
+        alert('Sale added successfully!');
+        // refresh books cache so UI sees updated stock after sale
+        this.store.refreshBooks();
+      },
+      (error: any) => {
+        console.error('Failed to add sale:', error);
+        alert('Failed to add sale. Please try again.');
+      });
     });
   }
 

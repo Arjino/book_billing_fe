@@ -1,4 +1,4 @@
-export const baseUrl = 'https://book-billing.onrender.com/api';
+export const baseUrl = 'http://localhost:8081/api'//'https://book-billing.onrender.com/api';
 
 export const enviort = {
   // Authentication
@@ -13,6 +13,7 @@ export const enviort = {
   salesUrl: baseUrl + '/sales',
   paymentUrl: baseUrl + '/payment',
   ledgerUrl: baseUrl + '/ledger/party',
+  saleReturnsUrl: baseUrl + '/sales/returns',
 
   // Invoice (download endpoint uses /sales/{id}/invoice/download)
   invoiceBase: baseUrl + '/sales',
