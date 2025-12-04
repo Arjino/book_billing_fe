@@ -39,22 +39,6 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Payment Status</mat-label>
-          <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus">
-            <mat-option value="Pending">Pending</mat-option>
-            <mat-option value="Paid">Paid</mat-option>
-            <mat-option value="Partial">Partial</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <div *ngIf="data.paymentStatus === 'Partial'">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Partial Payment Amount</mat-label>
-            <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" />
-          </mat-form-field>
-        </div>
-
         <!-- Items Section -->
         <div class="mt-2 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
           <div class="flex items-center justify-between mb-2">
@@ -84,13 +68,13 @@
                   </mat-form-field>
                 </td>
                 <td >
-                  <mat-form-field appearance="outline" class="w-full">
+                  <mat-form-field appearance="outline" class="w-25">
                     <mat-label>Qty</mat-label>
                     <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" (change)="calculateAmount(item)" />
-                  </mat-form-field>
+ </mat-form-field>
                 </td>
                 <td >
-                  <mat-form-field appearance="outline" class="w-full">
+                  <mat-form-field appearance="outline" class="w-25">
                     <mat-label>Rate</mat-label>
                     <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" (change)="calculateAmount(item)" />
                   </mat-form-field>
@@ -112,8 +96,8 @@
           </mat-form-field>
           <div class="grid grid-cols-1 gap-2 mt-2">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Discount</mat-label>
-              <input matInput type="number" [(ngModel)]="data.discount" name="discount" (change)="calculateTotals()" />
+              <mat-label>Discount (%)</mat-label>
+              <input matInput type="number" [(ngModel)]="data.discount" name="discount" (change)="calculateTotals()" min="0" max="100" />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
@@ -125,6 +109,21 @@
               <mat-label>Round Off</mat-label>
               <input matInput type="number" [(ngModel)]="data.roundOff" name="roundOff" (change)="calculateTotals()" />
             </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Payment Status</mat-label>
+          <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus">
+            <mat-option value="Pending">Pending</mat-option>
+            <mat-option value="Paid">Paid</mat-option>
+            <mat-option value="Partial">Partial</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <div *ngIf="data.paymentStatus === 'Partial'">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Partial Payment Amount</mat-label>
+            <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" />
+          </mat-form-field>
+        </div>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Grand Total</mat-label>

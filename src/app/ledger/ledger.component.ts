@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -35,7 +35,7 @@ export class LedgerComponent implements OnInit {
   lastBalance: number = 0;
   totalAmount: number = 0;
 
-  constructor(private route: ActivatedRoute, private http: HttpClient, private authService: AuthService, private store: DataStoreService) {}
+  constructor(private route: ActivatedRoute, private http: HttpClient, private authService: AuthService, private store: DataStoreService, private location: Location) {}
 
   ngOnInit(): void {
     this.route.queryParams.subscribe(q => {
@@ -62,8 +62,10 @@ export class LedgerComponent implements OnInit {
   fetchLedgerForParty(partyId: any) {
     if (!partyId) return;
     this.http.get<any[]>(enviort.ledgerUrl + '/' + partyId, { headers: this.authService.getAuthHeaders() }).subscribe(data => {
-      this.results = data || [];
-      // Server returns entries ordered by date desc; last updated balance is first item's balance
+      // Apply client-side filters to the received data
+      const filtered = this.filterResults(data || []);
+      this.results = filtered;
+      // Server returns entries ordered by date desc; last updated balance is first item's balance (from filtered set)
       this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
       // update totalAmount or Last Balance display accordingly
       this.totalAmount = this.lastBalance;
@@ -76,20 +78,59 @@ export class LedgerComponent implements OnInit {
   }
 
   applyFilters() {
-    const params: any = {};
-      if (this.partyId) params.partyId = String(this.partyId);
-      if (this.startDate) params.startDate = this.startDate;
-      if (this.endDate) params.endDate = this.endDate;
-      if (this.transactionType && this.transactionType !== 'All') params.type = this.transactionType;
-      if (this.minAmount !== null) params.minAmount = String(this.minAmount);
-      if (this.maxAmount !== null) params.maxAmount = String(this.maxAmount);
-
       // Call transactions endpoint with query params — backend should return ledger-style entries
       this.http.get<any[]>(enviort.ledgerUrl+"/"+this.partyId, { headers: this.authService.getAuthHeaders() }).subscribe(data => {
-        this.results = data || [];
+        // Apply client-side filters so UI reflects selected transaction type, amounts and dates
+        this.results = this.filterResults(data || []);
       }, err => {
         console.error('Failed to load ledger:', err);
         this.results = [];
       });
+  }
+
+  private filterResults(input: any[]): any[] {
+    if (!input || !input.length) return [];
+
+    // Normalize chosen transaction type
+    const chosen = (this.transactionType || 'All').toString().trim().toLowerCase();
+
+    const start = this.startDate ? new Date(this.startDate) : null;
+    const end = this.endDate ? new Date(this.endDate) : null;
+
+    return input.filter(r => {
+      // transactionType filter: compare refType case-insensitive and be resilient to small typos like 'pruchase'
+      if (chosen && chosen !== 'all') {
+        const ref = (r.refType || '').toString().toLowerCase();
+        if (chosen === 'sale') {
+          if (!ref.includes('sale')) return false;
+        } else if (chosen === 'purchase') {
+          if (!(ref.includes('purchase') || ref.includes('pruchase'))) return false;
+        } else {
+          if (!ref.includes(chosen)) return false;
+        }
+      }
+
+      // amount filters (use debit or credit value whichever is present)
+      const amt = Number(r.debit || r.credit || 0);
+      if (this.minAmount !== null && this.minAmount !== undefined) {
+        if (amt < Number(this.minAmount)) return false;
+      }
+      if (this.maxAmount !== null && this.maxAmount !== undefined) {
+        if (amt > Number(this.maxAmount)) return false;
+      }
+
+      // date filters (assume r.date is ISO or parseable)
+      if (start || end) {
+        const d = r.date ? new Date(r.date) : null;
+        if (start && d && d < start) return false;
+        if (end && d && d > end) return false;
+      }
+
+      return true;
+    });
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 }

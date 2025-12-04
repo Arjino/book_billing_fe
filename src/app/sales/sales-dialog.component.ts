@@ -93,6 +93,8 @@ export class SalesDialogComponent implements OnInit {
 
   calculateTotals(): void {
     this.data.totalAmount = this.data.items.reduce((sum, item) => sum + (item.amount || 0), 0);
-    this.data.grandTotal = this.data.totalAmount + this.data.taxAmount - this.data.discount + this.data.roundOff;
+    // Calculate discount as percentage of total amount
+    const discountAmount = this.data.totalAmount * (this.data.discount || 0) / 100;
+    this.data.grandTotal = this.data.totalAmount + this.data.taxAmount - discountAmount + this.data.roundOff;
   }
 }

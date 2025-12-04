@@ -257,7 +257,9 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-
+      if(result.paymentStatus === 'Paid'){
+        result.paidAmount = result.grandTotal;
+      }
       if (result.type === 'RETURN_IN') {
         const payload: any = {
           partyId: result.party && result.party.id ? result.party.id : result.party,

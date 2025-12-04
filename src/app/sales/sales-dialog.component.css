@@ -33,3 +33,21 @@ select:focus {
 :host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline .mat-form-field-outline-gap {
 	stroke: rgba(179,71,233,0.95) !important;
 }
+
+/* Style error messages - make them visible in red */
+:host ::ng-deep .mat-error {
+	color: #ff6b6b !important;
+	font-size: 0.85rem !important;
+}
+
+:host ::ng-deep .mat-form-field.mat-form-field-invalid .mat-form-field-outline {
+	stroke: #ff6b6b !important;
+}
+
+:host ::ng-deep .mat-form-field.mat-form-field-invalid .mat-form-field-outline-gap {
+	stroke: #ff6b6b !important;
+}
+
+:host ::ng-deep .mat-form-field-invalid .mat-input-element {
+	color: #ff6b6b !important;
+}
