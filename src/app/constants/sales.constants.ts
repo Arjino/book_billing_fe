@@ -4,8 +4,8 @@
 
 export const SALES_CONSTANTS = {
   // Table Configuration
-  TABLE_COLUMNS: ['id', 'invoiceNo', 'party', 'date', 'totalAmount', 'discount', 'taxAmount', 'roundOff', 'grandTotal', 'paymentStatus', 'actions'],
-  DISPLAY_COLUMNS: ['ID', 'Invoice No', 'Party', 'Date', 'Total Amount', 'Discount', 'Tax Amount', 'Round Off', 'Grand Total', 'Payment Status', 'Actions'],
+  TABLE_COLUMNS: ['id', 'party', 'date', 'totalAmount', 'discount', 'taxAmount', 'roundOff', 'grandTotal', 'paymentStatus', 'actions'],
+  DISPLAY_COLUMNS: ['ID', 'Party', 'Date', 'Total Amount', 'Discount', 'Tax Amount', 'Round Off', 'Grand Total', 'Payment Status', 'Actions'],
   
   // Dialog Configuration
   DIALOG_WIDTH: '900px',
@@ -14,7 +14,7 @@ export const SALES_CONSTANTS = {
   
   // Form Labels
   FORM_LABELS: {
-    INVOICE_NO: 'Invoice Number',
+    // Invoice number removed
     PARTY: 'Party',
     DATE: 'Date',
     BOOK: 'Book',

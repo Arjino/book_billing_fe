@@ -51,7 +51,6 @@ export class SalesComponent implements OnInit {
       width: '800px',
       data: {
         id: 0,
-        invoiceNo: '',
         party: null,
         date: new Date().toISOString().split('T')[0],
         totalAmount: 0,

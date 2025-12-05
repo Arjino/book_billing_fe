@@ -1,0 +1,6 @@
+.results-table th, .results-table td { border-bottom: 1px solid rgba(255,255,255,0.03); }
+.results-table tbody tr:hover { background: rgba(179,71,233,0.03); }
+
+:host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline { stroke: rgba(179,71,233,0.95) !important; }
+
+.invoice-actions button { margin-left: 6px; }

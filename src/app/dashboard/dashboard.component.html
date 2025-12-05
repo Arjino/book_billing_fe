@@ -109,15 +109,19 @@
                 <h4 class="text-xl font-bold text-white mb-2">{{ card.title }}</h4>
                 <p class="text-sm text-purple-200 mb-6 line-clamp-2">{{ card.description }}</p>
                 
-                <!-- PDF Card Content -->
+                <!-- PDF Card Content: select party and open invoice list -->
                 <div *ngIf="card.pdfCard" class="space-y-3">
                   <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Sale ID</mat-label>
-                    <input matInput [(ngModel)]="invoiceSaleId" placeholder="Enter Sale ID" class="text-white">
+                    <mat-label>Select Party</mat-label>
+                    <mat-select [(ngModel)]="selectedInvoiceParty" class="text-white">
+                      <mat-option [value]="null">Select Party</mat-option>
+                      <mat-option *ngFor="let p of parties" [value]="p.id">{{ p.name }}</mat-option>
+                    </mat-select>
                   </mat-form-field>
-                  <button mat-raised-button color="primary" (click)="onDownloadInvoice()" [disabled]="!invoiceSaleId" class="w-full">
-                    Download PDF
-                  </button>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button mat-raised-button color="primary" class="w-full" [disabled]="!selectedInvoiceParty" (click)="openInvoiceList(selectedInvoiceParty)">Open Invoices</button>
+                    <button mat-stroked-button color="accent" class="w-full" (click)="navigateTo('/invoices')">All Invoices</button>
+                  </div>
                 </div>
                 <!-- Ledger Card Content -->
                 <div *ngIf="card.title === 'Ledger'" class="space-y-3">

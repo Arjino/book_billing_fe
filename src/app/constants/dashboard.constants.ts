@@ -71,8 +71,8 @@ export const DASHBOARD_CONSTANTS = {
 
   // Sales Table Configuration
   SALES_TABLE: {
-    COLUMNS: ['id', 'invoiceNo', 'party', 'date', 'totalAmount', 'discount', 'taxAmount', 'roundOff', 'grandTotal', 'paymentStatus'],
-    DISPLAY_COLUMNS: ['ID', 'Invoice No', 'Party', 'Date', 'Total Amount', 'Discount', 'Tax Amount', 'Round Off', 'Grand Total', 'Payment Status'],
+    COLUMNS: ['id', 'party', 'date', 'totalAmount', 'discount', 'taxAmount', 'roundOff', 'grandTotal', 'paymentStatus'],
+    DISPLAY_COLUMNS: ['ID', 'Party', 'Date', 'Total Amount', 'Discount', 'Tax Amount', 'Round Off', 'Grand Total', 'Payment Status'],
     DATE_FORMAT: 'yyyy-MM-dd'
   },
 

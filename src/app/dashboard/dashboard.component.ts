@@ -110,6 +110,7 @@ export class DashboardComponent implements OnInit {
   showInvoicePreview: boolean = false;
   parties: Party[] = [];
   selectedLedgerParty: any = null;
+  selectedInvoiceParty: any = null;
 
   constructor(
     private authService: AuthService,
@@ -240,7 +241,6 @@ export class DashboardComponent implements OnInit {
       width: '600px',
       data: {
         id: 0,
-        invoiceNo: '',
         party: null,
         date: new Date().toISOString().split('T')[0],
         items: [],
@@ -353,5 +353,10 @@ export class DashboardComponent implements OnInit {
         panelClass: 'invoice-dialog'
       });
     }
+  }
+
+  openInvoiceList(partyId: any) {
+    if (!partyId) return;
+    this.router.navigate(['/invoices'], { queryParams: { partyId } });
   }
 }

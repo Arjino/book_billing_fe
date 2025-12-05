@@ -16,7 +16,6 @@ import { Party } from '../interface/party';
 
 export interface SalesDialogData {
   id: number;
-  invoiceNo: string;
   party: any;
   date: string;
   totalAmount: number;
@@ -66,7 +65,7 @@ export class SalesDialogComponent implements OnInit {
       id: 0,
       sale: null,
       book: null,
-      qty: 1,
+      qty: 0,
       rate: 0,
       amount: 0
     });
@@ -87,7 +86,8 @@ export class SalesDialogComponent implements OnInit {
     item.book = book;
     // Use salePrice from Book as the rate and stock as the qty (fall back to existing values)
     item.rate = typeof book.salePrice === 'number' ? book.salePrice : (item.rate || 0);
-    item.qty = typeof book.stock === 'number' ? book.stock : (item.qty || 1);
+    // default qty to zero when selecting a book; user will enter desired qty
+    item.qty = 0;
     this.calculateAmount(item);
   }
 
@@ -96,5 +96,13 @@ export class SalesDialogComponent implements OnInit {
     // Calculate discount as percentage of total amount
     const discountAmount = this.data.totalAmount * (this.data.discount || 0) / 100;
     this.data.grandTotal = this.data.totalAmount + this.data.taxAmount - discountAmount + this.data.roundOff;
+  }
+
+  isQtyExceedsStock(item: any): boolean {
+    return item && item.book && typeof item.book.stock === 'number' && Number(item.qty) > Number(item.book.stock);
+  }
+
+  hasQtyError(): boolean {
+    return (this.data.items || []).some((item: any) => this.isQtyExceedsStock(item));
   }
 }
