@@ -12,34 +12,56 @@
       <div class="grid grid-cols-1 gap-3">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Name</mat-label>
-          <input matInput [(ngModel)]="data.name" name="name" required />
+          <input matInput [(ngModel)]="data.name" name="name" required pattern="^[A-Za-z ]+$" #nameModel="ngModel" (ngModelChange)="nameModel.control.markAsTouched()" />
+          <mat-error *ngIf="nameModel.invalid && (nameModel.dirty || nameModel.touched)">
+            <span *ngIf="nameModel.errors?.['required']">Name is required.</span>
+            <span *ngIf="nameModel.errors?.['pattern']">Only alphabets and spaces are allowed.</span>
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Type (Customer / Supplier)</mat-label>
-          <input matInput [(ngModel)]="data.type" name="type" required />
+          <mat-label>Type</mat-label>
+          <mat-select [(ngModel)]="data.type" name="type" required #typeModel="ngModel">
+            <mat-option value="Consumer">Consumer</mat-option>
+            <mat-option value="Supplier">Supplier</mat-option>
+          </mat-select>
+          <mat-error *ngIf="typeModel.invalid && (typeModel.dirty || typeModel.touched)">
+            <span *ngIf="typeModel.errors?.['required']">Type is required.</span>
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Phone</mat-label>
-          <input matInput [(ngModel)]="data.phone" name="phone" required />
+          <input matInput type="tel" [(ngModel)]="data.phone" name="phone" required pattern="^[0-9]{10}$" minlength="10" maxlength="10" inputmode="numeric" #phoneModel="ngModel" (input)="onPhoneInput($event)" (ngModelChange)="phoneModel.control.markAsTouched()" />
+          <mat-error *ngIf="phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)">
+            <span *ngIf="phoneModel.errors?.['required']">Phone is required.</span>
+            <span *ngIf="phoneModel.errors?.['pattern']">Phone must be 10 digits.</span>
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Address</mat-label>
-          <textarea matInput [(ngModel)]="data.address" name="address" required rows="3"></textarea>
+          <textarea matInput [(ngModel)]="data.address" name="address" required rows="3" #addrModel="ngModel"></textarea>
+          <mat-error *ngIf="addrModel.invalid && (addrModel.dirty || addrModel.touched)">
+            <span *ngIf="addrModel.errors?.['required']">Address is required.</span>
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>GSTIN</mat-label>
-          <input matInput [(ngModel)]="data.gstin" name="gstin" required />
+          <input matInput [(ngModel)]="data.gstin" name="gstin" required pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$" #gstModel="ngModel" />
+          <mat-hint>Format: 15 characters (e.g. 27ABCDE1234F1Z5)</mat-hint>
+          <mat-error *ngIf="gstModel.invalid && (gstModel.dirty || gstModel.touched)">
+            <span *ngIf="gstModel.errors?.['required']">GSTIN is required.</span>
+            <span *ngIf="gstModel.errors?.['pattern']">Invalid GSTIN format.</span>
+          </mat-error>
         </mat-form-field>
       </div>
     </form>
   </div>
 
-  <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+    <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <button mat-button (click)="onCancel()">Cancel</button>
-    <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+    <button mat-raised-button color="primary" (click)="onSave()" [disabled]="partyForm.invalid">Save</button>
   </div>
 </div>

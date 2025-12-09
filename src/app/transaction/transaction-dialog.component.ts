@@ -38,6 +38,11 @@ export class TransactionDialogComponent {
   onCancel(): void {
     this.dialogRef.close();
   }
+  isOverpay(): boolean {
+    const paid = Number(this.data?.paidAmount || 0);
+    const total = Number(this.data?.totalAmount || 0);
+    return paid > total;
+  }
   fetchLedgerForParty(partyId: any) {
       if (!partyId) return;
       this.http.get<any[]>(enviort.ledgerUrl + '/' + partyId, { headers: this.authService.getAuthHeaders() }).subscribe(data => {

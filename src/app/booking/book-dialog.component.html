@@ -12,37 +12,68 @@
       <div class="grid grid-cols-1 gap-3">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Title</mat-label>
-            <input matInput [(ngModel)]="data.title" name="title" required />
+            <input matInput [(ngModel)]="data.title" name="title" required pattern="^[A-Za-z ]+$" #titleModel="ngModel" (ngModelChange)="titleModel.control.markAsTouched()" />
+            <mat-error *ngIf="titleModel.invalid && (titleModel.dirty || titleModel.touched)">
+              <span *ngIf="titleModel.errors?.['required']">Title is required.</span>
+              <span *ngIf="titleModel.errors?.['pattern']">Only alphabets and spaces are allowed.</span>
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>SKU</mat-label>
-            <input matInput [(ngModel)]="data.sku" name="sku" required />
+            <input matInput [(ngModel)]="data.sku" name="sku" required pattern="^[A-Za-z0-9_/.\-]+$" #skuModel="ngModel" (ngModelChange)="skuModel.control.markAsTouched()" />
+            <mat-hint>Allowed: letters, numbers, -, _, /, .</mat-hint>
+            <mat-error *ngIf="skuModel.invalid && (skuModel.dirty || skuModel.touched)">
+              <span *ngIf="skuModel.errors?.['required']">SKU is required.</span>
+              <span *ngIf="skuModel.errors?.['pattern']">Invalid SKU format.</span>
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Publisher</mat-label>
-            <input matInput [(ngModel)]="data.publisher" name="publisher" required />
+            <input matInput [(ngModel)]="data.publisher" name="publisher" required pattern="^[A-Za-z ]+$" #publisherModel="ngModel" (ngModelChange)="publisherModel.control.markAsTouched()" />
+            <mat-error *ngIf="publisherModel.invalid && (publisherModel.dirty || publisherModel.touched)">
+              <span *ngIf="publisherModel.errors?.['required']">Publisher is required.</span>
+              <span *ngIf="publisherModel.errors?.['pattern']">Only alphabets and spaces are allowed.</span>
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>HSN</mat-label>
-            <input matInput [(ngModel)]="data.hsn" name="hsn" required />
+            <input matInput type="number" [(ngModel)]="data.hsn" name="hsn" required inputmode="numeric" min="100000" max="9999999999" #hsnModel="ngModel" (ngModelChange)="hsnModel.control.markAsTouched()" />
+            <mat-hint>Numeric; normally 6 digits (can be 6-10 digits).</mat-hint>
+            <mat-error *ngIf="hsnModel.invalid && (hsnModel.dirty || hsnModel.touched)">
+              <span *ngIf="hsnModel.errors?.['required']">HSN is required.</span>
+              <span *ngIf="hsnModel.errors?.['min']">HSN must be at least 6 digits.</span>
+              <span *ngIf="hsnModel.errors?.['max']">HSN cannot exceed 10 digits.</span>
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Cost Price</mat-label>
-            <input matInput type="number" [(ngModel)]="data.costPrice" name="costPrice" required />
+            <input matInput type="number" [(ngModel)]="data.costPrice" name="costPrice" required min="0" #costModel="ngModel" (ngModelChange)="costModel.control.markAsTouched()" />
+            <mat-error *ngIf="costModel.invalid && (costModel.dirty || costModel.touched)">
+              <span *ngIf="costModel.errors?.['required']">Cost price is required.</span>
+              <span *ngIf="costModel.errors?.['min']">Cost price cannot be negative.</span>
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Sale Price</mat-label>
-            <input matInput type="number" [(ngModel)]="data.salePrice" name="salePrice" required />
+            <input matInput type="number" [(ngModel)]="data.salePrice" name="salePrice" required min="0" #saleModel="ngModel" (ngModelChange)="saleModel.control.markAsTouched()" />
+            <mat-error *ngIf="saleModel.invalid && (saleModel.dirty || saleModel.touched)">
+              <span *ngIf="saleModel.errors?.['required']">Sale price is required.</span>
+              <span *ngIf="saleModel.errors?.['min']">Sale price cannot be negative.</span>
+            </mat-error>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Stock</mat-label>
-            <input matInput type="number" [(ngModel)]="data.stock" name="stock" required />
+            <input matInput type="number" [(ngModel)]="data.stock" name="stock" required min="0" step="1" #stockModel="ngModel" (ngModelChange)="stockModel.control.markAsTouched()" />
+            <mat-error *ngIf="stockModel.invalid && (stockModel.dirty || stockModel.touched)">
+              <span *ngIf="stockModel.errors?.['required']">Stock is required.</span>
+              <span *ngIf="stockModel.errors?.['min']">Stock cannot be negative.</span>
+            </mat-error>
           </mat-form-field>
         </div>
     </form>
@@ -50,6 +81,6 @@
 
   <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <button mat-button (click)="onCancel()">Cancel</button>
-    <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+    <button mat-raised-button color="primary" (click)="onSave()" [disabled]="bookForm.invalid">Save</button>
   </div>
 </div>

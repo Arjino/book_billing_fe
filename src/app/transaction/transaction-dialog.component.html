@@ -12,32 +12,48 @@
       <div class="grid grid-cols-1 gap-3">
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Party</mat-label>
-          <mat-select [(ngModel)]="data.party" name="party" required>
+          <mat-select [(ngModel)]="data.party" name="party" required #partyModel="ngModel" (selectionChange)="fetchLedgerForParty($event.value?.id)">
             <mat-option [value]="null">Select Party</mat-option>
-            <mat-option *ngFor="let p of parties" [value]="p" (onSelectionChange)="fetchLedgerForParty(p.id)">{{ p.name }}</mat-option>
+            <mat-option *ngFor="let p of parties" [value]="p">{{ p.name }}</mat-option>
           </mat-select>
+          <mat-error *ngIf="partyModel.invalid && (partyModel.dirty || partyModel.touched)">
+            <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Transaction Date</mat-label>
-          <input matInput type="date" [(ngModel)]="data.paymentDate" name="paymentDate" required />
+          <input matInput type="date" [(ngModel)]="data.paymentDate" name="paymentDate" required #paymentDateModel="ngModel" />
+          <mat-error *ngIf="paymentDateModel.invalid && (paymentDateModel.dirty || paymentDateModel.touched)">
+            <span *ngIf="paymentDateModel.errors?.['required']">Transaction date is required.</span>
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Last Balance</mat-label>
-          <input matInput type="number" [(ngModel)]="data.totalAmount" name="totalAmount" required />
+          <input matInput type="number" [(ngModel)]="data.totalAmount" name="totalAmount" required #totalAmountModel="ngModel" min="0" (ngModelChange)="totalAmountModel.control.markAsTouched()" />
+          <mat-error *ngIf="totalAmountModel.invalid && (totalAmountModel.dirty || totalAmountModel.touched)">
+            <span *ngIf="totalAmountModel.errors?.['required']">Last balance is required.</span>
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Pay Amount</mat-label>
-          <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required />
+          <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
+          <mat-error *ngIf="paidAmountModel.invalid && (paidAmountModel.dirty || paidAmountModel.touched)">
+            <span *ngIf="paidAmountModel.errors?.['required']">Pay amount is required.</span>
+          </mat-error>
+          <mat-error *ngIf="isOverpay()">Pay amount cannot be greater than balance.</mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Payment Method</mat-label>
-          <mat-select [(ngModel)]="data.paymentMode" name="paymentMethod" required>
+          <mat-select [(ngModel)]="data.paymentMode" name="paymentMethod" required #paymentModeModel="ngModel">
             <mat-option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</mat-option>
           </mat-select>
+          <mat-error *ngIf="paymentModeModel.invalid && (paymentModeModel.dirty || paymentModeModel.touched)">
+            <span *ngIf="paymentModeModel.errors?.['required']">Payment method is required.</span>
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
@@ -55,6 +71,6 @@
 
   <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(179,71,233,0.6)] rounded-b-lg">
     <button mat-button (click)="onCancel()">Cancel</button>
-    <button mat-raised-button color="primary" (click)="onSave()">Save Transaction</button>
+    <button mat-raised-button color="primary" (click)="onSave()" [disabled]="transactionForm.invalid || isOverpay()">Save Transaction</button>
   </div>
 </div>

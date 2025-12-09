@@ -67,6 +67,7 @@ export class SalesDialogComponent implements OnInit {
       book: null,
       qty: 0,
       rate: 0,
+      discount: 0,
       amount: 0
     });
   }
@@ -76,7 +77,10 @@ export class SalesDialogComponent implements OnInit {
   }
 
   calculateAmount(item: any): void {
-    item.amount = item.qty * item.rate;
+    // Calculate amount after discount: (qty * rate) - discount
+    const subtotal = item.qty * item.rate;
+    const discountAmount = subtotal * (item.discount || 0) / 100;
+    item.amount = subtotal - discountAmount;
     this.calculateTotals();
   }
 
@@ -92,10 +96,10 @@ export class SalesDialogComponent implements OnInit {
   }
 
   calculateTotals(): void {
+    // Sum all item amounts (which already include per-item discounts)
     this.data.totalAmount = this.data.items.reduce((sum, item) => sum + (item.amount || 0), 0);
-    // Calculate discount as percentage of total amount
-    const discountAmount = this.data.totalAmount * (this.data.discount || 0) / 100;
-    this.data.grandTotal = this.data.totalAmount + this.data.taxAmount - discountAmount + this.data.roundOff;
+    // Apply tax and round off
+    this.data.grandTotal = this.data.totalAmount + this.data.taxAmount + this.data.roundOff;
   }
 
   isQtyExceedsStock(item: any): boolean {
@@ -104,5 +108,15 @@ export class SalesDialogComponent implements OnInit {
 
   hasQtyError(): boolean {
     return (this.data.items || []).some((item: any) => this.isQtyExceedsStock(item));
+  }
+
+  isOverpay(): boolean {
+    const paid = Number(this.data?.paidAmount || 0);
+    const total = Number(this.data?.grandTotal || 0);
+    return paid > total;
+  }
+
+  trackByIndex(index: number): number {
+    return index;
   }
 }

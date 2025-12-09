@@ -14,38 +14,34 @@
       </div>
     </div>
 
-    <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-indigo-500/30 rounded-2xl p-6 backdrop-blur-xl">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Party</mat-label>
-          <mat-select [(ngModel)]="partyId" (selectionChange)="onPartySelected($event.value)">
+    <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-indigo-500/30 rounded-2xl p-6 backdrop-blur-xl text-white">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+        <mat-form-field appearance="outline" class="w-full text-white">
+          <mat-label class="text-white">Party</mat-label>
+          <mat-select class="text-white" [(ngModel)]="partyId" (selectionChange)="onPartySelected($event.value)">
             <mat-option value="">All</mat-option>
             <mat-option *ngFor="let p of parties" [value]="p.id">{{p.name}}</mat-option>
           </mat-select>
         </mat-form-field>
 
-        <div class="flex gap-2">
-          <input type="date" class="border p-2 rounded w-full bg-transparent text-white" [(ngModel)]="startDate" />
-          <input type="date" class="border p-2 rounded w-full bg-transparent text-white" [(ngModel)]="endDate" />
-        </div>
-
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Type</mat-label>
-          <mat-select [(ngModel)]="transactionType">
+        <mat-form-field appearance="outline" class="w-full text-white">
+          <mat-label class="text-white">Type</mat-label>
+          <mat-select class="text-white" [(ngModel)]="transactionType">
             <mat-option value="All">All</mat-option>
             <mat-option value="Sale">Sale</mat-option>
             <mat-option value="Purchase">Purchase</mat-option>
           </mat-select>
         </mat-form-field>
+
+        <div class="flex gap-2">
+          <input type="date" class="border p-2 rounded w-full bg-transparent text-white placeholder-gray-400" [(ngModel)]="startDate" />
+          <input type="date" class="border p-2 rounded w-full bg-transparent text-white placeholder-gray-400" [(ngModel)]="endDate" />
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-        <input type="number" placeholder="Min Amount" class="border p-2 rounded w-full bg-transparent text-white" [(ngModel)]="minAmount" />
-        <input type="number" placeholder="Max Amount" class="border p-2 rounded w-full bg-transparent text-white" [(ngModel)]="maxAmount" />
-        <div class="flex items-center gap-2">
-          <button mat-raised-button color="primary" (click)="applyFilters()">Apply Filters</button>
-          <button mat-stroked-button (click)="applyFilters()">Refresh</button>
-        </div>
+      <div class="flex items-center gap-2 mb-4">
+        <button mat-raised-button color="primary" (click)="applyFilters()">Apply Filters</button>
+        <button mat-stroked-button (click)="applyFilters()">Refresh</button>
       </div>
 
       <div class="overflow-x-auto bg-[rgba(255,255,255,0.02)] rounded p-4">

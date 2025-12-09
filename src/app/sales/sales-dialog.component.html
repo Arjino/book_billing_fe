@@ -14,26 +14,35 @@
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Party</mat-label>
-          <mat-select [(ngModel)]="data.party" name="party" required>
+          <mat-select [(ngModel)]="data.party" name="party" required #partyModel="ngModel">
             <mat-option [value]="null">Select Party</mat-option>
             <mat-option *ngFor="let p of parties" [value]="p">{{ p.name }}</mat-option>
           </mat-select>
+          <mat-error *ngIf="partyModel.invalid && (partyModel.dirty || partyModel.touched)">
+            <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Date</mat-label>
-          <input matInput type="date" [(ngModel)]="data.date" name="date" required />
+          <input matInput type="date" [(ngModel)]="data.date" name="date" required #dateModel="ngModel" />
+          <mat-error *ngIf="dateModel.invalid && (dateModel.dirty || dateModel.touched)">
+            <span *ngIf="dateModel.errors?.['required']">Date is required.</span>
+          </mat-error>
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Sale Type</mat-label>
-          <mat-select [(ngModel)]="data.type" name="type" required>
+          <mat-select [(ngModel)]="data.type" name="type" required #typeModel="ngModel">
             <mat-option [value]="">Select Sale Type</mat-option>
             <mat-option value="SALE">Sale</mat-option>
             <mat-option value="PURCHASE">Purchase</mat-option>
             <mat-option value="RETURN_IN">Return In</mat-option>
             <mat-option value="RETURN_OUT">Return Out</mat-option>
           </mat-select>
+          <mat-error *ngIf="typeModel.invalid && (typeModel.dirty || typeModel.touched)">
+            <span *ngIf="typeModel.errors?.['required']">Sale type is required.</span>
+          </mat-error>
         </mat-form-field>
 
         <!-- Items Section -->
@@ -43,85 +52,97 @@
             <button type="button" (click)="addItem()" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Item</button>
           </div>
 
-          <table class="w-full" *ngIf="data.items.length">
-            <thead>
-              <tr class="text-sm text-gray-200">
-                <th >Book</th>
-                <th >Qty</th>
-                <th >Rate</th>
-                <th >Amount</th>
-                <th >Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of data.items; let i = index">
-                <td >
-                  <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Book</mat-label>
-                    <mat-select [(ngModel)]="item.book" [name]="'book_' + i" (selectionChange)="onBookSelected($event.value, item)">
-                      <mat-option [value]="null">Select Book</mat-option>
-                      <mat-option *ngFor="let b of books" [value]="b">{{ b.title }}</mat-option>
-                    </mat-select>
-                  </mat-form-field>
-                </td>
-                <td >
-                  <mat-form-field appearance="outline" class="w-25" [class.mat-form-field-invalid]="isQtyExceedsStock(item)">
-                    <mat-label>Qty</mat-label>
-                    <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" (ngModelChange)="calculateAmount(item)" min="0" [attr.max]="item.book?.stock" step="1" />
-                    <mat-error *ngIf="isQtyExceedsStock(item)">Qty exceeds available stock ({{ item.book?.stock }})</mat-error>
-                  </mat-form-field>
-                  <!-- Fallback visible error (in case mat-error styling is hidden) -->
-                  <div *ngIf="isQtyExceedsStock(item)" class="text-red-400 text-sm mt-1">Qty exceeds available stock ({{ item.book?.stock }})</div>
-                </td>
-                <td >
-                  <mat-form-field appearance="outline" class="w-25">
-                    <mat-label>Rate</mat-label>
-                    <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" (change)="calculateAmount(item)" />
-                  </mat-form-field>
-                </td>
-                <td >{{ item.amount }}</td>
-                <td >
-                  <button type="button" (click)="removeItem(i)" class="px-2 py-1 bg-red-600 text-white rounded">Remove</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          <!-- Items Card Layout -->
+          <div *ngIf="data.items.length" class="space-y-4">
+            <div *ngFor="let item of data.items; let i = index; trackBy: trackByIndex" class="border p-3 rounded bg-[rgba(0,0,0,0.2)]">
+              <!-- Row 1: Book Selection -->
+              <div class="mb-3">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Book</mat-label>
+                  <mat-select [(ngModel)]="item.book" [name]="'book_' + i" required #bookModel="ngModel" (selectionChange)="onBookSelected($event.value, item)">
+                    <mat-option [value]="null">Select Book</mat-option>
+                    <mat-option *ngFor="let b of books" [value]="b">{{ b.title }}</mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="bookModel.invalid && (bookModel.dirty || bookModel.touched)">
+                    <span *ngIf="bookModel.errors?.['required']">Book is required.</span>
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <!-- Row 2: Qty, Rate, Discount -->
+              <div class="grid grid-cols-3 gap-2 mb-3">
+                <mat-form-field appearance="outline" class="w-full" #qtyField="matFormField" [class.mat-form-field-invalid]="item.qty > 0 && item.book && item.qty > item.book.stock">
+                  <mat-label>Qty</mat-label>
+                  <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" required #qtyModel="ngModel" inputmode="numeric" (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item)" min="1" [attr.max]="item.book?.stock" step="1" />
+                  <mat-error *ngIf="qtyModel.invalid && (qtyModel.dirty || qtyModel.touched)">
+                    <span *ngIf="qtyModel.errors?.['required']">Required</span>
+                    <span *ngIf="qtyModel.errors?.['min']">Min 1</span>
+                  </mat-error>
+                  <mat-error *ngIf="qtyModel.touched && item.qty > 0 && item.book && item.qty > item.book.stock">Exceeds stock ({{ item.book.stock }})</mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Rate</mat-label>
+                  <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="rateModel.control.markAsTouched(); calculateAmount(item)" />
+                  <mat-error *ngIf="rateModel.invalid && (rateModel.dirty || rateModel.touched)">
+                    <span *ngIf="rateModel.errors?.['required']">Required</span>
+                  </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Discount %</mat-label>
+                  <input matInput type="number" [(ngModel)]="item.discount" [name]="'discount_' + i" min="0" max="100" (ngModelChange)="calculateAmount(item)" />
+                </mat-form-field>
+              </div>
+
+              <!-- Row 3: Amount and Remove -->
+              <div class="flex items-center justify-between">
+                <div class="text-sm">
+                  <span class="text-gray-300">Amount: </span>
+                  <span class="font-bold">{{ item.amount | number:'1.2-2' }}</span>
+                </div>
+                <button type="button" (click)="removeItem(i)" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Remove</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Totals Section -->
         <div class="mt-3 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Total Amount</mat-label>
+            <mat-label>Total Amount (after item discounts)</mat-label>
             <input matInput type="number" [(ngModel)]="data.totalAmount" name="totalAmount" readonly />
           </mat-form-field>
           <div class="grid grid-cols-1 gap-2 mt-2">
             <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Discount (%)</mat-label>
-              <input matInput type="number" [(ngModel)]="data.discount" name="discount" (change)="calculateTotals()" min="0" max="100" />
-            </mat-form-field>
-
-            <mat-form-field appearance="outline" class="w-full">
               <mat-label>Tax Amount</mat-label>
-              <input matInput type="number" [(ngModel)]="data.taxAmount" name="taxAmount" (change)="calculateTotals()" />
+              <input matInput type="number" [(ngModel)]="data.taxAmount" name="taxAmount" (ngModelChange)="calculateTotals()" #taxModel="ngModel" (ngModelChange)="taxModel.control.markAsTouched()" />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Round Off</mat-label>
-              <input matInput type="number" [(ngModel)]="data.roundOff" name="roundOff" (change)="calculateTotals()" />
+              <input matInput type="number" [(ngModel)]="data.roundOff" name="roundOff" (ngModelChange)="calculateTotals()" #roundModel="ngModel" (ngModelChange)="roundModel.control.markAsTouched()" />
             </mat-form-field>
-            <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Payment Status</mat-label>
-          <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus">
-            <mat-option value="Pending">Pending</mat-option>
-            <mat-option value="Paid">Paid</mat-option>
-            <mat-option value="Partial">Partial</mat-option>
-          </mat-select>
-        </mat-form-field>
+              <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Payment Status</mat-label>
+            <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus" required #paymentStatusModel="ngModel">
+              <mat-option value="Pending">Pending</mat-option>
+              <mat-option value="Paid">Paid</mat-option>
+              <mat-option value="Partial">Partial</mat-option>
+            </mat-select>
+            <mat-error *ngIf="paymentStatusModel.invalid && (paymentStatusModel.dirty || paymentStatusModel.touched)">
+              <span *ngIf="paymentStatusModel.errors?.['required']">Payment status is required.</span>
+            </mat-error>
+          </mat-form-field>
 
         <div *ngIf="data.paymentStatus === 'Partial'">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Partial Payment Amount</mat-label>
-            <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" />
+            <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
+            <mat-error *ngIf="paidAmountModel.invalid && (paidAmountModel.dirty || paidAmountModel.touched)">
+              <span *ngIf="paidAmountModel.errors?.['required']">Partial amount is required.</span>
+            </mat-error>
+            <mat-error *ngIf="isOverpay()">Paid amount cannot exceed grand total.</mat-error>
           </mat-form-field>
         </div>
 
@@ -135,8 +156,8 @@
     </form>
   </div>
 
-  <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+    <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <button mat-button (click)="onCancel()">Cancel</button>
-    <button mat-raised-button color="primary" (click)="onSave()">Save</button>
+    <button mat-raised-button color="primary" (click)="onSave()" [disabled]="saleForm.invalid || hasQtyError() || isOverpay()">Save</button>
   </div>
 </div>

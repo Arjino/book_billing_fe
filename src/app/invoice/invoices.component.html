@@ -12,28 +12,28 @@
       </div>
     </div>
 
-    <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-indigo-500/30 rounded-2xl p-6 backdrop-blur-xl">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Party</mat-label>
-          <mat-select [(ngModel)]="partyId" (selectionChange)="fetchInvoices(partyId)">
+    <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-indigo-500/30 rounded-2xl p-6 backdrop-blur-xl text-white">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <mat-form-field appearance="outline" class="w-full text-white">
+          <mat-label class="text-white">Party</mat-label>
+          <mat-select class="text-white" [(ngModel)]="partyId" (selectionChange)="fetchInvoices(partyId)">
             <mat-option value="">All</mat-option>
             <mat-option *ngFor="let p of parties" [value]="p.id">{{ p.name }}</mat-option>
           </mat-select>
         </mat-form-field>
 
-        <input type="date" class="border p-2 rounded w-full bg-transparent text-white" [(ngModel)]="startDate" />
-        <input type="date" class="border p-2 rounded w-full bg-transparent text-white" [(ngModel)]="endDate" />
-
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Sale Type</mat-label>
-          <mat-select [(ngModel)]="saleType">
+        <mat-form-field appearance="outline" class="w-full text-white">
+          <mat-label class="text-white">Sale Type</mat-label>
+          <mat-select class="text-white" [(ngModel)]="saleType">
             <mat-option value="All">All</mat-option>
             <mat-option value="Sale">Sale</mat-option>
             <mat-option value="Purchase">Purchase</mat-option>
             <mat-option value="Return">Return</mat-option>
           </mat-select>
         </mat-form-field>
+
+        <input type="date" class="border p-2 rounded w-full bg-transparent text-white placeholder-gray-400" [(ngModel)]="startDate" />
+        <input type="date" class="border p-2 rounded w-full bg-transparent text-white placeholder-gray-400" [(ngModel)]="endDate" />
       </div>
 
       <div class="flex items-center justify-end mb-4">

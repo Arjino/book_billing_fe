@@ -1,8 +1,10 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatOptionModule } from '@angular/material/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,16 +23,32 @@ export interface PartyDialogData {
   templateUrl: './party-dialog.component.html',
   styleUrls: ['./party-dialog.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule]
+  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatOptionModule]
 })
-export class PartyDialogComponent {
+export class PartyDialogComponent implements OnInit {
   constructor(
     public dialogRef: MatDialogRef<PartyDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: PartyDialogData
   ) {}
 
+  ngOnInit(): void {
+    if (!this.data) {
+      this.data = { id: 0, name: '', type: 'Consumer', phone: '', address: '', gstin: '' } as PartyDialogData;
+    }
+    if (!this.data.type) {
+      this.data.type = 'Consumer';
+    }
+  }
+
   onCancel(): void {
     this.dialogRef.close();
+  }
+
+  onPhoneInput(event: any): void {
+    // Allow only digits; strip out any non-numeric characters
+    const value = event.target.value.replace(/[^0-9]/g, '');
+    this.data.phone = value;
+    event.target.value = value;
   }
 
   onSave(): void {

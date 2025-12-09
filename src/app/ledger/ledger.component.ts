@@ -28,8 +28,6 @@ export class LedgerComponent implements OnInit {
   startDate: string = '';
   endDate: string = '';
   transactionType: string = 'All';
-  minAmount: number | null = null;
-  maxAmount: number | null = null;
 
   results: any[] = [];
   lastBalance: number = 0;
@@ -38,13 +36,14 @@ export class LedgerComponent implements OnInit {
   constructor(private route: ActivatedRoute, private http: HttpClient, private authService: AuthService, private store: DataStoreService, private location: Location) {}
 
   ngOnInit(): void {
+    this.store.getParties().subscribe(d => this.parties = d || []);
     this.route.queryParams.subscribe(q => {
       if (q['partyId']) {
-        this.partyId = q['partyId'];
+        this.partyId = parseInt(q['partyId'], 10);
+        // Auto-fetch ledger when component initializes with partyId
         this.fetchLedgerForParty(this.partyId);
       }
     });
-    this.store.getParties().subscribe(d => this.parties = d || []);
   }
   
 
@@ -108,15 +107,6 @@ export class LedgerComponent implements OnInit {
         } else {
           if (!ref.includes(chosen)) return false;
         }
-      }
-
-      // amount filters (use debit or credit value whichever is present)
-      const amt = Number(r.debit || r.credit || 0);
-      if (this.minAmount !== null && this.minAmount !== undefined) {
-        if (amt < Number(this.minAmount)) return false;
-      }
-      if (this.maxAmount !== null && this.maxAmount !== undefined) {
-        if (amt > Number(this.maxAmount)) return false;
       }
 
       // date filters (assume r.date is ISO or parseable)
