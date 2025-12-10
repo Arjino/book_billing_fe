@@ -16,27 +16,35 @@
 
     <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-indigo-500/30 rounded-2xl p-6 backdrop-blur-xl text-white">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        <mat-form-field appearance="outline" class="w-full text-white">
+        <mat-form-field appearance="outline" class="w-full text-white" [style.color]="'white'">
           <mat-label class="text-white">Party</mat-label>
-          <mat-select class="text-white" [(ngModel)]="partyId" (selectionChange)="onPartySelected($event.value)">
+          <mat-select class="text-white" [style.color]="'white'" [(ngModel)]="partyId" (selectionChange)="onPartySelected($event.value)">
             <mat-option value="">All</mat-option>
             <mat-option *ngFor="let p of parties" [value]="p.id">{{p.name}}</mat-option>
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full text-white">
+        <mat-form-field appearance="outline" class="w-full text-white" [style.color]="'white'">
           <mat-label class="text-white">Type</mat-label>
-          <mat-select class="text-white" [(ngModel)]="transactionType">
+          <mat-select class="text-white" [style.color]="'white'" [(ngModel)]="transactionType">
             <mat-option value="All">All</mat-option>
             <mat-option value="Sale">Sale</mat-option>
             <mat-option value="Purchase">Purchase</mat-option>
           </mat-select>
         </mat-form-field>
 
-        <div class="flex gap-2">
-          <input type="date" class="border p-2 rounded w-full bg-transparent text-white placeholder-gray-400" [(ngModel)]="startDate" />
-          <input type="date" class="border p-2 rounded w-full bg-transparent text-white placeholder-gray-400" [(ngModel)]="endDate" />
-        </div>
+        <mat-form-field appearance="outline" class="w-full text-white" [style.color]="'white'">
+          <mat-label class="text-white">Start Date</mat-label>
+          <input matInput [matDatepicker]="startPicker" class="text-white" [style.color]="'white'" [(ngModel)]="startDate" />
+          <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
+          <mat-datepicker #startPicker></mat-datepicker>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full text-white" [style.color]="'white'">
+          <mat-label class="text-white">End Date</mat-label>
+          <input matInput [matDatepicker]="endPicker" class="text-white" [style.color]="'white'" [(ngModel)]="endDate" />
+          <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
+          <mat-datepicker #endPicker></mat-datepicker>
+        </mat-form-field>
       </div>
 
       <div class="flex items-center gap-2 mb-4">

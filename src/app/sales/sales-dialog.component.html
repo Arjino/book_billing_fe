@@ -23,9 +23,11 @@
           </mat-error>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Date</mat-label>
-          <input matInput type="date" [(ngModel)]="data.date" name="date" required #dateModel="ngModel" />
+        <mat-form-field appearance="outline" class="w-full text-white">
+          <mat-label class="text-white">Date</mat-label>
+          <input matInput [matDatepicker]="salesDatePicker" class="text-white" [(ngModel)]="data.date" name="date" required #dateModel="ngModel" />
+          <mat-datepicker-toggle matSuffix [for]="salesDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #salesDatePicker></mat-datepicker>
           <mat-error *ngIf="dateModel.invalid && (dateModel.dirty || dateModel.touched)">
             <span *ngIf="dateModel.errors?.['required']">Date is required.</span>
           </mat-error>

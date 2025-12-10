@@ -21,9 +21,11 @@
           </mat-error>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Transaction Date</mat-label>
-          <input matInput type="date" [(ngModel)]="data.paymentDate" name="paymentDate" required #paymentDateModel="ngModel" />
+        <mat-form-field appearance="outline" class="w-full text-white">
+          <mat-label class="text-white">Transaction Date</mat-label>
+          <input matInput [matDatepicker]="transactionDatePicker" class="text-white" [(ngModel)]="data.paymentDate" name="paymentDate" required #paymentDateModel="ngModel" />
+          <mat-datepicker-toggle matSuffix [for]="transactionDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #transactionDatePicker></mat-datepicker>
           <mat-error *ngIf="paymentDateModel.invalid && (paymentDateModel.dirty || paymentDateModel.touched)">
             <span *ngIf="paymentDateModel.errors?.['required']">Transaction date is required.</span>
           </mat-error>

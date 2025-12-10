@@ -51,7 +51,7 @@ export class TransactionComponent implements OnInit {
 
   addTransaction() {
     const dialogRef = this.dialog.open(TransactionDialogComponent, {
-      width: '600px',
+      width: '500px',
       data: {
         id: 0,
         party: null,
