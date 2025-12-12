@@ -21,7 +21,6 @@ export interface SalesDialogData {
   party: any;
   date: string;
   totalAmount: number;
-  discount: number;
   taxAmount: number;
   roundOff: number;
   grandTotal: number;

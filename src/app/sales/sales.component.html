@@ -7,14 +7,14 @@
 
   <div class="max-w-7xl mx-auto px-6 relative z-10">
     <!-- Header -->
-    <div class="mb-8 flex items-center justify-between">
+    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
       <div>
         <h1 class="text-4xl font-extrabold mb-2">
           <span class="bg-gradient-to-r from-red-400 to-rose-400 bg-clip-text text-transparent">Sales Management</span>
         </h1>
         <p class="text-red-200">Track and manage all sales transactions</p>
       </div>
-      <div class="flex gap-3">
+      <div class="flex gap-3 w-full md:w-auto justify-between md:justify-end mt-4 md:mt-0">
         <button mat-raised-button color="accent" (click)="addSale()" class="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600">
           <mat-icon>add</mat-icon>
           Add Sale
@@ -32,15 +32,16 @@
         Filter by Date Range
       </h3>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Start Date</mat-label>
-          <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" placeholder="YYYY-MM-DD" class="text-white">
+        <mat-form-field appearance="outline" class="w-full text-white">
+          <mat-label class="text-white">Start Date</mat-label>
+          <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" placeholder="YYYY-MM-DD" class="text-white placeholder-white" [style.color]="'white'" />
           <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
           <mat-datepicker #startPicker></mat-datepicker>
+          <mat-error *ngIf="showStartDateError" class="text-red-300">Start date is required.</mat-error>
         </mat-form-field>
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>End Date</mat-label>
-          <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" placeholder="YYYY-MM-DD" class="text-white">
+        <mat-form-field appearance="outline" class="w-full text-white">
+          <mat-label class="text-white">End Date</mat-label>
+          <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" placeholder="YYYY-MM-DD" class="text-white placeholder-white" [style.color]="'white'" />
           <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
           <mat-datepicker #endPicker></mat-datepicker>
         </mat-form-field>

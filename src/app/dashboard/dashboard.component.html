@@ -141,19 +141,19 @@
               <!-- Action Buttons -->
               <div class="absolute bottom-4 right-4 flex gap-2 items-center z-20">
                 <!-- Add Button -->
-                <button *ngIf="card.route && !card.pdfCard && !card.button" 
+                <button *ngIf="card.route && !card.pdfCard && !card.button && card.title !== 'Ledger'" 
                         mat-mini-fab
                         color="accent"
-                        class="shadow-lg hover:shadow-xl transition-all duration-300 scale-0 group-hover:scale-100 origin-bottom-right"
+                        class="shadow-lg hover:shadow-xl transition-all duration-300 scale-100 sm:scale-0 sm:group-hover:scale-100 origin-bottom-right"
                         (click)="openAddDialog(card)"
                         [attr.aria-label]="'Add new ' + card.title">
                   <mat-icon>add</mat-icon>
                 </button>
                 <!-- Navigation Arrow Button -->
-                <button *ngIf="card.route" 
+                <button *ngIf="card.route && card.title !== 'Ledger'" 
                         mat-mini-fab
                         color="primary"
-                        class="shadow-lg hover:shadow-xl transition-all duration-300 scale-0 group-hover:scale-100 origin-bottom-right"
+                        class="shadow-lg hover:shadow-xl transition-all duration-300 scale-100 sm:scale-0 sm:group-hover:scale-100 origin-bottom-right"
                         (click)="navigateTo(card.route)"
                         [attr.aria-label]="'Navigate to ' + card.title">
                   <mat-icon>arrow_forward</mat-icon>

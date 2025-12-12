@@ -267,7 +267,8 @@ export class DashboardComponent implements OnInit {
           items: (result.items || []).map((it: any) => ({
             bookId:  it.book.sku ,
             qty: it.qty,
-            rate: it.rate
+            rate: it.rate,
+            discount: it.discount
           }))
         };
 

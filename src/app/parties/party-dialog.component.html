@@ -32,10 +32,11 @@
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Phone</mat-label>
-          <input matInput type="tel" [(ngModel)]="data.phone" name="phone" required pattern="^[0-9]{10}$" minlength="10" maxlength="10" inputmode="numeric" #phoneModel="ngModel" (input)="onPhoneInput($event)" (ngModelChange)="phoneModel.control.markAsTouched()" />
+          <input matInput type="tel" [(ngModel)]="data.phone" name="phone" required pattern="^[6-9][0-9]{9}$" maxlength="10" inputmode="numeric" #phoneModel="ngModel" (input)="onPhoneInput($event)" (ngModelChange)="phoneModel.control.markAsTouched()" />
+          <mat-hint>10-digit Indian phone number (starts with 6-9)</mat-hint>
           <mat-error *ngIf="phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)">
             <span *ngIf="phoneModel.errors?.['required']">Phone is required.</span>
-            <span *ngIf="phoneModel.errors?.['pattern']">Phone must be 10 digits.</span>
+            <span *ngIf="phoneModel.errors?.['pattern']">Phone must be 10 digits starting with 6,7, 8, or 9.</span>
           </mat-error>
         </mat-form-field>
 
@@ -49,10 +50,9 @@
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>GSTIN</mat-label>
-          <input matInput [(ngModel)]="data.gstin" name="gstin" required pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$" #gstModel="ngModel" />
-          <mat-hint>Format: 15 characters (e.g. 27ABCDE1234F1Z5)</mat-hint>
+          <input matInput [(ngModel)]="data.gstin" name="gstin" pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$" #gstModel="ngModel" />
+          <mat-hint>Format: 15 characters (e.g. 27ABCDE1234F1Z5).</mat-hint>
           <mat-error *ngIf="gstModel.invalid && (gstModel.dirty || gstModel.touched)">
-            <span *ngIf="gstModel.errors?.['required']">GSTIN is required.</span>
             <span *ngIf="gstModel.errors?.['pattern']">Invalid GSTIN format.</span>
           </mat-error>
         </mat-form-field>
@@ -60,8 +60,14 @@
     </form>
   </div>
 
-    <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
-    <button mat-button (click)="onCancel()">Cancel</button>
-    <button mat-raised-button color="primary" (click)="onSave()" [disabled]="partyForm.invalid">Save</button>
+    <div mat-dialog-actions class="flex flex-col md:flex-row md:justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+    <button mat-button class="w-full md:w-auto" (click)="onCancel()" aria-label="Back">
+      <mat-icon class="inline sm:hidden mr-2">arrow_back</mat-icon>
+      <span class="hidden sm:inline">Cancel</span>
+    </button>
+    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="partyForm.invalid" aria-label="Save">
+      <mat-icon class="inline sm:hidden mr-2">add</mat-icon>
+      <span class="hidden sm:inline">Save</span>
+    </button>
   </div>
 </div>

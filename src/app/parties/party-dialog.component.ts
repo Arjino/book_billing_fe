@@ -46,7 +46,15 @@ export class PartyDialogComponent implements OnInit {
 
   onPhoneInput(event: any): void {
     // Allow only digits; strip out any non-numeric characters
-    const value = event.target.value.replace(/[^0-9]/g, '');
+    let value = event.target.value.replace(/[^0-9]/g, '');
+    // Enforce max 10 digits
+    if (value.length > 10) {
+      value = value.slice(0, 10);
+    }
+    // Validate that first digit is 7, 8, or 9 (Indian phone number standard)
+    if (value.length > 0 && !/^[6-9]/.test(value)) {
+      value = '';
+    }
     this.data.phone = value;
     event.target.value = value;
   }

@@ -29,10 +29,15 @@ export class SalesComponent implements OnInit {
   sales: Sale[] = [];
   startDate: string = '';
   endDate: string = '';
+  showStartDateError: boolean = false;
 
   constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router, private store: DataStoreService) {}
 
   ngOnInit() {
+    // Set end date to today by default
+    const today = new Date();
+    this.endDate = today.toISOString().split('T')[0];
+    
     this.loadSales();
   }
 
@@ -54,7 +59,6 @@ export class SalesComponent implements OnInit {
         party: null,
         date: new Date().toISOString().split('T')[0],
         totalAmount: 0,
-        discount: 0,
         taxAmount: 0,
         roundOff: 0,
         grandTotal: 0,
@@ -77,9 +81,11 @@ export class SalesComponent implements OnInit {
           returnDate: result.date,
           items: (result.items || []).map((it: any) => ({
             // Prefer sku when it looks numeric, else fallback to id
-            bookId:  it.book.sku ,
+            bookId: it.book?.sku || it.book?.id || null,
             qty: it.qty,
-            rate: it.rate
+            rate: it.rate,
+            // include per-item discount (percentage)
+            discount: it.discount
           }))
         };
 
@@ -115,10 +121,12 @@ export class SalesComponent implements OnInit {
   }
 
   getSalesByDateRange() {
-    if (!this.startDate || !this.endDate) {
-      alert('Please select both start and end dates.');
+    // Require start date; show inline error instead of alert dialog
+    if (!this.startDate) {
+      this.showStartDateError = true;
       return;
     }
+    this.showStartDateError = false;
 
     const start = this.formatDate(this.startDate);
     const end = this.formatDate(this.endDate);
