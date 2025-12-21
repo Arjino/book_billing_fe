@@ -10,6 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule, MatIcon } from '@angular/material/icon';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 import { TransactionDialogComponent } from './transaction-dialog.component';
 import { AuthService } from '../services/auth.service';
 import { enviort } from '../../environments/environment';
@@ -23,11 +25,14 @@ import { DataStoreService } from '../services/data-store.service';
   templateUrl: './transaction.component.html',
   styleUrls: ['./transaction.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon, MatDatepickerModule, MatNativeDateModule]
 })
 export class TransactionComponent implements OnInit {
   transactions: Transaction[] = [];
-  displayedColumns = ['id', 'party', 'paymentDate', 'transactionType', 'amount', 'paymentMethod', 'referenceNo', 'notes', 'action'];
+  startDate: string = '';
+  endDate: string = '';
+  filteredTransactions: Transaction[] = [];
+  displayedColumns = ['id', 'party', 'paymentDate', 'transactionType', 'amount', 'paymentMethod', 'referenceNo', 'notes'];
 
   constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router, private store: DataStoreService) {}
 
@@ -42,11 +47,25 @@ export class TransactionComponent implements OnInit {
     ).subscribe(
       data => {
         this.transactions = data;
+        this.applyDateFilter();
       },
       error => {
         console.error('Failed to load transactions:', error);
       }
     );
+  }
+
+  applyDateFilter() {
+    let filtered = this.transactions.slice();
+    if (this.startDate) {
+      const s = new Date(this.startDate);
+      filtered = filtered.filter(t => t.paymentDate && new Date(t.paymentDate) >= s);
+    }
+    if (this.endDate) {
+      const e = new Date(this.endDate);
+      filtered = filtered.filter(t => t.paymentDate && new Date(t.paymentDate) <= e);
+    }
+    this.filteredTransactions = filtered;
   }
 
   addTransaction() {
@@ -84,5 +103,30 @@ export class TransactionComponent implements OnInit {
 
   goBack() {
     this.router.navigate(['/dashboard']);
+  }
+    filterTransactions() {
+    // Build query params for startDate and endDate
+    let params: any = {};
+    if (this.startDate) params.startDate = this.formatDate(this.startDate);
+    if (this.endDate) params.endDate = this.formatDate(this.endDate);
+    this.http.get<Transaction[]>(
+      enviort.paymentUrl,
+      { headers: this.authService.getAuthHeaders(), params }
+    ).subscribe(
+      data => {
+        this.transactions = data;
+        this.applyDateFilter();
+      },
+      error => {
+        console.error('Failed to load filtered transactions:', error);
+      }
+    );
+  }
+
+  formatDate(date: any): string {
+    if (!date) return '';
+    // Handles both Date object and string
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toISOString().split('T')[0];
   }
 }

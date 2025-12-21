@@ -57,7 +57,7 @@
               <th class="py-2 px-3 text-left">Date</th>
               <th class="py-2 px-3 text-left">Invoice No</th>
               <th class="py-2 px-3 text-left">Type</th>
-              <th class="py-2 px-3 text-right">Total</th>
+              <th class="py-2 px-3 text-right">Total (₹)</th>
               <th class="py-2 px-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -66,10 +66,10 @@
               <td class="py-3 px-3">{{ inv.date | date }}</td>
               <td class="py-3 px-3">{{ inv.invoiceNo || inv.id || '-' }}</td>
               <td class="py-3 px-3">{{ inv.type || '-' }}</td>
-              <td class="py-3 px-3 text-right">{{ inv.totalAmount | currency }}</td>
+              <td class="py-3 px-3 text-right">{{ inv.totalAmount }}</td>
               <td class="py-3 px-3 text-right">
                 <button mat-icon-button color="accent" (click)="openPreview(inv.id)"><mat-icon>visibility</mat-icon></button>
-                <button mat-icon-button color="primary" (click)="downloadPdf(inv.id)"><mat-icon>download</mat-icon></button>
+                <button mat-icon-button color="primary" (click)="downloadPdf(inv.id,inv.invoiceNo)"><mat-icon>download</mat-icon></button>
               </td>
             </tr>
             <tr *ngIf="!invoices.length">

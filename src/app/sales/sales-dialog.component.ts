@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { HttpClient } from '@angular/common/http';
@@ -35,7 +36,7 @@ export interface SalesDialogData {
   templateUrl: './sales-dialog.component.html',
   styleUrls: ['./sales-dialog.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatIconModule, MatDatepickerModule, MatNativeDateModule]
+  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatAutocompleteModule, MatIconModule, MatDatepickerModule, MatNativeDateModule]
 })
 export class SalesDialogComponent implements OnInit {
   books: Book[] = [];
@@ -49,8 +50,19 @@ export class SalesDialogComponent implements OnInit {
     private store: DataStoreService
   ) {}
   ngOnInit() {
-    this.store.getBooks().subscribe(data => this.books = data || []);
+    this.store.getBooks().subscribe(data => {
+      this.books = data || [];
+      // Update filteredBooks for all items if books change
+      (this.data.items || []).forEach(item => {
+        item.filteredBooks = this.books.slice();
+      });
+    });
     this.store.getParties().subscribe(data => this.parties = data || []);
+    // Initialize filteredBooks for existing items (if any)
+    (this.data.items || []).forEach(item => {
+      item.filteredBooks = this.books.slice();
+      item.bookSearch = item.book ? item.book.title : '';
+    });
   }
   onCancel(): void {
     this.dialogRef.close();
@@ -69,8 +81,21 @@ export class SalesDialogComponent implements OnInit {
       qty: 0,
       rate: 0,
       discount: 0,
-      amount: 0
+      amount: 0,
+      bookSearch: '',
+      filteredBooks: this.books.slice()
     });
+  }
+  filterBooks(search: string, index: number): void {
+    const value = (search || '').toLowerCase();
+    if (!value) {
+      this.data.items[index].filteredBooks = this.books.slice();
+      return;
+    }
+    this.data.items[index].filteredBooks = this.books.filter(b =>
+      b.title.toLowerCase().includes(value) ||
+      (b.sku && b.sku.toLowerCase().includes(value))
+    );
   }
 
   removeItem(index: number): void {
@@ -87,11 +112,9 @@ export class SalesDialogComponent implements OnInit {
 
   onBookSelected(book: Book | null, item: any): void {
     if (!book) return;
-    // Set the book object on the item (ngModel already sets it but ensure consistency)
     item.book = book;
-    // Use salePrice from Book as the rate and stock as the qty (fall back to existing values)
+    item.bookSearch = book.title;
     item.rate = typeof book.salePrice === 'number' ? book.salePrice : (item.rate || 0);
-    // default qty to zero when selecting a book; user will enter desired qty
     item.qty = 0;
     this.calculateAmount(item);
   }

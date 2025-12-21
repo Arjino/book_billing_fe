@@ -6,11 +6,12 @@ import { AuthService } from '../services/auth.service';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { baseUrl, enviort } from '../../environments/environment';
+import { MatIconModule } from '@angular/material/icon';
 
 @Component({
   selector: 'app-invoice-preview',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule,MatIconModule],
   templateUrl: './invoice-preview.component.html',
   styleUrls: ['./invoice-preview.component.css']
 })
@@ -26,7 +27,7 @@ export class InvoicePreviewComponent implements OnInit {
     private route: ActivatedRoute,
     private authService: AuthService,
     @Inject(MAT_DIALOG_DATA) public data: any,
-    private dialogRef: MatDialogRef<InvoicePreviewComponent>
+    public dialogRef: MatDialogRef<InvoicePreviewComponent>
   ) {
     if (data && data.salesId) {
       this.salesId = data.salesId;
@@ -67,7 +68,8 @@ export class InvoicePreviewComponent implements OnInit {
     if (!this.pdfUrl) return;
     const link = document.createElement('a');
     link.href = (this.pdfUrl as any).changingThisBreaksApplicationSecurity || '';
-    link.download = `invoice_${this.salesId}.pdf`;
+    const invoiceNo = this.data?.invoiceNo || this.salesId || 'invoice';
+    link.download = `${invoiceNo}.pdf`;
     link.click();
   }
 }

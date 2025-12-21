@@ -77,9 +77,9 @@
                 <a *ngIf="r.refType === 'SALE' && r.refId" [routerLink]="['/invoice', r.refId]" class="text-sky-300 hover:underline">{{ r.refId }}</a>
                 <span *ngIf="!(r.refType === 'SALE' && r.refId)">{{ r.refId || '-' }}</span>
               </td>
-              <td class="py-3 px-3 text-right text-emerald-300">{{ r.debit ? (r.debit | currency) : '-' }}</td>
-              <td class="py-3 px-3 text-right text-emerald-300">{{ r.credit ? (r.credit | currency) : '-' }}</td>
-              <td class="py-3 px-3 text-right font-semibold">{{ r.balance | currency }}</td>
+              <td class="py-3 px-3 text-right text-emerald-300">{{ r.debit ? (r.debit ) : '-' }}</td>
+              <td class="py-3 px-3 text-right text-emerald-300">{{ r.credit ? (r.credit) : '-' }}</td>
+              <td class="py-3 px-3 text-right font-semibold">{{ r.balance }}</td>
               <td class="py-3 px-3">{{ r.remarks || '' }}</td>
             </tr>
             <tr *ngIf="!results.length">

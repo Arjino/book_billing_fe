@@ -80,17 +80,26 @@ export class InvoicesComponent implements OnInit {
 
   openPreview(saleId: any) {
     if (!saleId) return;
-    this.dialog.open(InvoicePreviewComponent, { data: { salesId: saleId }, width: '900px', maxWidth: '95vw', panelClass: 'invoice-dialog' });
+    const invoice = this.invoices.find(inv => inv.id === saleId || inv.invoiceNo === saleId);
+    const invoiceNo = invoice?.invoiceNo || '';
+    this.dialog.open(InvoicePreviewComponent, {
+      data: { salesId: saleId, invoiceNo },
+      width: '900px',
+      maxWidth: '95vw',
+      panelClass: 'invoice-dialog'
+    });
   }
 
-  downloadPdf(saleId: any) {
+  downloadPdf(saleId: any,invoiceNo?:string) {
     if (!saleId) return;
-    const url = `${enviort.salesUrl}/pdf/${saleId}`;
+    // Find the invoice object to get invoiceNo
+    const invoice = this.invoices.find(inv => inv.id === saleId || inv.invoiceNo === saleId);
+    const url = `${enviort.salesUrl}/${saleId}/invoice/download`;
     this.http.get(url, { headers: this.auth.getAuthHeaders(), responseType: 'blob' }).subscribe(blob => {
       const link = document.createElement('a');
       const objectUrl = URL.createObjectURL(blob);
       link.href = objectUrl;
-      link.download = `invoice-${saleId}.pdf`;
+      link.download = `${invoiceNo}.pdf`;
       link.click();
       URL.revokeObjectURL(objectUrl);
     }, err => {

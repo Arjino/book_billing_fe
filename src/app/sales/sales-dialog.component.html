@@ -49,22 +49,21 @@
 
         <!-- Items Section -->
         <div class="mt-2 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center mb-2">
             <h3 class="font-bold">Items</h3>
-            <button type="button" (click)="addItem()" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Item</button>
           </div>
 
           <!-- Items Card Layout -->
           <div *ngIf="data.items.length" class="space-y-4">
-            <div *ngFor="let item of data.items; let i = index; trackBy: trackByIndex" class="border p-3 rounded bg-[rgba(0,0,0,0.2)]">
+            <div *ngFor="let item of data.items; let i = index; let last = last; trackBy: trackByIndex" class="border p-3 rounded bg-[rgba(0,0,0,0.2)]">
               <!-- Row 1: Book Selection -->
               <div class="mb-3">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Book</mat-label>
-                  <mat-select [(ngModel)]="item.book" [name]="'book_' + i" required #bookModel="ngModel" (selectionChange)="onBookSelected($event.value, item)">
-                    <mat-option [value]="null">Select Book</mat-option>
-                    <mat-option *ngFor="let b of books" [value]="b">{{ b.title }}</mat-option>
-                  </mat-select>
+                  <input type="text" matInput [matAutocomplete]="autoBook" [(ngModel)]="item.bookSearch" [name]="'bookSearch_' + i" (ngModelChange)="filterBooks($event, i)" placeholder="Search or select book" required #bookModel="ngModel">
+                  <mat-autocomplete #autoBook="matAutocomplete" (optionSelected)="onBookSelected($event.option.value, item)">
+                    <mat-option *ngFor="let b of item.filteredBooks || books" [value]="b">{{ b.title }}</mat-option>
+                  </mat-autocomplete>
                   <mat-error *ngIf="bookModel.invalid && (bookModel.dirty || bookModel.touched)">
                     <span *ngIf="bookModel.errors?.['required']">Book is required.</span>
                   </mat-error>
@@ -105,7 +104,15 @@
                 </div>
                 <button type="button" (click)="removeItem(i)" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Remove</button>
               </div>
+              <!-- Add Item button after the last item -->
+              <div *ngIf="last" class="flex justify-end mt-2">
+                <button type="button" (click)="addItem()" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Item</button>
+              </div>
             </div>
+          </div>
+          <!-- If no items, show Add Item button below header -->
+          <div *ngIf="!data.items.length" class="flex justify-end mt-2">
+            <button type="button" (click)="addItem()" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Item</button>
           </div>
         </div>
 

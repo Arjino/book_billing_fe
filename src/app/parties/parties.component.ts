@@ -7,6 +7,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { PartyDialogComponent, PartyDialogData } from './party-dialog.component';
 import { AuthService } from '../services/auth.service';
 import { DataStoreService } from '../services/data-store.service';
@@ -26,7 +29,7 @@ interface Party {
   templateUrl: './parties.component.html',
   styleUrls: ['./parties.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatIconModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatIconModule, FormsModule, MatFormFieldModule, MatInputModule]
 })
 export class PartiesComponent implements OnInit {
   parties: Party[] = [];
