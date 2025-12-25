@@ -128,10 +128,6 @@
               <input matInput type="number" [(ngModel)]="data.taxAmount" name="taxAmount" (ngModelChange)="calculateTotals()" #taxModel="ngModel" (ngModelChange)="taxModel.control.markAsTouched()" />
             </mat-form-field>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Round Off</mat-label>
-              <input matInput type="number" [(ngModel)]="data.roundOff" name="roundOff" (ngModelChange)="calculateTotals()" #roundModel="ngModel" (ngModelChange)="roundModel.control.markAsTouched()" />
-            </mat-form-field>
               <mat-form-field appearance="outline" class="w-full">
             <mat-label>Payment Status</mat-label>
             <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus" required #paymentStatusModel="ngModel">

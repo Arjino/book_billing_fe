@@ -23,7 +23,6 @@ export interface SalesDialogData {
   date: string;
   totalAmount: number;
   taxAmount: number;
-  roundOff: number;
   grandTotal: number;
   paymentStatus: string;
   paidAmount: number;
@@ -123,7 +122,7 @@ export class SalesDialogComponent implements OnInit {
     // Sum all item amounts (which already include per-item discounts)
     this.data.totalAmount = this.data.items.reduce((sum, item) => sum + (item.amount || 0), 0);
     // Apply tax and round off
-    this.data.grandTotal = this.data.totalAmount + this.data.taxAmount + this.data.roundOff;
+    this.data.grandTotal = this.data.totalAmount + this.data.taxAmount;
   }
 
   isQtyExceedsStock(item: any): boolean {
