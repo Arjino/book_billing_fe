@@ -25,10 +25,57 @@
       </div>
     </div>
 
+    <!-- Filter Section -->
+    <div class="mb-6 bg-gradient-to-br from-slate-900/90 to-slate-950 border border-orange-500/30 rounded-2xl backdrop-blur-xl p-6 text-white">
+      <div class="flex flex-col md:flex-row gap-4 items-end">
+        <!-- Filter Dropdown -->
+        <div class="flex-1">
+          <label class="block text-orange-300 font-semibold mb-2">Filter By</label>
+          <select [(ngModel)]="filterBy" class="w-full px-4 py-2 bg-slate-800/50 border border-orange-500/30 rounded-lg text-white focus:outline-none focus:border-orange-400 transition-colors">
+            <option *ngFor="let option of filterOptions" [value]="option.value">
+              {{option.label}}
+            </option>
+          </select>
+        </div>
+
+        <!-- Filter Input -->
+        <div class="flex-1">
+          <label class="block text-orange-300 font-semibold mb-2">Search Value</label>
+          <input 
+            [(ngModel)]="filterValue" 
+            (keyup.enter)="applyFilter()"
+            type="text" 
+            placeholder="Enter filter value..." 
+            class="w-full px-4 py-2 bg-slate-800/50 border border-orange-500/30 rounded-lg text-white placeholder-orange-300/40 focus:outline-none focus:border-orange-400 transition-colors"
+          />
+        </div>
+
+        <!-- Filter Button -->
+        <button 
+          (click)="applyFilter()" 
+          mat-raised-button 
+          class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold px-6 py-2 rounded-lg transition-all"
+        >
+          <mat-icon class="mr-2">search</mat-icon>
+          Apply Filter
+        </button>
+
+        <!-- Clear Button -->
+        <button 
+          (click)="clearFilter()" 
+          mat-outlined-button 
+          class="border border-orange-500/50 text-orange-300 hover:bg-orange-500/10 font-semibold px-6 py-2 rounded-lg transition-all"
+        >
+          <mat-icon class="mr-2">clear</mat-icon>
+          Clear
+        </button>
+      </div>
+    </div>
+
     <!-- Table Container -->
     <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-orange-500/30 rounded-2xl backdrop-blur-xl overflow-hidden text-white">
       <div class="overflow-x-auto">
-        <table mat-table [dataSource]="parties" class="w-full bg-transparent text-white" *ngIf="parties.length">
+        <table mat-table [dataSource]="filteredParties" class="w-full bg-transparent text-white" *ngIf="filteredParties.length">
           <ng-container matColumnDef="id">
             <th mat-header-cell *matHeaderCellDef class="text-orange-300 font-bold py-4 px-6 text-left">ID</th>
             <td mat-cell *matCellDef="let p" class="text-orange-300 bg-transparent py-4 px-6 border-t border-orange-500/20">{{p.id}}</td>
@@ -49,9 +96,10 @@
           <tr mat-row *matRowDef="let row; columns: ['id','name','type','phone'];" class="hover:bg-orange-500/10 transition-colors"></tr>
         </table>
       </div>
-      <div *ngIf="!parties.length" class="p-8 text-center">
+      <div *ngIf="!filteredParties.length" class="p-8 text-center">
         <mat-icon class="text-6xl text-orange-500/30 mb-4">business</mat-icon>
-        <p class="text-orange-300/60">No parties found. Create your first party entry.</p>
+        <p class="text-orange-300/60" *ngIf="filterValue">No results found for your filter.</p>
+        <p class="text-orange-300/60" *ngIf="!filterValue">No parties found. Create your first party entry.</p>
       </div>
     </div>
   </div>

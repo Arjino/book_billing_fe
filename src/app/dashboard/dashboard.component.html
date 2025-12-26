@@ -136,12 +136,20 @@
                     <button mat-stroked-button color="accent" class="flex-1" (click)="navigateTo('/ledger')">Open Ledger Page</button>
                   </div>
                 </div>
+
+                <!-- Analytics Card Content -->
+                <div *ngIf="card.title === 'Analytics'" class="space-y-3">
+                  <button mat-raised-button color="primary" class="w-full" (click)="openAnalyticsModal()">
+                    <mat-icon>analytics</mat-icon>
+                    View Analytics Dashboard
+                  </button>
+                </div>
               </div>
 
               <!-- Action Buttons -->
               <div class="absolute bottom-4 right-4 flex gap-2 items-center z-20">
                 <!-- Add Button -->
-                <button *ngIf="card.route && !card.pdfCard && !card.button && card.title !== 'Ledger'" 
+                <button *ngIf="card.route && !card.pdfCard && !card.button && card.title !== 'Ledger' && card.title !== 'Analytics'" 
                         mat-mini-fab
                         color="accent"
                         class="shadow-lg hover:shadow-xl transition-all duration-300 scale-100 sm:scale-0 sm:group-hover:scale-100 origin-bottom-right"
@@ -150,7 +158,7 @@
                   <mat-icon>add</mat-icon>
                 </button>
                 <!-- Navigation Arrow Button -->
-                <button *ngIf="card.route && card.title !== 'Ledger'" 
+                <button *ngIf="card.route && card.title !== 'Ledger' && card.title !== 'Analytics'" 
                         mat-mini-fab
                         color="primary"
                         class="shadow-lg hover:shadow-xl transition-all duration-300 scale-100 sm:scale-0 sm:group-hover:scale-100 origin-bottom-right"

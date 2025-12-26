@@ -5,14 +5,20 @@ import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Party } from '../interface/party';
 import { Book } from '../interface/book';
+import { Sale } from '../interface/Sale';
+import { Transaction } from '../interface/Transaction';
 import { enviort } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class DataStoreService {
   private parties$ = new BehaviorSubject<Party[]>([]);
   private books$ = new BehaviorSubject<Book[]>([]);
+  private sales$ = new BehaviorSubject<Sale[]>([]);
+  private transactions$ = new BehaviorSubject<Transaction[]>([]);
   private partiesLoaded = false;
   private booksLoaded = false;
+  private salesLoaded = false;
+  private transactionsLoaded = false;
 
   constructor(private http: HttpClient, private auth: AuthService) {}
 
@@ -56,5 +62,45 @@ export class DataStoreService {
   refreshBooks(): void {
     this.booksLoaded = false;
     this.loadBooks(true);
+  }
+
+  getSales(): Observable<Sale[]> {
+    if (!this.salesLoaded) this.loadSales();
+    return this.sales$.asObservable();
+  }
+
+  loadSales(force = false): void {
+    if (this.salesLoaded && !force) return;
+    this.salesLoaded = true;
+    this.http.get<Sale[]>(enviort.salesUrl, { headers: this.auth.getAuthHeaders() })
+      .pipe(catchError(() => of([])))
+      .subscribe(data => {
+        this.sales$.next(data || []);
+      });
+  }
+
+  refreshSales(): void {
+    this.salesLoaded = false;
+    this.loadSales(true);
+  }
+
+  getTransactions(): Observable<Transaction[]> {
+    if (!this.transactionsLoaded) this.loadTransactions();
+    return this.transactions$.asObservable();
+  }
+
+  loadTransactions(force = false): void {
+    if (this.transactionsLoaded && !force) return;
+    this.transactionsLoaded = true;
+    this.http.get<Transaction[]>(enviort.transactionUrl, { headers: this.auth.getAuthHeaders() })
+      .pipe(catchError(() => of([])))
+      .subscribe(data => {
+        this.transactions$.next(data || []);
+      });
+  }
+
+  refreshTransactions(): void {
+    this.transactionsLoaded = false;
+    this.loadTransactions(true);
   }
 }

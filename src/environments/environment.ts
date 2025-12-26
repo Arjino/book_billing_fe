@@ -11,6 +11,7 @@ export const enviort = {
   bookingUrl: baseUrl + '/books',
   partiesUrl: baseUrl + '/parties',
   salesUrl: baseUrl + '/sales',
+  transactionUrl: baseUrl + '/transactions',
   paymentUrl: baseUrl + '/payment',
   ledgerUrl: baseUrl + '/ledger/party',
   saleReturnsUrl: baseUrl + '/sales/returns',

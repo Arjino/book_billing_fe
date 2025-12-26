@@ -25,6 +25,7 @@ import { BookingComponent } from '../booking/booking.component';
 import { PartiesComponent } from '../parties/parties.component';
 import { SalesComponent } from '../sales/sales.component';
 import { TransactionComponent } from '../transaction/transaction.component';
+import { AnalyticsComponent } from './analytics.component';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
 
@@ -43,7 +44,8 @@ import { Party } from '../interface/party';
     FormsModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
+    AnalyticsComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
@@ -359,5 +361,14 @@ export class DashboardComponent implements OnInit {
   openInvoiceList(partyId: any) {
     if (!partyId) return;
     this.router.navigate(['/invoices'], { queryParams: { partyId } });
+  }
+
+  openAnalyticsModal() {
+    this.dialog.open(AnalyticsComponent, {
+      width: '1200px',
+      maxWidth: '95vw',
+      maxHeight: '90vh',
+      panelClass: 'analytics-dialog'
+    });
   }
 }

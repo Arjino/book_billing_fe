@@ -14,7 +14,6 @@ import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../services/auth.service';
 import { DataStoreService } from '../services/data-store.service';
 import { Book } from '../interface/book';
-import { enviort } from '../../environments/environment';
 import { Party } from '../interface/party';
 
 export interface SalesDialogData {
@@ -86,7 +85,7 @@ export class SalesDialogComponent implements OnInit {
     });
   }
   filterBooks(search: string, index: number): void {
-    const value = (search || '').toLowerCase();
+    const value = (typeof search === 'string' ? search : '').toLowerCase();
     if (!value) {
       this.data.items[index].filteredBooks = this.books.slice();
       return;
