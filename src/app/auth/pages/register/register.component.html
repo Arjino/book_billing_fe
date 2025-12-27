@@ -15,15 +15,15 @@
     <mat-card-content class="p-8">
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
         <!-- Username Field -->
-        <div class="space-y-2">
+        <div class="space-y-2 mt-2">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Username</mat-label>
             <mat-icon matPrefix class="mr-2">person</mat-icon>
             <input
               matInput
               formControlName="username"
-              placeholder="Choose a username"
               type="text"
+              autocomplete="username"
             />
             @if (registerForm.get('username')?.hasError('required') && registerForm.get('username')?.touched) {
               <mat-error>Username is required</mat-error>
@@ -43,7 +43,7 @@
               matInput
               formControlName="password"
               [type]="hidePassword() ? 'password' : 'text'"
-              placeholder="Create a strong password"
+              autocomplete="new-password"
             />
             <button
               mat-icon-button
@@ -96,7 +96,7 @@
               matInput
               formControlName="confirmPassword"
               [type]="hideConfirmPassword() ? 'password' : 'text'"
-              placeholder="Confirm your password"
+              autocomplete="new-password"
             />
             <button
               mat-icon-button

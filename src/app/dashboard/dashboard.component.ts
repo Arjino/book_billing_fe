@@ -44,8 +44,7 @@ import { Party } from '../interface/party';
     FormsModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule,
-    AnalyticsComponent
+    MatSelectModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
