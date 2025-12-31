@@ -28,6 +28,7 @@ import { TransactionComponent } from '../transaction/transaction.component';
 import { AnalyticsComponent } from './analytics.component';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
+import { getTodayLocal } from '../utils/date.utils';
 
 @Component({
   selector: 'app-dashboard',
@@ -112,6 +113,8 @@ export class DashboardComponent implements OnInit {
   parties: Party[] = [];
   selectedLedgerParty: any = null;
   selectedInvoiceParty: any = null;
+  selectedBookingStatus: string = 'available'; // 'available' or 'discarded'
+  selectedPartyStatus: string = 'current'; // 'current' or 'old'
 
   constructor(
     private authService: AuthService,
@@ -243,7 +246,7 @@ export class DashboardComponent implements OnInit {
       data: {
         id: 0,
         party: null,
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayLocal(),
         items: [],
         totalAmount: 0,
         discount: 0,
@@ -310,7 +313,7 @@ export class DashboardComponent implements OnInit {
       data: {
         id: 0,
         party: null,
-        paymentDate: new Date().toISOString().split('T')[0],
+        paymentDate: getTodayLocal(),
         paidAmount: 0,
         paymentMode: 'Cash',
         remarks: '',
@@ -339,6 +342,14 @@ export class DashboardComponent implements OnInit {
 
   navigateTo(route: string) {
     this.router.navigate([route]);
+  }
+
+  navigateToBooking(status: string) {
+    this.router.navigate(['/booking'], { queryParams: { status } });
+  }
+
+  navigateToParties(status: string) {
+    this.router.navigate(['/parties'], { queryParams: { status } });
   }
 
   getRouteByTitle(title: string): string {

@@ -100,8 +100,22 @@
             <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left">Stock</th>
               <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">{{b.stock}}</td>
           </ng-container>
-          <tr mat-header-row *matHeaderRowDef="['id','title','publisher','salePrice','sku','stock']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['id','title','publisher','salePrice','sku','stock'];" class="hover:bg-green-500/10 transition-colors"></tr>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left">Actions</th>
+              <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">
+                <button mat-icon-button (click)="editBook(b)" class="text-blue-400 hover:text-blue-300" title="Edit Book">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button *ngIf="bookStatus === 'available'" mat-icon-button (click)="deleteBook(b)" class="text-red-400 hover:text-red-300 ml-2" title="Delete Book">
+                  <mat-icon>delete</mat-icon>
+                </button>
+                <button *ngIf="bookStatus === 'discarded'" mat-icon-button (click)="enableBook(b)" class="text-green-400 hover:text-green-300 ml-2" title="Enable Book">
+                  <mat-icon>check_circle</mat-icon>
+                </button>
+              </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="['id','title','publisher','salePrice','sku','stock','actions']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['id','title','publisher','salePrice','sku','stock','actions'];" class="hover:bg-green-500/10 transition-colors"></tr>
         </table>
       </div>
       <div *ngIf="!filteredBooks.length" class="p-8 text-center">

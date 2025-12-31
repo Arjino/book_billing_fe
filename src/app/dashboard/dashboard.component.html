@@ -109,6 +109,30 @@
                 <h4 class="text-xl font-bold text-white mb-2">{{ card.title }}</h4>
                 <p class="text-sm text-purple-200 mb-6 line-clamp-2">{{ card.description }}</p>
                 
+                <!-- Booking Card Content: select Available or Discarded -->
+                <div *ngIf="card.title === 'Booking'" class="space-y-3">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Book Status</mat-label>
+                    <mat-select [(ngModel)]="selectedBookingStatus" class="text-white">
+                      <mat-option value="available">Available</mat-option>
+                      <mat-option value="discarded">Discarded</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <button mat-raised-button color="primary" class="w-full" (click)="navigateToBooking(selectedBookingStatus)">Open Books</button>
+                </div>
+
+                <!-- Parties Card Content: select Current or Old -->
+                <div *ngIf="card.title === 'Parties'" class="space-y-3">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Party Status</mat-label>
+                    <mat-select [(ngModel)]="selectedPartyStatus" class="text-white">
+                      <mat-option value="current">Current Parties</mat-option>
+                      <mat-option value="old">Old Parties</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <button mat-raised-button color="primary" class="w-full" (click)="navigateToParties(selectedPartyStatus)">Open Parties</button>
+                </div>
+                
                 <!-- PDF Card Content: select party and open invoice list -->
                 <div *ngIf="card.pdfCard" class="space-y-3">
                   <mat-form-field appearance="outline" class="w-full">

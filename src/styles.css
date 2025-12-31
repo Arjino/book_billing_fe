@@ -6,3 +6,15 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 {
   border-right: none;
 }
+
+/* Hide the required asterisk marker globally */
+.mat-mdc-form-field-required-marker {
+  display: none !important;
+}
+
+/* Fix icon alignment in form fields */
+.mat-mdc-form-field-icon-prefix,
+.mat-mdc-form-field-icon-suffix {
+  display: inline-flex;
+  align-items: center;
+}

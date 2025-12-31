@@ -14,6 +14,7 @@ import { RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { enviort } from '../../environments/environment';
 import { DataStoreService } from '../services/data-store.service';
+import { parseLocalDate } from '../utils/date.utils';
 
 @Component({
   selector: 'app-ledger',
@@ -95,8 +96,8 @@ export class LedgerComponent implements OnInit {
     // Normalize chosen transaction type
     const chosen = (this.transactionType || 'All').toString().trim().toLowerCase();
 
-    const start = this.startDate ? new Date(this.startDate) : null;
-    const end = this.endDate ? new Date(this.endDate) : null;
+    const start = this.startDate ? parseLocalDate(this.startDate) : null;
+    const end = this.endDate ? parseLocalDate(this.endDate) : null;
 
     return input.filter(r => {
       // transactionType filter: compare refType case-insensitive and be resilient to small typos like 'pruchase'
@@ -113,7 +114,7 @@ export class LedgerComponent implements OnInit {
 
       // date filters (assume r.date is ISO or parseable)
       if (start || end) {
-        const d = r.date ? new Date(r.date) : null;
+        const d = r.date ? parseLocalDate(r.date) : null;
         if (start && d && d < start) return false;
         if (end && d && d > end) return false;
       }

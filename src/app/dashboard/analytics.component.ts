@@ -8,6 +8,7 @@ import { DataStoreService } from '../services/data-store.service';
 import { Sale } from '../interface/Sale';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
+import { formatDateLocal, getTodayLocal } from '../utils/date.utils';
 
 @Component({
   selector: 'app-analytics',
@@ -79,9 +80,9 @@ export class AnalyticsComponent implements OnInit {
     this.totalSales = sales.length;
 
     // Calculate today's sales
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocal();
     const todaysSales = sales.filter(s => {
-      const saleDate = new Date(s.date).toISOString().split('T')[0];
+      const saleDate = formatDateLocal(s.date);
       return saleDate === today;
     });
     this.dailySales = todaysSales.length;
@@ -119,9 +120,9 @@ export class AnalyticsComponent implements OnInit {
     this.totalTransactions = transactions.length;
 
     // Calculate today's transactions
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayLocal();
     const todaysTransactions = transactions.filter(t => {
-      const txDate = new Date(t.paymentDate).toISOString().split('T')[0];
+      const txDate = formatDateLocal(t.paymentDate);
       return txDate === today;
     });
     this.dailyTransactions = todaysTransactions.length;

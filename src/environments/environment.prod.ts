@@ -9,10 +9,14 @@ export const enviort = {
 
   // Resources
   bookingUrl: baseUrl + '/books',
+  updateBookUrl: (id: number) => baseUrl + `/books/${id}`,
+  deleteBookUrl: (id: number) => baseUrl + `/books/${id}`,
   partiesUrl: baseUrl + '/parties',
+  updatePartyUrl: (id: number) => baseUrl + `/parties/${id}`,
+  deletePartyUrl: (id: number) => baseUrl + `/parties/${id}`,
   salesUrl: baseUrl + '/sales',
-  paymentUrl: baseUrl + '/payment',
   transactionUrl: baseUrl + '/transactions',
+  paymentUrl: baseUrl + '/payment',
 
   ledgerUrl: baseUrl + '/ledger/party',
   saleReturnsUrl: baseUrl + '/sales/returns',

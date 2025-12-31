@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { catchError } from 'rxjs/operators';
+import { catchError, tap } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Party } from '../interface/party';
 import { Book } from '../interface/book';
@@ -34,6 +34,9 @@ export class DataStoreService {
     this.http.get<Party[]>(enviort.partiesUrl, { headers: this.auth.getAuthHeaders() })
       .pipe(catchError(() => of([])))
       .subscribe(data => {
+        if(!data){
+          this.partiesLoaded = false;
+        }
         this.parties$.next(data || []);
       });
   }
@@ -41,6 +44,26 @@ export class DataStoreService {
   refreshParties(): void {
     this.partiesLoaded = false;
     this.loadParties(true);
+  }
+
+  updateParty(id: number, party: Party): Observable<Party> {
+    return this.http.put<Party>(enviort.updatePartyUrl(id), party, { headers: this.auth.getAuthHeaders() }).pipe(
+      tap(() => console.log('Party updated successfully')),
+      catchError((error) => {
+        console.error('Error updating party:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  deleteParty(id: number): Observable<void> {
+    return this.http.delete<void>(enviort.deletePartyUrl(id), { headers: this.auth.getAuthHeaders() }).pipe(
+      tap(() => console.log('Party deleted successfully')),
+      catchError((error) => {
+        console.error('Error deleting party:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   getBooks(): Observable<Book[]> {
@@ -62,6 +85,26 @@ export class DataStoreService {
   refreshBooks(): void {
     this.booksLoaded = false;
     this.loadBooks(true);
+  }
+
+  updateBook(id: number, book: Book): Observable<Book> {
+    return this.http.put<Book>(enviort.updateBookUrl(id), book, { headers: this.auth.getAuthHeaders() }).pipe(
+      tap(() => console.log('Book updated successfully')),
+      catchError((error) => {
+        console.error('Error updating book:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  deleteBook(id: number): Observable<void> {
+    return this.http.delete<void>(enviort.deleteBookUrl(id), { headers: this.auth.getAuthHeaders() }).pipe(
+      tap(() => console.log('Book deleted successfully')),
+      catchError((error) => {
+        console.error('Error deleting book:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   getSales(): Observable<Sale[]> {

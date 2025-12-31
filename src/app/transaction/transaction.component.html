@@ -29,13 +29,13 @@
     <div class="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <mat-form-field appearance="outline" class="w-full md:w-1/4">
         <mat-label>Start Date</mat-label>
-        <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" (dateChange)="applyDateFilter()" placeholder="Start date">
+        <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" (dateChange)="applyDateFilter()" [max]="maxDate" placeholder="Start date">
         <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
         <mat-datepicker #startPicker></mat-datepicker>
       </mat-form-field>
       <mat-form-field appearance="outline" class="w-full md:w-1/4">
         <mat-label>End Date</mat-label>
-        <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" placeholder="End date">
+        <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" [min]="minEndDate" [max]="maxDate" placeholder="End date">
         <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
         <mat-datepicker #endPicker></mat-datepicker>
       </mat-form-field>

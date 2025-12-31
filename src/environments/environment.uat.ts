@@ -9,16 +9,19 @@ export const enviort = {
 
   // Resources
   bookingUrl: baseUrl + '/books',
+  updateBookUrl: (id: number) => baseUrl + `/books/${id}`,
+  deleteBookUrl: (id: number) => baseUrl + `/books/${id}`,
   partiesUrl: baseUrl + '/parties',
+  updatePartyUrl: (id: number) => baseUrl + `/parties/${id}`,
+  deletePartyUrl: (id: number) => baseUrl + `/parties/${id}`,
   salesUrl: baseUrl + '/sales',
-  paymentUrl: baseUrl + '/payment',
-
-  ledgerUrl: baseUrl + '/ledger/party',
   transactionUrl: baseUrl + '/transactions',
-
-  // Invoice base
-  invoiceBase: baseUrl + '/sales',
+  paymentUrl: baseUrl + '/payment',
+  ledgerUrl: baseUrl + '/ledger/party',
   saleReturnsUrl: baseUrl + '/sales/returns',
+
+  // Invoice (download endpoint uses /sales/{id}/invoice/download)
+  invoiceBase: baseUrl + '/sales',
 
   // Sales by date
   salesByDateUrl: baseUrl + '/sales/by-date', // Returns today's sales by default

@@ -18,6 +18,7 @@ import { enviort } from '../../environments/environment';
 import { Party } from '../interface/party';
 import { Transaction } from '../interface/Transaction';
 import { DataStoreService } from '../services/data-store.service';
+import { formatDateLocal, getTodayLocal, parseLocalDate } from '../utils/date.utils';
 
 
 @Component({
@@ -33,6 +34,8 @@ export class TransactionComponent implements OnInit {
   endDate: string = '';
   filteredTransactions: Transaction[] = [];
   displayedColumns = ['id', 'party', 'paymentDate', 'transactionType', 'amount', 'paymentMethod', 'referenceNo', 'notes'];
+  maxDate = new Date(); // Today as maximum date
+  minEndDate: Date | null = null; // Minimum date for end date picker
 
   constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router, private store: DataStoreService) {}
 
@@ -56,14 +59,29 @@ export class TransactionComponent implements OnInit {
   }
 
   applyDateFilter() {
+    // Update minimum end date when start date changes
+    if (this.startDate) {
+      this.minEndDate = parseLocalDate(this.startDate);
+    } else {
+      this.minEndDate = null;
+    }
+    
     let filtered = this.transactions.slice();
     if (this.startDate) {
-      const s = new Date(this.startDate);
-      filtered = filtered.filter(t => t.paymentDate && new Date(t.paymentDate) >= s);
+      const s = parseLocalDate(this.startDate);
+      filtered = filtered.filter(t => {
+        if (!t.paymentDate) return false;
+        const tDate = parseLocalDate(t.paymentDate);
+        return tDate >= s;
+      });
     }
     if (this.endDate) {
-      const e = new Date(this.endDate);
-      filtered = filtered.filter(t => t.paymentDate && new Date(t.paymentDate) <= e);
+      const e = parseLocalDate(this.endDate);
+      filtered = filtered.filter(t => {
+        if (!t.paymentDate) return false;
+        const tDate = parseLocalDate(t.paymentDate);
+        return tDate <= e;
+      });
     }
     this.filteredTransactions = filtered;
   }
@@ -74,7 +92,7 @@ export class TransactionComponent implements OnInit {
       data: {
         id: 0,
         party: null,
-        paymentDate: new Date().toISOString().split('T')[0],
+        paymentDate: getTodayLocal(),
         paidAmount: 0,
         paymentMode: 'Cash',
         remarks: '',
@@ -124,9 +142,6 @@ export class TransactionComponent implements OnInit {
   }
 
   formatDate(date: any): string {
-    if (!date) return '';
-    // Handles both Date object and string
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return d.toISOString().split('T')[0];
+    return formatDateLocal(date);
   }
 }

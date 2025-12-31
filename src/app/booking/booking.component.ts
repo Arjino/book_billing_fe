@@ -1,12 +1,13 @@
 import { Component, OnInit } from '@angular/core';
 
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -25,6 +26,7 @@ interface Book {
   costPrice: number;
   salePrice: number;
   stock: number;
+  hidden?: boolean;
 }
 
 @Component({
@@ -32,7 +34,7 @@ interface Book {
   templateUrl: './booking.component.html',
   styleUrls: ['./booking.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatIconModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatIconModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSnackBarModule]
 })
 export class BookingComponent implements OnInit {
   books: Book[] = [];
@@ -40,6 +42,7 @@ export class BookingComponent implements OnInit {
   
   filterBy: string = 'title';
   filterValue: string = '';
+  bookStatus: string = 'available'; // Track current status
   
   filterOptions = [
     { value: 'title', label: 'Title' },
@@ -48,13 +51,48 @@ export class BookingComponent implements OnInit {
     { value: 'hsn', label: 'HSN' }
   ];
 
-  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router, private store: DataStoreService) {}
+  constructor(
+    private http: HttpClient, 
+    private dialog: MatDialog, 
+    private authService: AuthService, 
+    private router: Router,
+    private route: ActivatedRoute, 
+    private store: DataStoreService,
+    private snackBar: MatSnackBar
+  ) {}
 
   ngOnInit() {
-    this.store.getBooks().subscribe(data => {
-      this.books = data || [];
-      this.filteredBooks = [...this.books];
+    this.route?.queryParamMap?.subscribe(params => {
+      this.bookStatus = params.get('status') || 'available';
     });
+    this.loadBooksByStatus();
+  }
+
+  loadBooksByStatus() {
+    if (this.bookStatus === 'available') {
+      this.store?.getBooks().subscribe(data => {
+        this.books = data || [];
+        this.filteredBooks = [...this.books];
+      });
+    } else if (this.bookStatus === 'discarded') {
+      this.loadDiscardedBooks();
+    }
+  }
+
+  loadDiscardedBooks() {
+    this.http.get<Book[]>(
+      enviort.bookingUrl + '/hidden',
+      { headers: this.authService.getAuthHeaders() }
+    ).subscribe(
+      (data) => {
+        this.books = data || [];
+        this.filteredBooks = [...this.books];
+      },
+      (error) => {
+        this.snackBar.open('Failed to load discarded books', 'Close', { duration: 5000 });
+        console.error('Error loading discarded books:', error);
+      }
+    );
   }
 
   applyFilter() {
@@ -80,7 +118,7 @@ export class BookingComponent implements OnInit {
   }
 
   loadBooks() {
-    this.store.refreshBooks();
+    this.loadBooksByStatus();
   }
 
   addBook() {
@@ -109,5 +147,61 @@ export class BookingComponent implements OnInit {
         });
       }
     });
+  }
+
+  editBook(book: Book) {
+    const dialogRef = this.dialog.open(BookDialogComponent, {
+      width: '400px',
+      data: { ...book } as BookDialogData
+    });
+
+    dialogRef.afterClosed().subscribe((result: BookDialogData) => {
+      if (result) {
+          this.store.updateBook(result.id, result as Book).subscribe({
+            next: () => {
+              this.snackBar.open('Book updated successfully', 'Close', { duration: 3000 });
+              this.loadBooks();
+            },
+            error: (err) => {
+              this.snackBar.open('Failed to update book', 'Close', { duration: 5000 });
+            }
+        });
+      }
+    });
+  }
+
+  deleteBook(book: Book) {
+    if (confirm(`Are you sure you want to delete "${book.title}"?`)) {
+        this.store.deleteBook(book.id).subscribe({
+          next: () => {
+            this.snackBar.open('Book deleted successfully', 'Close', { duration: 3000 });
+            this.loadBooks();
+          },
+          error: (err) => {
+            const serverMessage = err?.error || err?.message || 'Unknown error';
+            this.snackBar.open(`Failed to delete book: ${serverMessage}`, 'Close', { duration: 6000 });
+            // If backend soft-hid the book (409), refresh to reflect hidden state removal from list
+            if (err?.status === 409) {
+              this.loadBooks();
+            }
+          }
+      });
+    }
+  }
+
+  enableBook(book: Book) {
+    if (confirm(`Are you sure you want to enable "${book.title}"?`)) {
+      const updatedBook = { ...book, hidden: false };
+      this.store.updateBook(book.id, updatedBook).subscribe({
+        next: () => {
+          this.snackBar.open('Book enabled successfully', 'Close', { duration: 3000 });
+          this.loadBooks();
+        },
+        error: (err) => {
+          const serverMessage = err?.error || err?.message || 'Unknown error';
+          this.snackBar.open(`Failed to enable book: ${serverMessage}`, 'Close', { duration: 6000 });
+        }
+      });
+    }
   }
 }
