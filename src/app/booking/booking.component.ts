@@ -41,6 +41,9 @@ export class BookingComponent implements OnInit {
   filterBy: string = 'title';
   filterValue: string = '';
   
+  sortColumn: string = '';
+  sortDirection: 'asc' | 'desc' | '' = '';
+  
   filterOptions = [
     { value: 'title', label: 'Title' },
     { value: 'publisher', label: 'Publisher' },
@@ -60,6 +63,7 @@ export class BookingComponent implements OnInit {
   applyFilter() {
     if (!this.filterValue.trim()) {
       this.filteredBooks = [...this.books];
+      this.applySorting();
       return;
     }
 
@@ -68,11 +72,54 @@ export class BookingComponent implements OnInit {
       const fieldValue = (book[this.filterBy as keyof Book] || '').toString().toLowerCase();
       return fieldValue.includes(searchTerm);
     });
+    this.applySorting();
   }
 
   clearFilter() {
     this.filterValue = '';
     this.filteredBooks = [...this.books];
+    this.applySorting();
+  }
+
+  sortBy(column: string) {
+    if (this.sortColumn === column) {
+      // Toggle sort direction: asc -> desc -> none
+      if (this.sortDirection === 'asc') {
+        this.sortDirection = 'desc';
+      } else if (this.sortDirection === 'desc') {
+        this.sortDirection = '';
+        this.sortColumn = '';
+        // Reset to original filtered order
+        this.applyFilter();
+        return;
+      }
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+    this.applySorting();
+  }
+
+  applySorting() {
+    if (!this.sortColumn || !this.sortDirection) {
+      return;
+    }
+
+    this.filteredBooks = [...this.filteredBooks].sort((a, b) => {
+      const aValue = a[this.sortColumn as keyof Book];
+      const bValue = b[this.sortColumn as keyof Book];
+      
+      // Convert to numbers for numeric columns
+      const aNum = Number(aValue);
+      const bNum = Number(bValue);
+      
+      // Compare as numbers
+      if (this.sortDirection === 'asc') {
+        return aNum - bNum;
+      } else {
+        return bNum - aNum;
+      }
+    });
   }
 
   goBack() {
