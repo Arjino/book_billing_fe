@@ -57,7 +57,7 @@ export class DashboardComponent implements OnInit {
     {
       icon: 'book',
       iconColor: 'text-green-600',
-      title: 'Booking',
+      title: 'Books',
       description: 'Manage booking reservations',
       route: '/booking',
       component: BookingComponent
