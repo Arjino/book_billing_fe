@@ -7,6 +7,7 @@ import { baseUrl, enviort } from '../../environments/environment';
 export interface AuthRequest {
   username: string;
   password: string;
+  email?: string;
 }
 
 export interface AuthResponse {
@@ -16,6 +17,11 @@ export interface AuthResponse {
 
 export interface ForgotPasswordRequest {
   email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  resetToken?: string;
 }
 
 @Injectable({
@@ -35,8 +41,8 @@ export class AuthService {
     }
   }
 
-  register(username: string, password: string): Observable<AuthResponse> {
-    const payload: AuthRequest = { username, password };
+  register(username: string, password: string, email?: string): Observable<AuthResponse> {
+    const payload: AuthRequest = { username, password, email };
     return this.http.post<AuthResponse>(this.apiUrl.registerUrl, payload).pipe(
       tap(response => this.setTokens(response))
     );
@@ -49,13 +55,13 @@ export class AuthService {
     );
   }
 
-  forgotPassword(email: string): Observable<any> {
+  forgotPassword(email: string): Observable<ForgotPasswordResponse> {
     const payload: ForgotPasswordRequest = { email };
-    return this.http.post(this.apiUrl.forgotPasswordUrl, payload);
+    return this.http.post<ForgotPasswordResponse>(this.apiUrl.forgotPasswordUrl, payload);
   }
 
-  resetPassword(token: string, newPassword: string): Observable<any> {
-    return this.http.post(this.apiUrl.resetPasswordUrl, { token, newPassword });
+  resetPassword(token: string, password: string): Observable<any> {
+    return this.http.post(this.apiUrl.resetPasswordUrl, { token, password });
   }
 
   logout(): void {

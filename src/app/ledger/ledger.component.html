@@ -61,6 +61,7 @@
           <thead>
             <tr class="text-sm text-indigo-300">
               <th class="py-2 px-3 text-left">Date</th>
+              <th class="py-2 px-3 text-left">Time</th>
               <th class="py-2 px-3 text-left">Ref Type</th>
               <th class="py-2 px-3 text-left">Ref No / Invoice</th>
               <th class="py-2 px-3 text-right">Debit (₹)</th>
@@ -72,6 +73,7 @@
           <tbody>
             <tr *ngFor="let r of results" class="border-t border-indigo-500/10">
               <td class="py-3 px-3">{{ r.date }}</td>
+              <td class="py-3 px-3">{{ formatLedgerTime(r) }}</td>
               <td class="py-3 px-3">{{ r.refType }}</td>
               <td class="py-3 px-3">
                 <a *ngIf="r.refType === 'SALE' && r.refId" [routerLink]="['/invoice', r.refId]" class="text-sky-300 hover:underline">{{ r.refId }}</a>
@@ -83,7 +85,7 @@
               <td class="py-3 px-3">{{ r.remarks || '' }}</td>
             </tr>
             <tr *ngIf="!results.length">
-              <td colspan="7" class="py-6 text-center text-indigo-300/60">No ledger entries found for selected filters.</td>
+              <td colspan="8" class="py-6 text-center text-indigo-300/60">No ledger entries found for selected filters.</td>
             </tr>
           </tbody>
         </table>

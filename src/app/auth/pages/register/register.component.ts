@@ -46,6 +46,7 @@ export class RegisterComponent {
   ) {
     this.registerForm = this.fb.group(
       {
+        email: ['', [Validators.required, Validators.email]],
         username: ['', [Validators.required, Validators.minLength(3)]],
         password: ['', [Validators.required, Validators.minLength(6)]],
         confirmPassword: ['', [Validators.required]],
@@ -128,9 +129,9 @@ export class RegisterComponent {
     }
 
     this.loading.set(true);
-    const { username, password } = this.registerForm.value;
+    const { email, username, password } = this.registerForm.value;
 
-    this.authService.register(username, password).subscribe({
+    this.authService.register(username, password, email).subscribe({
       next: () => {
         this.snackBar.open('Registration successful! Welcome!', 'Close', { duration: 3000 });
         this.router.navigate(['/dashboard']);

@@ -10,6 +10,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services/auth.service';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-forgot-password',
@@ -32,7 +34,6 @@ import { AuthService } from '../../../services/auth.service';
 export class ForgotPasswordComponent {
   forgotForm: FormGroup;
   loading = signal(false);
-  submitted = signal(false);
 
   constructor(
     private fb: FormBuilder,
@@ -55,10 +56,16 @@ export class ForgotPasswordComponent {
     const { email } = this.forgotForm.value;
 
     this.authService.forgotPassword(email).subscribe({
-      next: () => {
+      next: (response: any) => {
         this.loading.set(false);
-        this.submitted.set(true);
-        this.snackBar.open('Check your email for password reset instructions!', 'Close', { duration: 4000 });
+        const token = response?.resetToken;
+
+        if (token) {
+          this.snackBar.open('Reset token generated. Proceed to set a new password.', 'Close', { duration: 2500 });
+          this.router.navigate(['/auth/reset-password', token]);
+        } else {
+          this.snackBar.open('Reset token missing in response. Please try again.', 'Close', { duration: 4000 });
+        }
       },
       error: (error: any) => {
         this.loading.set(false);

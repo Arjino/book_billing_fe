@@ -14,22 +14,22 @@
 
     <mat-card-content class="p-8">
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
-        <!-- Username Field -->
+        <!-- Email Field -->
         <div class="space-y-2 mt-2">
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Username</mat-label>
-            <mat-icon matPrefix class="mr-2">person</mat-icon>
+            <mat-label>Email</mat-label>
+            <mat-icon matPrefix class="mr-2">mail_outline</mat-icon>
             <input
               matInput
-              formControlName="username"
-              type="text"
-              autocomplete="username"
+              formControlName="email"
+              type="email"
+              autocomplete="email"
             />
-            @if (loginForm.get('username')?.hasError('required') && loginForm.get('username')?.touched) {
-              <mat-error>Username is required</mat-error>
+            @if (loginForm.get('email')?.hasError('required') && loginForm.get('email')?.touched) {
+              <mat-error>Email is required</mat-error>
             }
-            @if (loginForm.get('username')?.hasError('minlength') && loginForm.get('username')?.touched) {
-              <mat-error>Username must be at least 3 characters</mat-error>
+            @if (loginForm.get('email')?.hasError('email') && loginForm.get('email')?.touched) {
+              <mat-error>Please enter a valid email</mat-error>
             }
           </mat-form-field>
         </div>

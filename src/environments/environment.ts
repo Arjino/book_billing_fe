@@ -4,8 +4,8 @@ export const enviort = {
   // Authentication
   registerUrl: baseUrl + '/auth/register',
   loginUrl: baseUrl + '/auth/login',
-  forgotPasswordUrl: baseUrl + '/auth/forgot-password',
-  resetPasswordUrl: baseUrl + '/auth/reset-password',
+  forgotPasswordUrl: baseUrl + '/auth/forgot',
+  resetPasswordUrl: baseUrl + '/auth/reset',
 
   // Resources
   bookingUrl: baseUrl + '/books',

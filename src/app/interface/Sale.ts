@@ -6,6 +6,7 @@ export interface Sale {
   invoiceNo: string;
   party: Party;
   date: string;
+  time?: string;
   totalAmount: number;
   discount: number;
   taxAmount: number;
@@ -13,4 +14,7 @@ export interface Sale {
   grandTotal: number;
   paymentStatus: string;
   items: SalesItem[];
+  type?: string;
+  paidAmount?: number;
+  dueAmount?: number;
 }

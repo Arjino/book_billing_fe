@@ -17,6 +17,26 @@
         <!-- Username Field -->
         <div class="space-y-2 mt-2">
           <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Email</mat-label>
+            <mat-icon matPrefix class="mr-2">email</mat-icon>
+            <input
+              matInput
+              formControlName="email"
+              type="email"
+              autocomplete="email"
+            />
+            @if (registerForm.get('email')?.hasError('required') && registerForm.get('email')?.touched) {
+              <mat-error>Email is required</mat-error>
+            }
+            @if (registerForm.get('email')?.hasError('email') && registerForm.get('email')?.touched) {
+              <mat-error>Enter a valid email</mat-error>
+            }
+          </mat-form-field>
+        </div>
+
+        <!-- Username Field -->
+        <div class="space-y-2 mt-2">
+          <mat-form-field appearance="outline" class="w-full">
             <mat-label>Username</mat-label>
             <mat-icon matPrefix class="mr-2">person</mat-icon>
             <input

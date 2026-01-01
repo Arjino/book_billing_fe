@@ -16,6 +16,7 @@ import { SalesDialogComponent, SalesDialogData } from './sales-dialog.component'
 import { AuthService } from '../services/auth.service';
 import { DataStoreService } from '../services/data-store.service';
 import { baseUrl, enviort } from '../../environments/environment';
+import { formatTimeIST } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
 
 @Component({
@@ -153,6 +154,10 @@ export class SalesComponent implements OnInit {
     const day = String(d.getDate()).padStart(2, '0');
     const year = d.getFullYear();
     return `${year}-${month}-${day}`;
+  }
+
+  formatSaleTime(s: Sale): string {
+    return formatTimeIST(s.time, s.date);
   }
 
   goBack() {

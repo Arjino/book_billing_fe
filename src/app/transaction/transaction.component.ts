@@ -18,7 +18,7 @@ import { enviort } from '../../environments/environment';
 import { Party } from '../interface/party';
 import { Transaction } from '../interface/Transaction';
 import { DataStoreService } from '../services/data-store.service';
-import { formatDateLocal, getTodayLocal, parseLocalDate } from '../utils/date.utils';
+import { formatDateLocal, getTodayLocal, parseLocalDate, formatTimeIST } from '../utils/date.utils';
 
 
 @Component({
@@ -33,7 +33,7 @@ export class TransactionComponent implements OnInit {
   startDate: string = '';
   endDate: string = '';
   filteredTransactions: Transaction[] = [];
-  displayedColumns = ['id', 'party', 'paymentDate', 'transactionType', 'amount', 'paymentMethod', 'referenceNo', 'notes'];
+  displayedColumns = ['id', 'party', 'paymentDate', 'paymentTime', 'amount', 'paymentMethod', 'referenceNo', 'notes'];
   maxDate = new Date(); // Today as maximum date
   minEndDate: Date | null = null; // Minimum date for end date picker
 
@@ -143,5 +143,9 @@ export class TransactionComponent implements OnInit {
 
   formatDate(date: any): string {
     return formatDateLocal(date);
+  }
+
+  formatPaymentTime(t: Transaction): string {
+    return formatTimeIST(t.paymentTime, t.paymentDate);
   }
 }

@@ -64,3 +64,29 @@ export function compareDatesLocal(date1: Date | string, date2: Date | string): n
   if (d1Str > d2Str) return 1;
   return 0;
 }
+
+/**
+ * Formats a time string to 12-hour clock in IST (Asia/Kolkata) up to minutes.
+ * Accepts optional fractional seconds in the input (e.g., 19:11:48.438).
+ * @param time - Time portion as HH:mm or HH:mm:ss.sss
+ * @param date - Optional date to pair with the time for consistent parsing
+ * @returns Formatted time like "07:11 PM" or "-" when missing
+ */
+export function formatTimeIST(time: string | null | undefined, date?: string | null | undefined): string {
+  if (!time) return '-';
+
+  const baseDate = date || '1970-01-01';
+  const timePart = time.split('.')[0]; // drop fractional seconds for safe parsing
+  const dateTime = new Date(`${baseDate}T${timePart}`);
+
+  if (isNaN(dateTime.getTime())) {
+    return time; // fall back to raw value if parsing fails
+  }
+
+  return dateTime.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kolkata'
+  });
+}

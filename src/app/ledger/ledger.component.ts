@@ -14,7 +14,7 @@ import { RouterModule } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 import { enviort } from '../../environments/environment';
 import { DataStoreService } from '../services/data-store.service';
-import { parseLocalDate } from '../utils/date.utils';
+import { parseLocalDate, formatTimeIST } from '../utils/date.utils';
 
 @Component({
   selector: 'app-ledger',
@@ -121,6 +121,10 @@ export class LedgerComponent implements OnInit {
 
       return true;
     });
+  }
+
+  formatLedgerTime(entry: any): string {
+    return formatTimeIST(entry?.time, entry?.date);
   }
 
   goBack(): void {
