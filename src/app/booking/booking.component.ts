@@ -207,6 +207,7 @@ export class BookingComponent implements OnInit {
           this.store.updateBook(result.id, result as Book).subscribe({
             next: () => {
               this.snackBar.open('Book updated successfully', 'Close', { duration: 3000 });
+              this.store?.loadBooks(true);
               this.loadBooks();
             },
             error: (err) => {
@@ -222,6 +223,7 @@ export class BookingComponent implements OnInit {
         this.store.deleteBook(book.id).subscribe({
           next: () => {
             this.snackBar.open('Book deleted successfully', 'Close', { duration: 3000 });
+            this.store?.loadBooks(true);
             this.loadBooks();
           },
           error: (err) => {
@@ -242,6 +244,7 @@ export class BookingComponent implements OnInit {
       this.store.updateBook(book.id, updatedBook).subscribe({
         next: () => {
           this.snackBar.open('Book enabled successfully', 'Close', { duration: 3000 });
+          this.store?.loadBooks(true);
           this.loadBooks();
         },
         error: (err) => {

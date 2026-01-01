@@ -161,7 +161,7 @@ export class DashboardComponent implements OnInit {
 
   openAddDialog(card: any) {
     switch(card.title) {
-      case 'Booking':
+      case 'Books':
         this.openBookingDialog();
         break;
       case 'Parties':

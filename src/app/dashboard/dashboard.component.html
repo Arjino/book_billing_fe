@@ -110,7 +110,7 @@
                 <p class="text-sm text-purple-200 mb-6 line-clamp-2">{{ card.description }}</p>
                 
                 <!-- Booking Card Content: select Available or Discarded -->
-                <div *ngIf="card.title === 'Booking'" class="space-y-3">
+                <div *ngIf="card.title === 'Books'" class="space-y-3">
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Book Status</mat-label>
                     <mat-select [(ngModel)]="selectedBookingStatus" class="text-white">

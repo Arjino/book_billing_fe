@@ -156,6 +156,7 @@ export class PartiesComponent implements OnInit {
         this.store.updateParty(result.id, result as Party).subscribe({
           next: () => {
             this.snackBar.open('Party updated successfully', 'Close', { duration: 3000 });
+            this.store?.loadParties(true);
             this.loadParties();
           },
           error: (err) => {
@@ -171,6 +172,7 @@ export class PartiesComponent implements OnInit {
       this.store.deleteParty(party.id).subscribe({
         next: () => {
           this.snackBar.open('Party deleted successfully', 'Close', { duration: 3000 });
+          this.store?.loadParties(true);
           this.loadParties();
         },
         error: (err) => {
@@ -190,6 +192,7 @@ export class PartiesComponent implements OnInit {
       this.store.updateParty(party.id, updatedParty).subscribe({
         next: () => {
           this.snackBar.open('Party enabled successfully', 'Close', { duration: 3000 });
+          this.store?.loadParties(true);
           this.loadParties();
         },
         error: (err) => {
