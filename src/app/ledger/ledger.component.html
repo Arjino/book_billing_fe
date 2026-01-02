@@ -54,14 +54,13 @@
 
       <div class="overflow-x-auto bg-[rgba(255,255,255,0.02)] rounded p-4">
         <div class="mb-4 flex items-center justify-between">
-          <div class="text-indigo-200">Last Balance: <span class="font-semibold text-white">{{ lastBalance | currency }}</span></div>
-          <div class="text-indigo-200">Total Amount: <span class="font-semibold text-white">{{ totalAmount | currency }}</span></div>
+          <div class="text-indigo-200">Last Balance: <span class="font-semibold text-white">{{ lastBalance | currency:'INR':'symbol':'1.2-2' }}</span></div>
+          <div class="text-indigo-200">Total Amount: <span class="font-semibold text-white">{{ totalAmount | currency:'INR':'symbol':'1.2-2' }}</span></div>
         </div>
         <table class="w-full text-white results-table">
           <thead>
             <tr class="text-sm text-indigo-300">
-              <th class="py-2 px-3 text-left">Date</th>
-              <th class="py-2 px-3 text-left">Time</th>
+              <th class="py-2 px-3 text-left">Date Time</th>
               <th class="py-2 px-3 text-left">Ref Type</th>
               <th class="py-2 px-3 text-left">Ref No / Invoice</th>
               <th class="py-2 px-3 text-right">Debit (₹)</th>
@@ -72,8 +71,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let r of results" class="border-t border-indigo-500/10">
-              <td class="py-3 px-3">{{ r.date }}</td>
-              <td class="py-3 px-3">{{ formatLedgerTime(r) }}</td>
+              <td class="py-3 px-3">{{ formatLedgerDateTime(r) }}</td>
               <td class="py-3 px-3">{{ r.refType }}</td>
               <td class="py-3 px-3">
                 <a *ngIf="r.refType === 'SALE' && r.refId" [routerLink]="['/invoice', r.refId]" class="text-sky-300 hover:underline">{{ r.refId }}</a>

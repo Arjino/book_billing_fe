@@ -12,7 +12,9 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule, MatIcon } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TransactionDialogComponent } from './transaction-dialog.component';
+import { PaymentReceiptPreviewComponent } from './payment-receipt-preview.component';
 import { AuthService } from '../services/auth.service';
 import { enviort } from '../../environments/environment';
 import { Party } from '../interface/party';
@@ -26,14 +28,14 @@ import { formatDateLocal, getTodayLocal, parseLocalDate, formatTimeIST } from '.
   templateUrl: './transaction.component.html',
   styleUrls: ['./transaction.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon, MatDatepickerModule, MatNativeDateModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon, MatDatepickerModule, MatNativeDateModule, MatTooltipModule]
 })
 export class TransactionComponent implements OnInit {
   transactions: Transaction[] = [];
   startDate: string = '';
   endDate: string = '';
   filteredTransactions: Transaction[] = [];
-  displayedColumns = ['id', 'party', 'paymentDate', 'paymentTime', 'amount', 'paymentMethod', 'referenceNo', 'notes'];
+  displayedColumns = ['id', 'party', 'paymentDateTime', 'amount', 'paymentMethod', 'referenceNo', 'notes', 'actions'];
   maxDate = new Date(); // Today as maximum date
   minEndDate: Date | null = null; // Minimum date for end date picker
 
@@ -145,7 +147,40 @@ export class TransactionComponent implements OnInit {
     return formatDateLocal(date);
   }
 
-  formatPaymentTime(t: Transaction): string {
-    return formatTimeIST(t.paymentTime, t.paymentDate);
+  formatPaymentDateTime(t: Transaction): string {
+    const time = formatTimeIST(t.paymentTime, t.paymentDate)?.toUpperCase();
+    return `${t.paymentDate}  ${time}`;
+  }
+
+  viewPaymentReceipt(paymentId: number): void {
+    this.dialog.open(PaymentReceiptPreviewComponent, {
+      data: { paymentId },
+      width: '800px',
+      height: '90vh',
+      maxHeight: '95vh',
+      maxWidth: '95vw',
+      panelClass: 'receipt-dialog'
+    });
+  }
+
+  downloadPaymentReceipt(paymentId: number): void {
+    const receiptUrl = `${enviort.paymentUrl}/${paymentId}/receipt`;
+    this.http.get(receiptUrl, {
+      headers: this.authService.getAuthHeaders(),
+      responseType: 'blob'
+    }).subscribe({
+      next: (blob: Blob) => {
+        const link = document.createElement('a');
+        const url = window.URL.createObjectURL(blob);
+        link.href = url;
+        link.download = `Payment_Receipt_${paymentId}.pdf`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (error: any) => {
+        console.error('Failed to download receipt:', error);
+        alert('Failed to download receipt. Please try again.');
+      }
+    });
   }
 }

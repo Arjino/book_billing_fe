@@ -156,8 +156,9 @@ export class SalesComponent implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
-  formatSaleTime(s: Sale): string {
-    return formatTimeIST(s.time, s.date);
+  formatSaleDateTime(s: Sale): string {
+    const time = formatTimeIST(s.time, s.date)?.toUpperCase();
+    return `${s.date}  ${time}`;
   }
 
   goBack() {

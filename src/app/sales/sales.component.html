@@ -64,13 +64,9 @@
             <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Party</th>
             <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{s.party?.name}}</td>
           </ng-container>
-          <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Date</th>
-            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{s.date}}</td>
-          </ng-container>
-          <ng-container matColumnDef="time">
-            <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Time</th>
-            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{formatSaleTime(s)}}</td>
+          <ng-container matColumnDef="dateTime">
+            <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Date Time</th>
+            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{formatSaleDateTime(s)}}</td>
           </ng-container>
           <ng-container matColumnDef="grandTotal">
             <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Grand Total (₹)</th>
@@ -84,8 +80,8 @@
               </span>
             </td>
           </ng-container>
-          <tr mat-header-row *matHeaderRowDef="['id','party','date','time','grandTotal','paymentStatus']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['id','party','date','time','grandTotal','paymentStatus'];" class="hover:bg-red-500/10 transition-colors"></tr>
+          <tr mat-header-row *matHeaderRowDef="['id','party','dateTime','grandTotal','paymentStatus']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['id','party','dateTime','grandTotal','paymentStatus'];" class="hover:bg-red-500/10 transition-colors"></tr>
         </table>
       </div>
       <div *ngIf="!sales.length" class="p-8 text-center">

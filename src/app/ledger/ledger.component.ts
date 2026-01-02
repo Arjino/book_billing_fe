@@ -123,8 +123,9 @@ export class LedgerComponent implements OnInit {
     });
   }
 
-  formatLedgerTime(entry: any): string {
-    return formatTimeIST(entry?.time, entry?.date);
+  formatLedgerDateTime(entry: any): string {
+    const time = formatTimeIST(entry?.time, entry?.date)?.toUpperCase();
+    return `${entry?.date || ''}  ${time}`;
   }
 
   goBack(): void {
