@@ -8,6 +8,12 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client
   },
   {
+    // Reset password route with token parameter should be client-rendered
+    // because tokens are dynamic and cannot be prerendered
+    path: 'auth/reset-password/:token',
+    renderMode: RenderMode.Client
+  },
+  {
     path: '**',
     renderMode: RenderMode.Prerender
   }
