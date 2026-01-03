@@ -80,14 +80,100 @@ export class LedgerComponent implements OnInit {
   }
 
   applyFilters() {
-      // Call transactions endpoint with query params — backend should return ledger-style entries
-      this.http.get<any[]>(enviort.ledgerUrl+"/"+this.partyId, { headers: this.authService.getAuthHeaders() }).subscribe(data => {
-        // Apply client-side filters so UI reflects selected transaction type, amounts and dates
-        this.results = this.filterResults(data || []);
-      }, err => {
-        console.error('Failed to load ledger:', err);
-        this.results = [];
-      });
+    if (!this.partyId) {
+      console.warn('Please select a party first');
+      return;
+    }
+
+    // Prepare filter parameters
+    const start = this.startDate ? this.formatDateForAPI(this.startDate) : this.formatDateForAPI(new Date());
+    const end = this.endDate ? this.formatDateForAPI(this.endDate) : this.formatDateForAPI(new Date());
+    const type = this.transactionType || 'All';
+
+    // Call filter endpoint with query params: GET /api/ledger/entries/filter
+    const url = `${enviort.ledgerFilterUrl}?partyId=${this.partyId}&startDate=${start}&endDate=${end}&type=${type}`;
+    
+    this.http.get<any[]>(url, { headers: this.authService.getAuthHeaders() }).subscribe(data => {
+      this.results = data || [];
+      // Calculate last balance from results
+      this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
+      this.totalAmount = this.lastBalance;
+    }, err => {
+      console.error('Failed to load ledger:', err);
+      this.results = [];
+    });
+  }
+
+  resetFilters() {
+    // Reset filter values but keep party selected
+    this.startDate = '';
+    this.endDate = '';
+    this.transactionType = 'All';
+    
+    // Fetch all records for the selected party using normal ledger API
+    if (this.partyId) {
+      this.fetchLedgerForParty(this.partyId);
+    }
+  }
+
+  downloadLedgerPDF() {
+    if (!this.partyId) {
+      console.warn('Please select a party first');
+      return;
+    }
+
+    // Build query params based on currently applied filters (matching what's displayed on screen)
+    const queryParams = new URLSearchParams();
+    queryParams.append('partyId', this.partyId.toString());
+    
+    // Only add startDate if it's actually set by user
+    if (this.startDate) {
+      queryParams.append('startDate', this.formatDateForAPI(this.startDate));
+    }
+    
+    // Only add endDate if it's actually set by user
+    if (this.endDate) {
+      queryParams.append('endDate', this.formatDateForAPI(this.endDate));
+    }
+    
+    // Only add type if it's not 'All'
+    if (this.transactionType && this.transactionType !== 'All') {
+      queryParams.append('type', this.transactionType);
+    }
+
+    // Call PDF download endpoint: GET /api/ledger/entries/report/pdf
+    const url = `${enviort.ledgerReportUrl}?${queryParams.toString()}`;
+    
+    // Download PDF directly without opening in new tab
+    this.http.get(url, { 
+      headers: this.authService.getAuthHeaders(),
+      responseType: 'blob'
+    }).subscribe(
+      (blob: Blob) => {
+        // Create blob URL and trigger download
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `ledger_report_${this.formatDateForAPI(new Date())}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      },
+      err => {
+        console.error('Failed to download PDF:', err);
+        alert('Failed to download ledger report. Please try again.');
+      }
+    );
+  }
+
+  private formatDateForAPI(date: string | Date): string {
+    if (!date) return '';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   private filterResults(input: any[]): any[] {

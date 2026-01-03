@@ -30,6 +30,19 @@ import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
 import { getTodayLocal } from '../utils/date.utils';
 
+interface DashboardStats {
+  totalBooks: number;
+  totalBookStock: number;
+  totalParties: number;
+  salesTodayAmount: number;
+  salesTodayCount: number;
+  paymentsTodayAmount: number;
+  paymentsTodayCount: number;
+  weekSalesAmount: number;
+  monthSalesAmount: number;
+  last7DaysSales: { date: string; amount: number }[];
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -115,6 +128,19 @@ export class DashboardComponent implements OnInit {
   selectedInvoiceParty: any = null;
   selectedBookingStatus: string = 'available'; // 'available' or 'discarded'
   selectedPartyStatus: string = 'current'; // 'current' or 'old'
+  dashboardStats: DashboardStats = {
+    totalBooks: 0,
+    totalBookStock: 0,
+    totalParties: 0,
+    salesTodayAmount: 0,
+    salesTodayCount: 0,
+    paymentsTodayAmount: 0,
+    paymentsTodayCount: 0,
+    weekSalesAmount: 0,
+    monthSalesAmount: 0,
+    last7DaysSales: []
+  };
+  lastUpdated: Date | null = null;
 
   constructor(
     private authService: AuthService,
@@ -137,6 +163,7 @@ export class DashboardComponent implements OnInit {
     }
 
     this.store.getParties().subscribe(data => this.parties = data || []);
+    this.loadDashboardStats();
   }
  
 
@@ -379,6 +406,24 @@ export class DashboardComponent implements OnInit {
       maxWidth: '95vw',
       maxHeight: '90vh',
       panelClass: 'analytics-dialog'
+    });
+  }
+
+  private loadDashboardStats(): void {
+    this.http.get<DashboardStats>(enviort.statsDashboardUrl, {
+      headers: this.authService.getAuthHeaders()
+    }).subscribe({
+      next: (data) => {
+        this.dashboardStats = {
+          ...this.dashboardStats,
+          ...data,
+          last7DaysSales: data?.last7DaysSales || []
+        };
+        this.lastUpdated = new Date();
+      },
+      error: (error) => {
+        console.error('Failed to load dashboard stats:', error);
+      }
     });
   }
 }

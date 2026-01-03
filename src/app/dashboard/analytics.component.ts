@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,6 +10,21 @@ import { Sale } from '../interface/Sale';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
 import { formatDateLocal, getTodayLocal } from '../utils/date.utils';
+import { AuthService } from '../services/auth.service';
+import { enviort } from '../../environments/environment';
+
+interface DashboardStats {
+  totalBooks: number;
+  totalBookStock: number;
+  totalParties: number;
+  salesTodayAmount: number;
+  salesTodayCount: number;
+  paymentsTodayAmount: number;
+  paymentsTodayCount: number;
+  weekSalesAmount: number;
+  monthSalesAmount: number;
+  last7DaysSales: { date: string; amount: number }[];
+}
 
 @Component({
   selector: 'app-analytics',
@@ -23,11 +39,17 @@ export class AnalyticsComponent implements OnInit {
   dailySales: number = 0;
   totalRevenue: number = 0;
   averageOrderValue: number = 0;
+  salesTodayAmount: number = 0;
+  salesTodayCount: number = 0;
+  weekSalesAmount: number = 0;
+  monthSalesAmount: number = 0;
 
   // Transaction Data
   totalTransactions: number = 0;
   dailyTransactions: number = 0;
   totalTransactionAmount: number = 0;
+  paymentsTodayAmount: number = 0;
+  paymentsTodayCount: number = 0;
 
   // Party Data
   totalParties: number = 0;
@@ -49,10 +71,11 @@ export class AnalyticsComponent implements OnInit {
   bestPerformingDay: string = '';
   recommendedActions: string[] = [];
 
-  constructor(private store: DataStoreService) {}
+  constructor(private store: DataStoreService, private http: HttpClient, private auth: AuthService) {}
 
   ngOnInit() {
     this.loadAnalyticsData();
+    this.loadStatsFromApi();
   }
 
   private loadAnalyticsData() {
@@ -71,6 +94,47 @@ export class AnalyticsComponent implements OnInit {
 
     this.store.getBooks().subscribe(books => {
       this.processBookData(books || []);
+    });
+  }
+
+  private loadStatsFromApi(): void {
+    this.http.get<DashboardStats>(enviort.statsDashboardUrl, {
+      headers: this.auth.getAuthHeaders()
+    }).subscribe({
+      next: (stats) => {
+        this.salesTodayAmount = stats.salesTodayAmount || 0;
+        this.salesTodayCount = stats.salesTodayCount || 0;
+        if (this.salesTodayCount > 0) {
+          this.dailySales = this.salesTodayCount;
+        }
+
+        this.paymentsTodayAmount = stats.paymentsTodayAmount || 0;
+        this.paymentsTodayCount = stats.paymentsTodayCount || 0;
+        if (this.paymentsTodayCount > 0) {
+          this.dailyTransactions = this.paymentsTodayCount;
+        }
+
+        this.weekSalesAmount = stats.weekSalesAmount || 0;
+        this.monthSalesAmount = stats.monthSalesAmount || 0;
+
+        if (typeof stats.totalBooks === 'number') {
+          this.totalBooks = stats.totalBooks;
+        }
+
+        if (typeof stats.totalParties === 'number') {
+          this.totalParties = stats.totalParties;
+        }
+
+        if (Array.isArray(stats.last7DaysSales) && stats.last7DaysSales.length) {
+          this.dailySalesData = stats.last7DaysSales.map((entry) => ({
+            date: new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            amount: entry.amount || 0
+          }));
+        }
+      },
+      error: (error) => {
+        console.error('Failed to load analytics stats:', error);
+      }
     });
   }
 
@@ -153,6 +217,8 @@ export class AnalyticsComponent implements OnInit {
   }
 
   private generateDailySalesData(sales: Sale[]) {
+    if (this.dailySalesData.length > 0) return;
+
     const dailyMap = new Map<string, number>();
     
     // Generate for last 7 days

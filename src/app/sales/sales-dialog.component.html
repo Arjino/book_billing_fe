@@ -9,7 +9,7 @@
 
   <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
     <form #saleForm="ngForm">
-      <div class="grid grid-cols-1 gap-3">
+      <div class="grid grid-cols-1 gap-4">
         <!-- Invoice No removed per user request -->
 
         <mat-form-field appearance="outline" class="w-full">
@@ -24,10 +24,10 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full text-white">
-          <mat-label >Date</mat-label>
-          <input matInput [matDatepicker]="salesDatePicker" class="text-white" [(ngModel)]="data.date" name="date" required #dateModel="ngModel" />
+          <mat-label>Date</mat-label>
+          <input matInput [matDatepicker]="salesDatePicker" class="text-white" [(ngModel)]="data.date" name="date" required #dateModel="ngModel" [placeholder]="'dd-MM-yyyy'" />
           <mat-datepicker-toggle matSuffix [for]="salesDatePicker"></mat-datepicker-toggle>
-          <mat-datepicker #salesDatePicker></mat-datepicker>
+          <mat-datepicker #salesDatePicker startView="month"></mat-datepicker>
           <mat-error *ngIf="dateModel.invalid && (dateModel.dirty || dateModel.touched)">
             <span *ngIf="dateModel.errors?.['required']">Date is required.</span>
           </mat-error>
@@ -72,14 +72,24 @@
 
               <!-- Row 2: Qty, Rate, Discount -->
               <div class="grid grid-cols-3 gap-2 mb-3">
-                <mat-form-field appearance="outline" class="w-full" #qtyField="matFormField" [class.mat-form-field-invalid]="item.qty > 0 && item.book && item.qty > item.book.stock">
+                <mat-form-field appearance="outline" class="w-full" #qtyField="matFormField">
                   <mat-label>Qty</mat-label>
-                  <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" required #qtyModel="ngModel" inputmode="numeric" (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item)" min="1" [attr.max]="item.book?.stock" step="1" />
-                  <mat-error *ngIf="qtyModel.invalid && (qtyModel.dirty || qtyModel.touched)">
-                    <span *ngIf="qtyModel.errors?.['required']">Required</span>
-                    <span *ngIf="qtyModel.errors?.['min']">Min 1</span>
+                  <input matInput 
+                    type="number" 
+                    [(ngModel)]="item.qty" 
+                    [name]="'qty_' + i" 
+                    required 
+                    #qtyModel="ngModel" 
+                    inputmode="numeric" 
+                    (ngModelChange)="qtyModel.control.markAsTouched(); validateQty(item, qtyModel)" 
+                    min="1" 
+                    [attr.max]="item.book?.stock" 
+                    step="1" />
+                  <mat-error>
+                    <span *ngIf="qtyModel.errors?.['required'] && (qtyModel.dirty || qtyModel.touched)">Required</span>
+                    <span *ngIf="qtyModel.errors?.['min'] && (qtyModel.dirty || qtyModel.touched)">Min 1</span>
+                    <span *ngIf="!qtyModel.errors?.['required'] && !qtyModel.errors?.['min'] && qtyModel.touched && hasExceededStock(item)">Exceeds stock ({{ item.book?.stock }})</span>
                   </mat-error>
-                  <mat-error *ngIf="qtyModel.touched && item.qty > 0 && item.book && item.qty > item.book.stock">Exceeds stock ({{ item.book.stock }})</mat-error>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">

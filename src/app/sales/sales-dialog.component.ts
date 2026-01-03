@@ -48,6 +48,16 @@ export class SalesDialogComponent implements OnInit {
     private store: DataStoreService
   ) {}
   ngOnInit() {
+    // Ensure date is in proper YYYY-MM-DD string format to avoid timezone issues
+    if (!this.data.date) {
+      // Set to today's date in YYYY-MM-DD format
+      const today = new Date();
+      this.data.date = today.toISOString().split('T')[0];
+    } else if (typeof this.data.date !== 'string') {
+      const d = new Date(this.data.date);
+      this.data.date = d.toISOString().split('T')[0];
+    }
+    
     this.store.getBooks().subscribe(data => {
       this.books = data || [];
       // Update filteredBooks for all items if books change
@@ -62,12 +72,27 @@ export class SalesDialogComponent implements OnInit {
       item.bookSearch = item.book ? item.book.title : '';
     });
   }
+  formatDateDisplay(date: string | Date): string {
+    if (!date) return '';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+
   onCancel(): void {
     this.dialogRef.close();
   }
   
 
   onSave(): void {
+    // Ensure date is in YYYY-MM-DD format before saving
+    if (this.data.date && typeof this.data.date === 'string') {
+      // Already a string, ensure it's YYYY-MM-DD format
+      const d = new Date(this.data.date);
+      this.data.date = d.toISOString().split('T')[0];
+    }
     this.dialogRef.close(this.data);
   }
 
@@ -126,6 +151,17 @@ export class SalesDialogComponent implements OnInit {
 
   isQtyExceedsStock(item: any): boolean {
     return item && item.book && typeof item.book.stock === 'number' && Number(item.qty) > Number(item.book.stock);
+  }
+
+  hasExceededStock(item: any): boolean {
+    return this.isQtyExceedsStock(item);
+  }
+
+  validateQty(item: any, qtyModel: any): void {
+    this.calculateAmount(item);
+    if (this.hasExceededStock(item)) {
+      qtyModel.control.setErrors({ ...qtyModel.errors, 'exceededStock': true });
+    }
   }
 
   hasQtyError(): boolean {

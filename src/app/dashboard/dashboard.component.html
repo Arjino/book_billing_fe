@@ -49,7 +49,7 @@
       <p class="text-lg text-purple-200 mb-2">Manage your billing operations effortlessly</p>
       <div class="flex items-center justify-center gap-2 text-purple-300">
         <mat-icon class="text-lg">schedule</mat-icon>
-        <span class="text-sm">Last updated: Just now</span>
+        <span class="text-sm">Last updated: {{ lastUpdated ? (lastUpdated | date:'shortTime') : '—' }}</span>
       </div>
     </div>
 
@@ -58,22 +58,26 @@
       <div class="bg-gradient-to-br from-purple-500/20 to-purple-600/20 border border-purple-400/30 rounded-2xl p-6 backdrop-blur-lg hover:border-purple-400/60 transition-all duration-300">
         <mat-icon class="text-purple-400 mb-2">shopping_cart</mat-icon>
         <p class="text-sm text-purple-200 mb-2">Sales</p>
-        <p class="text-3xl font-bold text-white">0</p>
+        <p class="text-3xl font-bold text-white">₹{{ dashboardStats.salesTodayAmount | number:'1.0-0' }}</p>
+        <p class="text-xs text-purple-200 mt-1">{{ dashboardStats.salesTodayCount }} orders today</p>
       </div>
       <div class="bg-gradient-to-br from-pink-500/20 to-pink-600/20 border border-pink-400/30 rounded-2xl p-6 backdrop-blur-lg hover:border-pink-400/60 transition-all duration-300">
         <mat-icon class="text-pink-400 mb-2">business</mat-icon>
         <p class="text-sm text-pink-200 mb-2">Parties</p>
-        <p class="text-3xl font-bold text-white">0</p>
+        <p class="text-3xl font-bold text-white">{{ dashboardStats.totalParties }}</p>
+        <p class="text-xs text-pink-200 mt-1">Total active parties</p>
       </div>
       <div class="bg-gradient-to-br from-blue-500/20 to-blue-600/20 border border-blue-400/30 rounded-2xl p-6 backdrop-blur-lg hover:border-blue-400/60 transition-all duration-300">
         <mat-icon class="text-blue-400 mb-2">book</mat-icon>
         <p class="text-sm text-blue-200 mb-2">Books</p>
-        <p class="text-3xl font-bold text-white">0</p>
+        <p class="text-3xl font-bold text-white">{{ dashboardStats.totalBooks }}</p>
+        <p class="text-xs text-blue-200 mt-1">{{ dashboardStats.totalBookStock }} units in stock</p>
       </div>
       <div class="bg-gradient-to-br from-emerald-500/20 to-emerald-600/20 border border-emerald-400/30 rounded-2xl p-6 backdrop-blur-lg hover:border-emerald-400/60 transition-all duration-300">
         <mat-icon class="text-emerald-400 mb-2">payment</mat-icon>
         <p class="text-sm text-emerald-200 mb-2">Transactions</p>
-        <p class="text-3xl font-bold text-white">0</p>
+        <p class="text-3xl font-bold text-white">₹{{ dashboardStats.paymentsTodayAmount | number:'1.0-0' }}</p>
+        <p class="text-xs text-emerald-200 mt-1">{{ dashboardStats.paymentsTodayCount }} payments today</p>
       </div>
     </div>
 

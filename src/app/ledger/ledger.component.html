@@ -47,9 +47,19 @@
         </mat-form-field>
       </div>
 
-      <div class="flex items-center gap-2 mb-4">
-        <button mat-raised-button color="primary" (click)="applyFilters()">Apply Filters</button>
-        <button mat-stroked-button (click)="applyFilters()">Refresh</button>
+      <div class="flex items-center gap-2 mb-4 flex-wrap">
+        <button mat-raised-button color="primary" (click)="applyFilters()" class="flex items-center gap-2">
+          <mat-icon>filter_list</mat-icon>
+          Apply Filters
+        </button>
+        <button mat-stroked-button (click)="resetFilters()" class="flex items-center gap-2">
+          <mat-icon>refresh</mat-icon>
+          Refresh
+        </button>
+        <button mat-raised-button color="accent" (click)="downloadLedgerPDF()" class="flex items-center gap-2" [disabled]="!results.length">
+          <mat-icon>download</mat-icon>
+          Download PDF
+        </button>
       </div>
 
       <div class="overflow-x-auto bg-[rgba(255,255,255,0.02)] rounded p-4">
