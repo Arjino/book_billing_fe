@@ -32,6 +32,10 @@ export class SalesDialogComponent implements OnInit {
     @Inject(MAT_DIALOG_DATA) public data: SalesDialogData,
     private store: DataStoreService
   ) {}
+
+  getDialogTitle(): string {
+    return this.data.type === 'PURCHASE' ? 'Add Purchase' : 'Add Sale';
+  }
   ngOnInit() {
     // Ensure date is in proper YYYY-MM-DD string format to avoid timezone issues
     if (!this.data.date) {

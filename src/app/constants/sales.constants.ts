@@ -15,7 +15,7 @@ export const SALES_CONSTANTS = {
   // Defaults
   DEFAULTS: {
     PAYMENT_STATUS: 'Pending',
-    SALE_TYPE: '',
+    SALE_TYPE: 'sale',
     ROUND_OFF: null
   },
   

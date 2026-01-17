@@ -1,6 +1,5 @@
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { Router } from '@angular/router';
+import { Component, OnInit } from '@angular/core';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
@@ -31,15 +30,30 @@ export class SalesComponent implements OnInit {
   startDate: string = '';
   endDate: string = '';
   showStartDateError: boolean = false;
+  defaultSaleType: string = 'SALE'; // Default to 'SALE', can be 'PURCHASE'
+  isPurchaseMode: boolean = false; // Track if in purchase mode
 
   constructor(
-    private dialog: MatDialog,
-    private router: Router,
-    private store: DataStoreService,
+    private dialog: MatDialog, 
+    private router: Router, 
+    private store: DataStoreService, 
+    private route: ActivatedRoute,
     private salesService: SalesService
   ) {}
 
   ngOnInit() {
+    // Read the type query parameter
+    this.route.queryParams.subscribe(params => {
+      const type = params['type'];
+      if (type === 'sale') {
+        this.defaultSaleType = 'SALE';
+        this.isPurchaseMode = false;
+      } else if (type === 'purchase') {
+        this.defaultSaleType = 'PURCHASE';
+        this.isPurchaseMode = true;
+      }
+    });
+
     // Set end date to today by default
     const today = new Date();
     this.endDate = today.toISOString().split('T')[0];
@@ -50,7 +64,12 @@ export class SalesComponent implements OnInit {
   
   loadSales() {
     this.salesService.getSalesByDate().subscribe(data => {
-      this.sales = data;
+      // Filter sales based on the current mode
+      if (this.isPurchaseMode) {
+        this.sales = data.filter(sale => sale.type === 'PURCHASE');
+      } else {
+        this.sales = data.filter(sale => sale.type === 'SALE');
+      }
     });
   }
 
@@ -69,7 +88,7 @@ export class SalesComponent implements OnInit {
         grandTotal: 0,
         paymentStatus: SALES_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
         paidAmount: 0,
-        type: SALES_CONSTANTS.DEFAULTS.SALE_TYPE,
+        type: this.defaultSaleType,
         items: []
       } as SalesDialogData,
       disableClose: false
@@ -130,7 +149,12 @@ export class SalesComponent implements OnInit {
 
     this.salesService.getSalesByDateRange(start, end).subscribe({
       next: (data) => {
-        this.sales = data;
+        // Filter sales based on the current mode
+        if (this.isPurchaseMode) {
+          this.sales = data.filter(sale => sale.type === 'PURCHASE');
+        } else {
+          this.sales = data.filter(sale => sale.type === 'SALE');
+        }
       },
       error: (err) => {
         console.error('Failed to fetch sales by date range:', err);
@@ -157,5 +181,21 @@ export class SalesComponent implements OnInit {
 
   goBack() {
     this.router.navigate(['/dashboard']);
+  }
+
+  getPageTitle(): string {
+    return this.isPurchaseMode ? 'Purchase' : 'Sales';
+  }
+
+  getPageSubtitle(): string {
+    return this.isPurchaseMode ? 'Track and manage all purchase transactions' : 'Track and manage all sales transactions';
+  }
+
+  getButtonLabel(): string {
+    return this.isPurchaseMode ? 'Add Purchase' : 'Add Sale';
+  }
+
+  getEmptyMessage(): string {
+    return this.isPurchaseMode ? 'No purchases found. Create your first purchase entry.' : 'No sales found. Create your first sales entry.';
   }
 }

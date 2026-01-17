@@ -123,6 +123,7 @@ export class DashboardComponent implements OnInit {
   selectedInvoiceParty: any = null;
   selectedBookingStatus: string = BOOKING_CONSTANTS.DEFAULTS.STATUS; // 'available' or 'discarded'
   selectedPartyStatus: string = PARTIES_CONSTANTS.DEFAULTS.STATUS; // 'current' or 'old'
+  selectedSalesType: string = SALES_CONSTANTS.DEFAULTS.SALE_TYPE; // 'sale' or 'purchase'
   dashboardStats: DashboardStats = {
     totalBooks: 0,
     totalBookStock: 0,
@@ -353,6 +354,10 @@ export class DashboardComponent implements OnInit {
 
   navigateToParties(status: string) {
     this.router.navigate(['/parties'], { queryParams: { status } });
+  }
+
+  navigateToSales(type: string) {
+    this.router.navigate(['/sales'], { queryParams: { type } });
   }
 
   getRouteByTitle(title: string): string {

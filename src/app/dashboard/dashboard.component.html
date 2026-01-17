@@ -136,6 +136,18 @@
                   </mat-form-field>
                   <button mat-raised-button color="primary" class="w-full" (click)="navigateToParties(selectedPartyStatus)">Open Parties</button>
                 </div>
+
+                <!-- Sales Card Content: select Sale or Purchase -->
+                <div *ngIf="card.title === 'Sales'" class="space-y-3">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Transaction Type</mat-label>
+                    <mat-select [(ngModel)]="selectedSalesType" class="text-white">
+                      <mat-option value="sale">Sale</mat-option>
+                      <mat-option value="purchase">Purchase</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <button mat-raised-button color="primary" class="w-full" (click)="navigateToSales(selectedSalesType)">Open Sales</button>
+                </div>
                 
                 <!-- PDF Card Content: select party and open invoice list -->
                 <div *ngIf="card.pdfCard" class="space-y-3">
