@@ -8,15 +8,8 @@ import { MatOptionModule } from '@angular/material/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-
-export interface PartyDialogData {
-  id: number;
-  name: string;
-  type: string;
-  phone: string;
-  address: string;
-  gstin: string;
-}
+import { PartyDialogData } from '../interface/party-dialog-data';
+import { PARTIES_CONSTANTS } from '../constants/parties.constants';
 
 @Component({
   selector: 'app-party-dialog',
@@ -33,10 +26,10 @@ export class PartyDialogComponent implements OnInit {
 
   ngOnInit(): void {
     if (!this.data) {
-      this.data = { id: 0, name: '', type: 'Consumer', phone: '', address: '', gstin: '' } as PartyDialogData;
+      this.data = { id: 0, name: '', type: PARTIES_CONSTANTS.DEFAULTS.PARTY_TYPE, phone: '', address: '', gstin: '' } as PartyDialogData;
     }
     if (!this.data.type) {
-      this.data.type = 'Consumer';
+      this.data.type = PARTIES_CONSTANTS.DEFAULTS.PARTY_TYPE;
     }
   }
 

@@ -8,9 +8,30 @@ export const PARTIES_CONSTANTS = {
   DISPLAY_COLUMNS: ['ID', 'Name', 'Type', 'Phone', 'Address', 'GSTIN', 'Actions'],
   
   // Dialog Configuration
-  DIALOG_WIDTH: '600px',
+  DIALOG_WIDTH: '500px',
   DIALOG_TITLE_ADD: 'Add New Party',
   DIALOG_TITLE_EDIT: 'Edit Party',
+
+  // Defaults
+  DEFAULTS: {
+    FILTER_BY: 'name',
+    STATUS: 'current',
+    PARTY_TYPE: 'Consumer'
+  },
+
+  // Status Values
+  STATUS: {
+    CURRENT: 'current',
+    OLD: 'old'
+  },
+
+  // Filter Options
+  FILTER_OPTIONS: [
+    { value: 'name', label: 'Name' },
+    { value: 'type', label: 'Type' },
+    { value: 'phone', label: 'Phone' },
+    { value: 'gstin', label: 'GSTIN' }
+  ],
   
   // Form Labels
   FORM_LABELS: {
@@ -26,7 +47,8 @@ export const PARTIES_CONSTANTS = {
     { value: 'Supplier', label: 'Supplier' },
     { value: 'Customer', label: 'Customer' },
     { value: 'Retailer', label: 'Retailer' },
-    { value: 'Distributor', label: 'Distributor' }
+    { value: 'Distributor', label: 'Distributor' },
+    { value: 'Consumer', label: 'Consumer' }
   ],
   
   // Validation Rules
@@ -50,6 +72,18 @@ export const PARTIES_CONSTANTS = {
     LOAD_ERROR: 'Failed to load parties!',
     ADD_ERROR: 'Failed to add party!',
     UPDATE_ERROR: 'Failed to update party!',
-    DELETE_ERROR: 'Failed to delete party!'
+    DELETE_ERROR: 'Failed to delete party!',
+    LOAD_OLD_ERROR: 'Failed to load old parties',
+    ENABLE_SUCCESS: 'Party enabled successfully',
+    ENABLE_ERROR: 'Failed to enable party',
+    CONFIRM_DELETE: 'Are you sure you want to delete "{name}"?',
+    CONFIRM_ENABLE: 'Are you sure you want to enable "{name}"?'
+  },
+
+  // Snackbar Durations (ms)
+  SNACKBAR_DURATION: {
+    SHORT: 3000,
+    MEDIUM: 5000,
+    LONG: 6000
   }
 };

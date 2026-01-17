@@ -1,6 +1,5 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,20 +11,12 @@ import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { PartyDialogComponent, PartyDialogData } from './party-dialog.component';
-import { AuthService } from '../services/auth.service';
+import { PartyDialogComponent } from './party-dialog.component';
+import { PartyDialogData } from '../interface/party-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
-import { baseUrl, enviort } from '../../environments/environment';
-
-interface Party {
-  id: number;
-  name: string;
-  type: string;
-  phone: string;
-  address: string;
-  gstin: string;
-  hidden?: boolean;
-}
+import { PartiesService } from '../services/parties.service';
+import { Party } from '../interface/party';
+import { PARTIES_CONSTANTS } from '../constants/parties.constants';
 
 @Component({
   selector: 'app-parties',
@@ -38,56 +29,47 @@ export class PartiesComponent implements OnInit {
   parties: Party[] = [];
   filteredParties: Party[] = [];
   
-  filterBy: string = 'name';
+  filterBy: string = PARTIES_CONSTANTS.DEFAULTS.FILTER_BY;
   filterValue: string = '';
-  partyStatus: string = 'current'; // Track current status
+  partyStatus: string = PARTIES_CONSTANTS.DEFAULTS.STATUS; // Track current status
   
-  filterOptions = [
-    { value: 'name', label: 'Name' },
-    { value: 'type', label: 'Type' },
-    { value: 'phone', label: 'Phone' },
-    { value: 'gstin', label: 'GSTIN' }
-  ];
+  filterOptions = PARTIES_CONSTANTS.FILTER_OPTIONS;
 
   constructor(
-    private http: HttpClient, 
     private dialog: MatDialog, 
-    private authService: AuthService, 
     private router: Router,
     private route: ActivatedRoute, 
     private store: DataStoreService,
+    private partiesService: PartiesService,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
     this.route?.queryParamMap?.subscribe(params => {
-      this.partyStatus = params.get('status') || 'current';
+      this.partyStatus = params.get('status') || PARTIES_CONSTANTS.STATUS.CURRENT;
     });
     this.loadPartiesByStatus();
   }
 
   loadPartiesByStatus() {
-    if (this.partyStatus === 'current') {
+    if (this.partyStatus === PARTIES_CONSTANTS.STATUS.CURRENT) {
       this.store.getParties().subscribe(data => {
         this.parties = data || [];
         this.filteredParties = [...this.parties];
       });
-    } else if (this.partyStatus === 'old') {
+    } else if (this.partyStatus === PARTIES_CONSTANTS.STATUS.OLD) {
       this.loadOldParties();
     }
   }
 
   loadOldParties() {
-    this.http.get<Party[]>(
-      enviort.partiesUrl + '/hidden',
-      { headers: this.authService.getAuthHeaders() }
-    ).subscribe(
+    this.partiesService.getOldParties().subscribe(
       (data) => {
         this.parties = data || [];
         this.filteredParties = [...this.parties];
       },
       (error) => {
-        this.snackBar.open('Failed to load old parties', 'Close', { duration: 5000 });
+        this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.LOAD_OLD_ERROR, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
         console.error('Error loading old parties:', error);
       }
     );
@@ -121,11 +103,11 @@ export class PartiesComponent implements OnInit {
 
   addParty() {
     const dialogRef = this.dialog.open(PartyDialogComponent, {
-      width: '500px',
+      width: PARTIES_CONSTANTS.DIALOG_WIDTH,
       data: {
         id: 0,
         name: '',
-        type: '',
+        type: PARTIES_CONSTANTS.DEFAULTS.PARTY_TYPE,
         phone: '',
         address: '',
         gstin: ''
@@ -134,11 +116,7 @@ export class PartiesComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: PartyDialogData) => {
       if (result) {
-        this.http.post(
-          enviort.partiesUrl,
-          result,
-          { headers: this.authService.getAuthHeaders() }
-        ).subscribe(() => {
+        this.store.createParty(result as Party).subscribe(() => {
           this.loadParties();
         });
       }
@@ -147,7 +125,7 @@ export class PartiesComponent implements OnInit {
 
   editParty(party: Party) {
     const dialogRef = this.dialog.open(PartyDialogComponent, {
-      width: '500px',
+      width: PARTIES_CONSTANTS.DIALOG_WIDTH,
       data: { ...party } as PartyDialogData
     });
 
@@ -155,12 +133,12 @@ export class PartiesComponent implements OnInit {
       if (result) {
         this.store.updateParty(result.id, result as Party).subscribe({
           next: () => {
-            this.snackBar.open('Party updated successfully', 'Close', { duration: 3000 });
+            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.UPDATE_SUCCESS, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT });
             this.store?.loadParties(true);
             this.loadParties();
           },
           error: (err) => {
-            this.snackBar.open('Failed to update party', 'Close', { duration: 5000 });
+            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.UPDATE_ERROR, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
           }
         });
       }
@@ -168,16 +146,17 @@ export class PartiesComponent implements OnInit {
   }
 
   deleteParty(party: Party) {
-    if (confirm(`Are you sure you want to delete "${party.name}"?`)) {
+    const confirmMessage = PARTIES_CONSTANTS.MESSAGES.CONFIRM_DELETE.replace('{name}', party.name);
+    if (confirm(confirmMessage)) {
       this.store.deleteParty(party.id).subscribe({
         next: () => {
-          this.snackBar.open('Party deleted successfully', 'Close', { duration: 3000 });
+          this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.DELETE_SUCCESS, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT });
           this.store?.loadParties(true);
           this.loadParties();
         },
         error: (err) => {
           const serverMessage = err?.error || err?.message || 'Unknown error';
-          this.snackBar.open(`Failed to delete party: ${serverMessage}`, 'Close', { duration: 6000 });
+          this.snackBar.open(`${PARTIES_CONSTANTS.MESSAGES.DELETE_ERROR}: ${serverMessage}`, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.LONG });
           if (err?.status === 409) {
             this.loadParties();
           }
@@ -187,17 +166,18 @@ export class PartiesComponent implements OnInit {
   }
 
   enableParty(party: Party) {
-    if (confirm(`Are you sure you want to enable "${party.name}"?`)) {
+    const confirmMessage = PARTIES_CONSTANTS.MESSAGES.CONFIRM_ENABLE.replace('{name}', party.name);
+    if (confirm(confirmMessage)) {
       const updatedParty = { ...party, hidden: false };
       this.store.updateParty(party.id, updatedParty).subscribe({
         next: () => {
-          this.snackBar.open('Party enabled successfully', 'Close', { duration: 3000 });
+          this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ENABLE_SUCCESS, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT });
           this.store?.loadParties(true);
           this.loadParties();
         },
         error: (err) => {
           const serverMessage = err?.error || err?.message || 'Unknown error';
-          this.snackBar.open(`Failed to enable party: ${serverMessage}`, 'Close', { duration: 6000 });
+          this.snackBar.open(`${PARTIES_CONSTANTS.MESSAGES.ENABLE_ERROR}: ${serverMessage}`, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.LONG });
         }
       });
     }

@@ -1,6 +1,5 @@
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,12 +11,13 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
-import { SalesDialogComponent, SalesDialogData } from './sales-dialog.component';
-import { AuthService } from '../services/auth.service';
+import { SalesDialogComponent } from './sales-dialog.component';
+import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
-import { baseUrl, enviort } from '../../environments/environment';
+import { SalesService } from '../services/sales.service';
 import { formatTimeIST } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
+import { SALES_CONSTANTS } from '../constants/sales.constants';
 
 @Component({
   selector: 'app-sales',
@@ -32,7 +32,12 @@ export class SalesComponent implements OnInit {
   endDate: string = '';
   showStartDateError: boolean = false;
 
-  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router, private store: DataStoreService) {}
+  constructor(
+    private dialog: MatDialog,
+    private router: Router,
+    private store: DataStoreService,
+    private salesService: SalesService
+  ) {}
 
   ngOnInit() {
     // Set end date to today by default
@@ -44,28 +49,27 @@ export class SalesComponent implements OnInit {
 
   
   loadSales() {
-    this.http.get<Sale[]>(
-      enviort.salesByDateUrl,
-      { headers: this.authService.getAuthHeaders() }
-    ).subscribe(data => {
+    this.salesService.getSalesByDate().subscribe(data => {
       this.sales = data;
     });
   }
 
   addSale() {
     const dialogRef = this.dialog.open(SalesDialogComponent, {
-      width: '800px',
+      width: SALES_CONSTANTS.DIALOG_WIDTH,
       data: {
         id: 0,
+        invoiceNo: '',
         party: null,
         date: new Date().toISOString().split('T')[0],
         totalAmount: 0,
+        discount: 0,
         taxAmount: 0,
         roundOff: 0,
         grandTotal: 0,
-        paymentStatus: 'Pending',
+        paymentStatus: SALES_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
         paidAmount: 0,
-        type: '',
+        type: SALES_CONSTANTS.DEFAULTS.SALE_TYPE,
         items: []
       } as SalesDialogData,
       disableClose: false
@@ -90,33 +94,25 @@ export class SalesComponent implements OnInit {
           }))
         };
 
-        this.http.post(
-          enviort.saleReturnsUrl,
-          payload,
-          { headers: this.authService.getAuthHeaders() }
-        ).subscribe(() => {
+        this.salesService.createSaleReturn(payload).subscribe(() => {
           this.loadSales();
           this.store.refreshBooks();
         }, err => {
           console.error('Failed to post sale return:', err);
-          alert('Failed to submit sale return. Please try again.');
+          alert(SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR);
         });
 
         return;
       }
 
       // Normal sale
-      this.http.post(
-        enviort.salesUrl,
-        result,
-        { headers: this.authService.getAuthHeaders() }
-      ).subscribe(() => {
+      this.store.createSale(result).subscribe(() => {
         this.loadSales();
         // refresh cached books so stock updates after a sale
         this.store.refreshBooks();
       }, err => {
         console.error('Failed to create sale:', err);
-        alert('Failed to create sale. Please try again.');
+        alert(SALES_CONSTANTS.MESSAGES.CREATE_ERROR);
       });
     });
   }
@@ -132,15 +128,13 @@ export class SalesComponent implements OnInit {
     const start = this.formatDate(this.startDate);
     const end = this.formatDate(this.endDate);
 
-    const url = `${enviort.salesByDateRangeUrl}?startDate=${start}&endDate=${end}`;
-
-    this.http.get<Sale[]>(url, { headers: this.authService.getAuthHeaders() }).subscribe({
+    this.salesService.getSalesByDateRange(start, end).subscribe({
       next: (data) => {
         this.sales = data;
       },
       error: (err) => {
         console.error('Failed to fetch sales by date range:', err);
-        alert('Failed to fetch sales. Please try again.');
+        alert(SALES_CONSTANTS.MESSAGES.DATE_RANGE_ERROR);
       }
     });
   }

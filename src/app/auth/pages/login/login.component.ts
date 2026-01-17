@@ -10,6 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services/auth.service';
+import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
 
 @Component({
   selector: 'app-login',
@@ -52,7 +53,7 @@ export class LoginComponent {
 
   onSubmit(): void {
     if (this.loginForm.invalid) {
-      this.snackBar.open('Please fill all fields correctly', 'Close', { duration: 3000 });
+      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.INVALID_FORM, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
       return;
     }
 
@@ -61,13 +62,13 @@ export class LoginComponent {
 
     this.authService.login(email, password).subscribe({
       next: () => {
-        this.snackBar.open('Login successful!', 'Close', { duration: 3000 });
+        this.snackBar.open(AUTH_CONSTANTS.MESSAGES.LOGIN_SUCCESS, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
         this.router.navigate(['/dashboard']);
       },
       error: (error: any) => {
         this.loading.set(false);
-        const message = error.error?.message || 'Login failed. Please try again.';
-        this.snackBar.open(message, 'Close', { duration: 3000 });
+        const message = error.error?.message || AUTH_CONSTANTS.MESSAGES.LOGIN_ERROR;
+        this.snackBar.open(message, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
       }
     });
   }

@@ -1,12 +1,11 @@
 import { Component, Inject, Input, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
-import { AuthService } from '../services/auth.service';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
-import { baseUrl, enviort } from '../../environments/environment';
 import { MatIconModule } from '@angular/material/icon';
+import { InvoicesService } from '../services/invoices.service';
+import { INVOICE_CONSTANTS } from '../constants/invoice.constants';
 
 @Component({
   selector: 'app-invoice-preview',
@@ -22,10 +21,9 @@ export class InvoicePreviewComponent implements OnInit {
   error = '';
 
   constructor(
-    private http: HttpClient,
     private sanitizer: DomSanitizer,
     private route: ActivatedRoute,
-    private authService: AuthService,
+    private invoicesService: InvoicesService,
     @Inject(MAT_DIALOG_DATA) public data: any,
     public dialogRef: MatDialogRef<InvoicePreviewComponent>
   ) {
@@ -41,24 +39,20 @@ export class InvoicePreviewComponent implements OnInit {
     if (this.salesId) {
       this.fetchInvoicePdf(this.salesId);
     } else {
-      this.error = 'No sales ID provided.';
+      this.error = INVOICE_CONSTANTS.MESSAGES.INVALID_SALE_ID;
     }
   }
 
   fetchInvoicePdf(id: string) {
     this.loading = true;
-    this.http.get(`${enviort.invoiceBase}/${id}/invoice/download`,
-        { 
-        headers: this.authService.getAuthHeaders(),
-      responseType: 'blob'
-    }).subscribe({
+    this.invoicesService.downloadInvoice(parseInt(id, 10)).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Failed to load invoice PDF.';
+        this.error = INVOICE_CONSTANTS.MESSAGES.LOAD_ERROR;
         this.loading = false;
       }
     });

@@ -10,6 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services/auth.service';
+import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
 
 @Component({
   selector: 'app-reset-password',
@@ -68,13 +69,13 @@ export class ResetPasswordComponent {
 
   onSubmit(): void {
     if (this.tokenMissing()) {
-      this.snackBar.open('Reset link is invalid or missing.', 'Close', { duration: 3000 });
+      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.RESET_LINK_INVALID, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
       return;
     }
 
     if (this.resetForm.invalid) {
       this.resetForm.markAllAsTouched();
-      this.snackBar.open('Please fix the errors before submitting.', 'Close', { duration: 3000 });
+      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.RESET_FORM_INVALID, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
       return;
     }
 
@@ -86,12 +87,12 @@ export class ResetPasswordComponent {
       next: () => {
         this.loading.set(false);
         this.submitted.set(true);
-        this.snackBar.open('Password updated. You can now log in.', 'Close', { duration: 4000 });
+        this.snackBar.open(AUTH_CONSTANTS.MESSAGES.PASSWORD_UPDATED, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.LONG });
       },
       error: (error: any) => {
         this.loading.set(false);
-        const message = error?.error?.message || 'Failed to reset password. Please try again.';
-        this.snackBar.open(message, 'Close', { duration: 4000 });
+        const message = error?.error?.message || AUTH_CONSTANTS.MESSAGES.PASSWORD_RESET_ERROR;
+        this.snackBar.open(message, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.LONG });
       }
     });
   }

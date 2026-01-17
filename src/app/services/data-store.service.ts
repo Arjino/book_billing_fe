@@ -127,6 +127,51 @@ export class DataStoreService {
     this.loadSales(true);
   }
 
+  createSale(sale: Sale): Observable<Sale> {
+    return this.http.post<Sale>(enviort.salesUrl, sale, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error creating sale:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  createSaleReturn(payload: any): Observable<any> {
+    return this.http.post(enviort.saleReturnsUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error creating sale return:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  createTransaction(transaction: Transaction): Observable<Transaction> {
+    return this.http.post<Transaction>(enviort.paymentUrl, transaction, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error creating transaction:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  createBook(book: Book): Observable<Book> {
+    return this.http.post<Book>(enviort.bookingUrl, book, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error creating book:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  createParty(party: Party): Observable<Party> {
+    return this.http.post<Party>(enviort.partiesUrl, party, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error creating party:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   getTransactions(): Observable<Transaction[]> {
     if (!this.transactionsLoaded) this.loadTransactions();
     return this.transactions$.asObservable();

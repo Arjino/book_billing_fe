@@ -6,17 +6,7 @@ import { MatInputModule } from '@angular/material/input';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-
-export interface BookDialogData {
-  id: number;
-  sku: string;
-  title: string;
-  publisher: string;
-  hsn: string;
-  costPrice: number;
-  salePrice: number;
-  stock: number;
-}
+import { BookDialogData } from '../interface/book-dialog-data';
 
 @Component({
   selector: 'app-book-dialog',

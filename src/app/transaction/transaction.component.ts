@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -15,12 +14,12 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TransactionDialogComponent } from './transaction-dialog.component';
 import { PaymentReceiptPreviewComponent } from './payment-receipt-preview.component';
-import { AuthService } from '../services/auth.service';
-import { enviort } from '../../environments/environment';
+import { DataStoreService } from '../services/data-store.service';
+import { TransactionsService } from '../services/transactions.service';
 import { Party } from '../interface/party';
 import { Transaction } from '../interface/Transaction';
-import { DataStoreService } from '../services/data-store.service';
 import { formatDateLocal, getTodayLocal, parseLocalDate, formatTimeIST } from '../utils/date.utils';
+import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
 
 
 @Component({
@@ -39,17 +38,19 @@ export class TransactionComponent implements OnInit {
   maxDate = new Date(); // Today as maximum date
   minEndDate: Date | null = null; // Minimum date for end date picker
 
-  constructor(private http: HttpClient, private dialog: MatDialog, private authService: AuthService, private router: Router, private store: DataStoreService) {}
+  constructor(
+    private dialog: MatDialog,
+    private router: Router,
+    private store: DataStoreService,
+    private transactionsService: TransactionsService
+  ) {}
 
   ngOnInit() {
     this.loadTransactions();
   }
 
   loadTransactions() {
-    this.http.get<Transaction[]>(
-      enviort.paymentUrl,
-      { headers: this.authService.getAuthHeaders() }
-    ).subscribe(
+    this.transactionsService.getTransactions().subscribe(
       data => {
         this.transactions = data;
         this.applyDateFilter();
@@ -106,16 +107,12 @@ export class TransactionComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
-        this.http.post(
-          enviort.paymentUrl,
-          result,
-          { headers: this.authService.getAuthHeaders() }
-        ).subscribe(() => {
+        this.store.createTransaction(result).subscribe(() => {
           this.loadTransactions();
         },
         error => {
           console.error('Failed to add transaction:', error);
-          alert('Failed to add transaction. Please try again.');
+          alert(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR);
         });
       }
     });
@@ -124,15 +121,12 @@ export class TransactionComponent implements OnInit {
   goBack() {
     this.router.navigate(['/dashboard']);
   }
-    filterTransactions() {
+  filterTransactions() {
     // Build query params for startDate and endDate
     let params: any = {};
     if (this.startDate) params.startDate = this.formatDate(this.startDate);
     if (this.endDate) params.endDate = this.formatDate(this.endDate);
-    this.http.get<Transaction[]>(
-      enviort.paymentUrl,
-      { headers: this.authService.getAuthHeaders(), params }
-    ).subscribe(
+    this.transactionsService.getTransactionsByDateRange(params).subscribe(
       data => {
         this.transactions = data;
         this.applyDateFilter();
@@ -164,11 +158,7 @@ export class TransactionComponent implements OnInit {
   }
 
   downloadPaymentReceipt(paymentId: number): void {
-    const receiptUrl = `${enviort.paymentUrl}/${paymentId}/receipt`;
-    this.http.get(receiptUrl, {
-      headers: this.authService.getAuthHeaders(),
-      responseType: 'blob'
-    }).subscribe({
+    this.transactionsService.downloadPaymentReceipt(paymentId).subscribe({
       next: (blob: Blob) => {
         const link = document.createElement('a');
         const url = window.URL.createObjectURL(blob);
@@ -179,7 +169,7 @@ export class TransactionComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Failed to download receipt:', error);
-        alert('Failed to download receipt. Please try again.');
+        alert(TRANSACTION_CONSTANTS.MESSAGES.DOWNLOAD_ERROR);
       }
     });
   }

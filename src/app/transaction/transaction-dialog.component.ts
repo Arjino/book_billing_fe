@@ -12,9 +12,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
 import { DataStoreService } from '../services/data-store.service';
-import { HttpClient } from '@angular/common/http';
-import { enviort } from '../../environments/environment';
-import { AuthService } from '../services/auth.service';
+import { LedgerService } from '../services/ledger.service';
 
 @Component({
   selector: 'app-transaction-dialog',
@@ -30,8 +28,7 @@ export class TransactionDialogComponent {
   constructor(
     public dialogRef: MatDialogRef<TransactionDialogComponent>,
     private dataService: DataStoreService,
-    private http: HttpClient,
-    private authService: AuthService,
+    private ledgerService: LedgerService,
     @Inject(MAT_DIALOG_DATA) public data: Transaction
   ) {
     this.dataService.getParties().subscribe(party => this.parties = party || []);
@@ -47,7 +44,7 @@ export class TransactionDialogComponent {
   }
   fetchLedgerForParty(partyId: any) {
       if (!partyId) return;
-      this.http.get<any[]>(enviort.ledgerUrl + '/' + partyId, { headers: this.authService.getAuthHeaders() }).subscribe(data => {
+      this.ledgerService.getLedgerForParty(partyId).subscribe(data => {
         let results = data || [];
         // Server returns entries ordered by date desc; last updated balance is first item's balance
         let lastBalance = (results && results.length) ? (results[results.length-1].balance || 0) : 0;

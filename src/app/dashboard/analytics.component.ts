@@ -1,30 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { OrderByPipe } from '../pipes/order-by.pipe';
 import { DataStoreService } from '../services/data-store.service';
+import { DashboardService } from '../services/dashboard.service';
 import { Sale } from '../interface/Sale';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
 import { formatDateLocal, getTodayLocal } from '../utils/date.utils';
-import { AuthService } from '../services/auth.service';
-import { enviort } from '../../environments/environment';
-
-interface DashboardStats {
-  totalBooks: number;
-  totalBookStock: number;
-  totalParties: number;
-  salesTodayAmount: number;
-  salesTodayCount: number;
-  paymentsTodayAmount: number;
-  paymentsTodayCount: number;
-  weekSalesAmount: number;
-  monthSalesAmount: number;
-  last7DaysSales: { date: string; amount: number }[];
-}
+import { DASHBOARD_CONSTANTS } from '../constants/dashboard.constants';
 
 @Component({
   selector: 'app-analytics',
@@ -71,7 +57,7 @@ export class AnalyticsComponent implements OnInit {
   bestPerformingDay: string = '';
   recommendedActions: string[] = [];
 
-  constructor(private store: DataStoreService, private http: HttpClient, private auth: AuthService) {}
+  constructor(private store: DataStoreService, private dashboardService: DashboardService) {}
 
   ngOnInit() {
     this.loadAnalyticsData();
@@ -98,9 +84,7 @@ export class AnalyticsComponent implements OnInit {
   }
 
   private loadStatsFromApi(): void {
-    this.http.get<DashboardStats>(enviort.statsDashboardUrl, {
-      headers: this.auth.getAuthHeaders()
-    }).subscribe({
+    this.dashboardService.getDashboardStats().subscribe({
       next: (stats) => {
         this.salesTodayAmount = stats.salesTodayAmount || 0;
         this.salesTodayCount = stats.salesTodayCount || 0;
@@ -133,7 +117,7 @@ export class AnalyticsComponent implements OnInit {
         }
       },
       error: (error) => {
-        console.error('Failed to load analytics stats:', error);
+        console.error(DASHBOARD_CONSTANTS.MESSAGES.FETCH_ERROR, error);
       }
     });
   }

@@ -3,26 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { baseUrl, enviort } from '../../environments/environment';
-
-export interface AuthRequest {
-  username: string;
-  password: string;
-  email?: string;
-}
-
-export interface AuthResponse {
-  accessToken: string;
-  refreshToken: string;
-}
-
-export interface ForgotPasswordRequest {
-  email: string;
-}
-
-export interface ForgotPasswordResponse {
-  message: string;
-  resetToken?: string;
-}
+import { AuthRequest, AuthResponse, ForgotPasswordRequest, ForgotPasswordResponse } from '../interface/auth';
 
 @Injectable({
   providedIn: 'root'

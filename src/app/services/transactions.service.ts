@@ -1,0 +1,67 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { AuthService } from './auth.service';
+import { Transaction } from '../interface/Transaction';
+import { enviort } from '../../environments/environment';
+
+@Injectable({ providedIn: 'root' })
+export class TransactionsService {
+  constructor(private http: HttpClient, private auth: AuthService) {}
+
+  getTransactions(): Observable<Transaction[]> {
+    return this.http.get<Transaction[]>(enviort.paymentUrl, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading transactions:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getTransactionsByDateRange(params: any): Observable<Transaction[]> {
+    return this.http.get<Transaction[]>(enviort.paymentUrl, { 
+      headers: this.auth.getAuthHeaders(), 
+      params 
+    }).pipe(
+      catchError((error) => {
+        console.error('Error loading transactions by date range:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  createTransaction(transaction: Transaction): Observable<Transaction> {
+    return this.http.post<Transaction>(enviort.paymentUrl, transaction, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error creating transaction:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  downloadPaymentReceipt(paymentId: number): Observable<Blob> {
+    const receiptUrl = `${enviort.paymentUrl}/${paymentId}/receipt`;
+    return this.http.get(receiptUrl, {
+      headers: this.auth.getAuthHeaders(),
+      responseType: 'blob'
+    }).pipe(
+      catchError((error) => {
+        console.error('Error downloading payment receipt:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getPaymentReceipt(paymentId: number): Observable<any> {
+    const receiptUrl = `${enviort.paymentUrl}/${paymentId}/receipt`;
+    return this.http.get(receiptUrl, { 
+      headers: this.auth.getAuthHeaders() 
+    }).pipe(
+      catchError((error) => {
+        console.error('Error loading payment receipt:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+}

@@ -11,6 +11,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AuthService } from '../../../services/auth.service';
+import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
 
 @Component({
   selector: 'app-register',
@@ -124,7 +125,7 @@ export class RegisterComponent {
 
   onSubmit(): void {
     if (this.registerForm.invalid) {
-      this.snackBar.open('Please fill all fields correctly', 'Close', { duration: 3000 });
+      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.INVALID_FORM, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
       return;
     }
 
@@ -133,13 +134,13 @@ export class RegisterComponent {
 
     this.authService.register(username, password, email).subscribe({
       next: () => {
-        this.snackBar.open('Registration successful! Welcome!', 'Close', { duration: 3000 });
+        this.snackBar.open(AUTH_CONSTANTS.MESSAGES.REGISTER_SUCCESS, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
         this.router.navigate(['/dashboard']);
       },
       error: (error: any) => {
         this.loading.set(false);
-        const message = error.error?.message || 'Registration failed. Please try again.';
-        this.snackBar.open(message, 'Close', { duration: 3000 });
+        const message = error.error?.message || AUTH_CONSTANTS.MESSAGES.REGISTER_ERROR;
+        this.snackBar.open(message, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
       }
     });
   }

@@ -63,7 +63,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let inv of invoices" class="border-t border-indigo-500/10">
-              <td class="py-3 px-3">{{ inv.date | date }}</td>
+              <td class="py-3 px-3">{{ formatInvoiceDateTime(inv) }}</td>
               <td class="py-3 px-3">{{ inv.invoiceNo || inv.id || '-' }}</td>
               <td class="py-3 px-3">{{ inv.type || '-' }}</td>
               <td class="py-3 px-3 text-right">{{ inv.totalAmount }}</td>

@@ -11,6 +11,7 @@ import { Observable, throwError } from 'rxjs';
 import { tap, catchError, finalize } from 'rxjs/operators';
 import { LoadingService } from './loading.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { LOADING_CONSTANTS } from '../constants/loading.constants';
 
 @Injectable()
 export class LoadingInterceptor implements HttpInterceptor {
@@ -30,7 +31,7 @@ export class LoadingInterceptor implements HttpInterceptor {
           if (event.status === 200 || event.status === 201) {
             const message = this.getSuccessMessage(request);
             if (message) {
-              this.snackBar.open(message, 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
+              this.snackBar.open(message, 'Close', { duration: LOADING_CONSTANTS.DURATION.SUCCESS, panelClass: LOADING_CONSTANTS.PANEL_CLASS.SUCCESS });
             }
           }
         }
@@ -38,7 +39,7 @@ export class LoadingInterceptor implements HttpInterceptor {
       catchError((error: HttpErrorResponse) => {
         // Show error message
         const errorMessage = this.getErrorMessage(error);
-        this.snackBar.open(errorMessage, 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+        this.snackBar.open(errorMessage, 'Close', { duration: LOADING_CONSTANTS.DURATION.ERROR, panelClass: LOADING_CONSTANTS.PANEL_CLASS.ERROR });
         
         console.error('HTTP Error:', error);
         return throwError(() => error);
@@ -60,31 +61,31 @@ export class LoadingInterceptor implements HttpInterceptor {
     }
 
     if (url.includes('books') && method === 'POST') {
-      return 'Book added successfully';
+      return LOADING_CONSTANTS.SUCCESS.BOOK_ADDED;
     }
     if (url.includes('books') && method === 'PUT') {
-      return 'Book updated successfully';
+      return LOADING_CONSTANTS.SUCCESS.BOOK_UPDATED;
     }
     if (url.includes('books') && method === 'DELETE') {
-      return 'Book deleted successfully';
+      return LOADING_CONSTANTS.SUCCESS.BOOK_DELETED;
     }
     if (url.includes('parties') && method === 'POST') {
-      return 'Party added successfully';
+      return LOADING_CONSTANTS.SUCCESS.PARTY_ADDED;
     }
     if (url.includes('parties') && method === 'PUT') {
-      return 'Party updated successfully';
+      return LOADING_CONSTANTS.SUCCESS.PARTY_UPDATED;
     }
     if (url.includes('parties') && method === 'DELETE') {
-      return 'Party deleted successfully';
+      return LOADING_CONSTANTS.SUCCESS.PARTY_DELETED;
     }
     if (url.includes('sales') && method === 'POST') {
-      return 'Sale added successfully';
+      return LOADING_CONSTANTS.SUCCESS.SALE_ADDED;
     }
     if (url.includes('sales') && method === 'PUT') {
-      return 'Sale updated successfully';
+      return LOADING_CONSTANTS.SUCCESS.SALE_UPDATED;
     }
     if (url.includes('payment') && method === 'POST') {
-      return 'Payment recorded successfully';
+      return LOADING_CONSTANTS.SUCCESS.PAYMENT_RECORDED;
     }
 
     return '';
@@ -92,30 +93,30 @@ export class LoadingInterceptor implements HttpInterceptor {
 
   private getErrorMessage(error: HttpErrorResponse): string {
     if (error.status === 0) {
-      return 'Network error. Please check your connection.';
+      return LOADING_CONSTANTS.ERROR.NETWORK;
     }
     if (error.status === 400) {
-      return error.error?.message || 'Invalid request. Please check your input.';
+      return error.error?.message || LOADING_CONSTANTS.ERROR.BAD_REQUEST;
     }
     if (error.status === 401) {
-      return 'Unauthorized. Please login again.';
+      return LOADING_CONSTANTS.ERROR.UNAUTHORIZED;
     }
     if (error.status === 403) {
-      return 'Access denied.';
+      return LOADING_CONSTANTS.ERROR.FORBIDDEN;
     }
     if (error.status === 404) {
-      return 'Resource not found.';
+      return LOADING_CONSTANTS.ERROR.NOT_FOUND;
     }
     if (error.status === 409) {
-      return error.error?.message || 'Conflict with existing data.';
+      return error.error?.message || LOADING_CONSTANTS.ERROR.CONFLICT;
     }
     if (error.status === 500) {
-      return 'Server error. Please try again later.';
+      return LOADING_CONSTANTS.ERROR.SERVER;
     }
     if (error.status === 503) {
-      return 'Service unavailable. Please try again later.';
+      return LOADING_CONSTANTS.ERROR.SERVICE_UNAVAILABLE;
     }
 
-    return error.error?.message || 'An error occurred. Please try again.';
+    return error.error?.message || LOADING_CONSTANTS.ERROR.DEFAULT;
   }
 }

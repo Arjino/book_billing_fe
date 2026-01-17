@@ -12,6 +12,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services/auth.service';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
 
 @Component({
   selector: 'app-forgot-password',
@@ -48,7 +49,7 @@ export class ForgotPasswordComponent {
 
   onSubmit(): void {
     if (this.forgotForm.invalid) {
-      this.snackBar.open('Please enter a valid email address', 'Close', { duration: 3000 });
+      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.INVALID_EMAIL, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
       return;
     }
 
@@ -61,16 +62,16 @@ export class ForgotPasswordComponent {
         const token = response?.resetToken;
 
         if (token) {
-          this.snackBar.open('Reset token generated. Proceed to set a new password.', 'Close', { duration: 2500 });
+          this.snackBar.open(AUTH_CONSTANTS.MESSAGES.FORGOT_PASSWORD_SUCCESS, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.SHORT });
           this.router.navigate(['/auth/reset-password', token]);
         } else {
-          this.snackBar.open('Reset token missing in response. Please try again.', 'Close', { duration: 4000 });
+          this.snackBar.open(AUTH_CONSTANTS.MESSAGES.RESET_TOKEN_MISSING, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.LONG });
         }
       },
       error: (error: any) => {
         this.loading.set(false);
-        const message = error.error?.message || 'Failed to process request. Please try again.';
-        this.snackBar.open(message, 'Close', { duration: 3000 });
+        const message = error.error?.message || AUTH_CONSTANTS.MESSAGES.FORGOT_PASSWORD_ERROR;
+        this.snackBar.open(message, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
       }
     });
   }

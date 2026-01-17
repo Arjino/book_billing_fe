@@ -43,10 +43,15 @@ export const AUTH_CONSTANTS = {
     LOGOUT_ERROR: 'Logout failed!',
     PASSWORD_RESET_ERROR: 'Failed to reset password! Please try again.',
     FORGOT_PASSWORD_ERROR: 'Failed to send reset link! Please try again.',
+    RESET_TOKEN_MISSING: 'Reset token missing in response. Please try again.',
     SESSION_EXPIRED: 'Your session has expired. Please log in again.',
     INVALID_EMAIL: 'Please enter a valid email address.',
     INVALID_PASSWORD: 'Password does not meet security requirements.',
-    PASSWORDS_NOT_MATCH: 'Passwords do not match!'
+    PASSWORDS_NOT_MATCH: 'Passwords do not match!',
+    INVALID_FORM: 'Please fill all fields correctly',
+    RESET_LINK_INVALID: 'Reset link is invalid or missing.',
+    RESET_FORM_INVALID: 'Please fix the errors before submitting.',
+    PASSWORD_UPDATED: 'Password updated. You can now log in.'
   },
   
   // Token Configuration
@@ -54,5 +59,12 @@ export const AUTH_CONSTANTS = {
     STORAGE_KEY: 'accessToken',
     REFRESH_TOKEN_KEY: 'refreshToken',
     TOKEN_EXPIRY_CHECK_INTERVAL: 60000 // 1 minute
+  },
+
+  // Snackbar Durations (ms)
+  SNACKBAR_DURATION: {
+    SHORT: 2500,
+    MEDIUM: 3000,
+    LONG: 4000
   }
 };

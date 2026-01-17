@@ -10,24 +10,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../services/auth.service';
 import { DataStoreService } from '../services/data-store.service';
 import { Book } from '../interface/book';
 import { Party } from '../interface/party';
-
-export interface SalesDialogData {
-  id: number;
-  party: any;
-  date: string;
-  totalAmount: number;
-  taxAmount: number;
-  grandTotal: number;
-  paymentStatus: string;
-  paidAmount: number;
-  type: string;
-  items: any[];
-}
+import { SalesDialogData } from '../interface/sales-dialog-data';
 
 @Component({
   selector: 'app-sales-dialog',
@@ -43,8 +30,6 @@ export class SalesDialogComponent implements OnInit {
   constructor(
     public dialogRef: MatDialogRef<SalesDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: SalesDialogData,
-    private http: HttpClient,
-    private authService: AuthService,
     private store: DataStoreService
   ) {}
   ngOnInit() {
@@ -101,10 +86,10 @@ export class SalesDialogComponent implements OnInit {
       id: 0,
       sale: null,
       book: null,
-      qty: 0,
-      rate: 0,
+      qty: null,
+      rate: null,
       discount: 0,
-      amount: 0,
+      amount: null,
       bookSearch: '',
       filteredBooks: this.books.slice()
     });
@@ -138,7 +123,7 @@ export class SalesDialogComponent implements OnInit {
     item.book = book;
     item.bookSearch = book.title;
     item.rate = typeof book.salePrice === 'number' ? book.salePrice : (item.rate || 0);
-    item.qty = 0;
+    item.qty = null;
     this.calculateAmount(item);
   }
 
@@ -146,7 +131,7 @@ export class SalesDialogComponent implements OnInit {
     // Sum all item amounts (which already include per-item discounts)
     this.data.totalAmount = this.data.items.reduce((sum, item) => sum + (item.amount || 0), 0);
     // Apply tax and round off
-    this.data.grandTotal = this.data.totalAmount + this.data.taxAmount;
+    this.data.grandTotal = (this.data.totalAmount ?? 0) + (this.data?.taxAmount ?? 0);
   }
 
   isQtyExceedsStock(item: any): boolean {

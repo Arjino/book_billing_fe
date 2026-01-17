@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,10 +11,10 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { AuthService } from '../services/auth.service';
 import { DataStoreService } from '../services/data-store.service';
+import { InvoicesService } from '../services/invoices.service';
 import { InvoicePreviewComponent } from './invoice-preview.component';
-import { enviort } from '../../environments/environment';
+import { formatTimeIST, formatDateLocal } from '../utils/date.utils';
 
 @Component({
   selector: 'app-invoices',
@@ -34,7 +33,7 @@ export class InvoicesComponent implements OnInit {
   endDate = '';
   saleType = 'All';
 
-  constructor(private route: ActivatedRoute, private http: HttpClient, private auth: AuthService, private store: DataStoreService, private dialog: MatDialog) {}
+  constructor(private route: ActivatedRoute, private store: DataStoreService, private invoicesService: InvoicesService, private dialog: MatDialog) {}
 
   ngOnInit(): void {
     this.store.getParties().subscribe(d => this.parties = d || []);
@@ -49,9 +48,7 @@ export class InvoicesComponent implements OnInit {
   }
 
   fetchInvoices(partyId?: any) {
-    let url = enviort.salesUrl;
-    if (partyId) url = `${enviort.salesUrl}/by-party/${partyId}`;
-    this.http.get<any[]>(url, { headers: this.auth.getAuthHeaders() }).subscribe(data => {
+    this.invoicesService.getInvoices(partyId).subscribe(data => {
       this.invoices = data || [];
       this.applyLocalFilters();
     }, err => {
@@ -90,12 +87,18 @@ export class InvoicesComponent implements OnInit {
     });
   }
 
+  formatInvoiceDateTime(inv: any): string {
+    if (!inv) return '-';
+    const datePart = inv.date ? formatDateLocal(inv.date) : '-';
+    const timePart = inv.time ? formatTimeIST(inv.time, inv.date) : '-';
+    return timePart === '-' ? datePart : `${datePart} ${timePart}`;
+  }
+
   downloadPdf(saleId: any,invoiceNo?:string) {
     if (!saleId) return;
     // Find the invoice object to get invoiceNo
     const invoice = this.invoices.find(inv => inv.id === saleId || inv.invoiceNo === saleId);
-    const url = `${enviort.salesUrl}/${saleId}/invoice/download`;
-    this.http.get(url, { headers: this.auth.getAuthHeaders(), responseType: 'blob' }).subscribe(blob => {
+    this.invoicesService.downloadInvoice(saleId).subscribe(blob => {
       const link = document.createElement('a');
       const objectUrl = URL.createObjectURL(blob);
       link.href = objectUrl;

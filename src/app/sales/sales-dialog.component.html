@@ -18,7 +18,7 @@
             <mat-option [value]="null">Select Party</mat-option>
             <mat-option *ngFor="let p of parties" [value]="p">{{ p.name }}</mat-option>
           </mat-select>
-          <mat-error *ngIf="partyModel.invalid && (partyModel.dirty || partyModel.touched)">
+          <mat-error *ngIf="partyModel.invalid && (partyModel.dirty && partyModel.touched)">
             <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
           </mat-error>
         </mat-form-field>
@@ -28,7 +28,7 @@
           <input matInput [matDatepicker]="salesDatePicker" class="text-white" [(ngModel)]="data.date" name="date" required #dateModel="ngModel" [placeholder]="'dd-MM-yyyy'" />
           <mat-datepicker-toggle matSuffix [for]="salesDatePicker"></mat-datepicker-toggle>
           <mat-datepicker #salesDatePicker startView="month"></mat-datepicker>
-          <mat-error *ngIf="dateModel.invalid && (dateModel.dirty || dateModel.touched)">
+          <mat-error *ngIf="dateModel.invalid && (dateModel.dirty && dateModel.touched)">
             <span *ngIf="dateModel.errors?.['required']">Date is required.</span>
           </mat-error>
         </mat-form-field>
@@ -42,7 +42,7 @@
             <mat-option value="RETURN_IN">Return In</mat-option>
             <mat-option value="RETURN_OUT">Return Out</mat-option>
           </mat-select>
-          <mat-error *ngIf="typeModel.invalid && (typeModel.dirty || typeModel.touched)">
+          <mat-error *ngIf="typeModel.invalid && (typeModel.dirty && typeModel.touched)">
             <span *ngIf="typeModel.errors?.['required']">Sale type is required.</span>
           </mat-error>
         </mat-form-field>
@@ -64,7 +64,7 @@
                   <mat-autocomplete #autoBook="matAutocomplete" (optionSelected)="onBookSelected($event.option.value, item)">
                     <mat-option *ngFor="let b of item.filteredBooks || books" [value]="b">{{ b.title }}</mat-option>
                   </mat-autocomplete>
-                  <mat-error *ngIf="bookModel.invalid && (bookModel.dirty || bookModel.touched)">
+                  <mat-error *ngIf="bookModel.invalid && (bookModel.dirty && bookModel.touched)">
                     <span *ngIf="bookModel.errors?.['required']">Book is required.</span>
                   </mat-error>
                 </mat-form-field>
@@ -86,8 +86,8 @@
                     [attr.max]="item.book?.stock" 
                     step="1" />
                   <mat-error>
-                    <span *ngIf="qtyModel.errors?.['required'] && (qtyModel.dirty || qtyModel.touched)">Required</span>
-                    <span *ngIf="qtyModel.errors?.['min'] && (qtyModel.dirty || qtyModel.touched)">Min 1</span>
+                    <span *ngIf="qtyModel.errors?.['required'] && (qtyModel.dirty && qtyModel.touched)">Required</span>
+                    <span *ngIf="qtyModel.errors?.['min'] && (qtyModel.dirty && qtyModel.touched)">Min 1</span>
                     <span *ngIf="!qtyModel.errors?.['required'] && !qtyModel.errors?.['min'] && qtyModel.touched && hasExceededStock(item)">Exceeds stock ({{ item.book?.stock }})</span>
                   </mat-error>
                 </mat-form-field>
@@ -95,7 +95,7 @@
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Rate</mat-label>
                   <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="rateModel.control.markAsTouched(); calculateAmount(item)" />
-                  <mat-error *ngIf="rateModel.invalid && (rateModel.dirty || rateModel.touched)">
+                  <mat-error *ngIf="rateModel.invalid && (rateModel.dirty && rateModel.touched)">
                     <span *ngIf="rateModel.errors?.['required']">Required</span>
                   </mat-error>
                 </mat-form-field>
@@ -145,7 +145,7 @@
               <mat-option value="Paid">Paid</mat-option>
               <mat-option value="Partial">Partial</mat-option>
             </mat-select>
-            <mat-error *ngIf="paymentStatusModel.invalid && (paymentStatusModel.dirty || paymentStatusModel.touched)">
+            <mat-error *ngIf="paymentStatusModel.invalid && (paymentStatusModel.dirty && paymentStatusModel.touched)">
               <span *ngIf="paymentStatusModel.errors?.['required']">Payment status is required.</span>
             </mat-error>
           </mat-form-field>
@@ -154,7 +154,7 @@
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Partial Payment Amount</mat-label>
             <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
-            <mat-error *ngIf="paidAmountModel.invalid && (paidAmountModel.dirty || paidAmountModel.touched)">
+            <mat-error *ngIf="paidAmountModel.invalid && (paidAmountModel.dirty && paidAmountModel.touched)">
               <span *ngIf="paidAmountModel.errors?.['required']">Partial amount is required.</span>
             </mat-error>
             <mat-error *ngIf="isOverpay()">Paid amount cannot exceed grand total.</mat-error>

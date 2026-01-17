@@ -8,9 +8,16 @@ export const SALES_CONSTANTS = {
   DISPLAY_COLUMNS: ['ID', 'Party', 'Date', 'Total Amount', 'Discount', 'Tax Amount', 'Round Off', 'Grand Total', 'Payment Status', 'Actions'],
   
   // Dialog Configuration
-  DIALOG_WIDTH: '900px',
+  DIALOG_WIDTH: '800px',
   DIALOG_TITLE_ADD: 'Create New Sale',
   DIALOG_TITLE_EDIT: 'Edit Sale',
+
+  // Defaults
+  DEFAULTS: {
+    PAYMENT_STATUS: 'Pending',
+    SALE_TYPE: '',
+    ROUND_OFF: null
+  },
   
   // Form Labels
   FORM_LABELS: {
@@ -61,6 +68,17 @@ export const SALES_CONSTANTS = {
     ADD_ERROR: 'Failed to create sale!',
     UPDATE_ERROR: 'Failed to update sale!',
     DELETE_ERROR: 'Failed to delete sale!',
-    INVALID_ITEMS: 'Please add at least one item to the sale!'
+    INVALID_ITEMS: 'Please add at least one item to the sale!',
+    DATE_RANGE_ERROR: 'Failed to fetch sales. Please try again.',
+    RETURN_IN_SUCCESS: 'Sale return added successfully!',
+    RETURN_IN_ERROR: 'Failed to submit sale return. Please try again.',
+    CREATE_ERROR: 'Failed to create sale. Please try again.'
+  },
+
+  // Snackbar Durations (ms)
+  SNACKBAR_DURATION: {
+    SHORT: 3000,
+    MEDIUM: 5000,
+    LONG: 6000
   }
 };

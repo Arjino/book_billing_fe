@@ -1,7 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,17 +9,20 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
 import { AuthService } from '../services/auth.service';
 import { DataStoreService } from '../services/data-store.service';
+import { DashboardService } from '../services/dashboard.service';
 import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
-import { BookDialogComponent, BookDialogData } from '../booking/book-dialog.component';
-import { PartyDialogComponent, PartyDialogData } from '../parties/party-dialog.component';
-import { SalesDialogComponent, SalesDialogData } from '../sales/sales-dialog.component';
+import { BookDialogComponent } from '../booking/book-dialog.component';
+import { BookDialogData } from '../interface/book-dialog-data';
+import { PartyDialogComponent } from '../parties/party-dialog.component';
+import { PartyDialogData } from '../interface/party-dialog-data';
+import { SalesDialogComponent } from '../sales/sales-dialog.component';
+import { SalesDialogData } from '../interface/sales-dialog-data';
 import { TransactionDialogComponent} from '../transaction/transaction-dialog.component';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { enviort } from '../../environments/environment';
 import { BookingComponent } from '../booking/booking.component';
 import { PartiesComponent } from '../parties/parties.component';
 import { SalesComponent } from '../sales/sales.component';
@@ -29,19 +31,12 @@ import { AnalyticsComponent } from './analytics.component';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
 import { getTodayLocal } from '../utils/date.utils';
-
-interface DashboardStats {
-  totalBooks: number;
-  totalBookStock: number;
-  totalParties: number;
-  salesTodayAmount: number;
-  salesTodayCount: number;
-  paymentsTodayAmount: number;
-  paymentsTodayCount: number;
-  weekSalesAmount: number;
-  monthSalesAmount: number;
-  last7DaysSales: { date: string; amount: number }[];
-}
+import { BOOKING_CONSTANTS } from '../constants/booking.constants';
+import { PARTIES_CONSTANTS } from '../constants/parties.constants';
+import { DASHBOARD_CONSTANTS } from '../constants/dashboard.constants';
+import { SALES_CONSTANTS } from '../constants/sales.constants';
+import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
+import { DashboardStats } from '../interface/dashboard-stats';
 
 @Component({
   selector: 'app-dashboard',
@@ -126,8 +121,8 @@ export class DashboardComponent implements OnInit {
   parties: Party[] = [];
   selectedLedgerParty: any = null;
   selectedInvoiceParty: any = null;
-  selectedBookingStatus: string = 'available'; // 'available' or 'discarded'
-  selectedPartyStatus: string = 'current'; // 'current' or 'old'
+  selectedBookingStatus: string = BOOKING_CONSTANTS.DEFAULTS.STATUS; // 'available' or 'discarded'
+  selectedPartyStatus: string = PARTIES_CONSTANTS.DEFAULTS.STATUS; // 'current' or 'old'
   dashboardStats: DashboardStats = {
     totalBooks: 0,
     totalBookStock: 0,
@@ -146,8 +141,8 @@ export class DashboardComponent implements OnInit {
     private authService: AuthService,
     private router: Router,
     private dialog: MatDialog,
-    private http: HttpClient,
-    private store: DataStoreService
+    private store: DataStoreService,
+    private dashboardService: DashboardService
   ) {}
 
   ngOnInit(): void {
@@ -181,7 +176,7 @@ export class DashboardComponent implements OnInit {
     const token = this.authService.getAccessToken();
     if (token) {
       navigator.clipboard.writeText(token).then(() => {
-        alert('Token copied to clipboard!');
+        alert(DASHBOARD_CONSTANTS.MESSAGES.TOKEN_COPIED);
       });
     }
   }
@@ -205,7 +200,7 @@ export class DashboardComponent implements OnInit {
 
   openBookingDialog() {
     const dialogRef = this.dialog.open(BookDialogComponent, {
-      width: '400px',
+      width: BOOKING_CONSTANTS.DIALOG_WIDTH,
       data: {
         id: 0,
         sku: '',
@@ -220,17 +215,13 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: BookDialogData) => {
       if (result) {
-        this.http.post(
-          enviort.bookingUrl,
-          result,
-          { headers: this.authService.getAuthHeaders() }
-        ).subscribe(() => {
-          alert('Book added successfully!');
+        this.store.createBook(result as any).subscribe(() => {
+          alert(BOOKING_CONSTANTS.MESSAGES.ADD_SUCCESS);
           this.store.refreshBooks();
         },
         (error: any) => {
           console.error('Failed to add book:', error);
-          alert('Failed to add book. Please try again.');
+          alert(BOOKING_CONSTANTS.MESSAGES.ADD_ERROR);
         });
       }
     });
@@ -238,11 +229,11 @@ export class DashboardComponent implements OnInit {
 
   openPartyDialog() {
     const dialogRef = this.dialog.open(PartyDialogComponent, {
-      width: '400px',
+      width: PARTIES_CONSTANTS.DIALOG_WIDTH,
       data: {
         id: 0,
         name: '',
-        type: '',
+        type: PARTIES_CONSTANTS.DEFAULTS.PARTY_TYPE,
         phone: '',
         address: '',
         gstin: ''
@@ -251,17 +242,13 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: PartyDialogData) => {
       if (result) {
-        this.http.post(
-          enviort.partiesUrl,
-          result,
-          { headers: this.authService.getAuthHeaders() }
-        ).subscribe(() => {
-          alert('Party added successfully!');
+        this.store.createParty(result as Party).subscribe(() => {
+          alert(PARTIES_CONSTANTS.MESSAGES.ADD_SUCCESS);
           this.store.refreshParties();
         },
         (error: any) => {
           console.error('Failed to add party:', error);
-          alert('Failed to add party. Please try again.');
+          alert(PARTIES_CONSTANTS.MESSAGES.ADD_ERROR);
         });
       }
     });
@@ -272,6 +259,7 @@ export class DashboardComponent implements OnInit {
       width: '600px',
       data: {
         id: 0,
+        invoiceNo: '',
         party: null,
         date: getTodayLocal(),
         items: [],
@@ -303,33 +291,25 @@ export class DashboardComponent implements OnInit {
           }))
         };
 
-        this.http.post(
-          enviort.saleReturnsUrl,
-          payload,
-          { headers: this.authService.getAuthHeaders() }
-        ).subscribe(() => {
-          alert('Sale return added successfully!');
+        this.store.createSaleReturn(payload).subscribe(() => {
+          alert(SALES_CONSTANTS.MESSAGES.RETURN_IN_SUCCESS);
           this.store.refreshBooks();
         }, (error: any) => {
           console.error('Failed to add sale return:', error);
-          alert('Failed to add sale return. Please try again.');
+          alert(SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR);
         });
 
         return;
       }
 
-      this.http.post(
-        enviort.salesUrl,
-        result,
-        { headers: this.authService.getAuthHeaders() }
-      ).subscribe(() => {
-        alert('Sale added successfully!');
+      this.store.createSale(result).subscribe(() => {
+        alert(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS);
         // refresh books cache so UI sees updated stock after sale
         this.store.refreshBooks();
       },
       (error: any) => {
         console.error('Failed to add sale:', error);
-        alert('Failed to add sale. Please try again.');
+        alert(SALES_CONSTANTS.MESSAGES.CREATE_ERROR);
       });
     });
   }
@@ -352,16 +332,12 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
-        this.http.post(
-          enviort.paymentUrl,
-          result,
-          { headers: this.authService.getAuthHeaders() }
-        ).subscribe(() => {
-          alert('Transaction added successfully!');
+        this.store.createTransaction(result).subscribe(() => {
+          alert(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS);
         },
         (error: any) => {
           console.error('Failed to add transaction:', error);
-          alert('Failed to add transaction. Please try again.');
+          alert(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR);
         });
       }
     });
@@ -410,9 +386,7 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadDashboardStats(): void {
-    this.http.get<DashboardStats>(enviort.statsDashboardUrl, {
-      headers: this.authService.getAuthHeaders()
-    }).subscribe({
+    this.dashboardService.getDashboardStats().subscribe({
       next: (data) => {
         this.dashboardStats = {
           ...this.dashboardStats,

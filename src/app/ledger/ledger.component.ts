@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { LEDGER_CONSTANTS } from '../constants/ledger.constants';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
@@ -11,9 +11,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { RouterModule } from '@angular/router';
-import { AuthService } from '../services/auth.service';
-import { enviort } from '../../environments/environment';
 import { DataStoreService } from '../services/data-store.service';
+import { LedgerService } from '../services/ledger.service';
 import { parseLocalDate, formatTimeIST } from '../utils/date.utils';
 
 @Component({
@@ -36,7 +35,7 @@ export class LedgerComponent implements OnInit {
   lastBalance: number = 0;
   totalAmount: number = 0;
 
-  constructor(private route: ActivatedRoute, private http: HttpClient, private authService: AuthService, private store: DataStoreService, private location: Location) {}
+  constructor(private route: ActivatedRoute, private store: DataStoreService, private ledgerService: LedgerService, private location: Location) {}
 
   ngOnInit(): void {
     this.store.getParties().subscribe(d => this.parties = d || []);
@@ -63,7 +62,7 @@ export class LedgerComponent implements OnInit {
 
   fetchLedgerForParty(partyId: any) {
     if (!partyId) return;
-    this.http.get<any[]>(enviort.ledgerUrl + '/' + partyId, { headers: this.authService.getAuthHeaders() }).subscribe(data => {
+    this.ledgerService.getLedgerForParty(partyId).subscribe(data => {
       // Apply client-side filters to the received data
       const filtered = this.filterResults(data || []);
       this.results = filtered;
@@ -90,10 +89,9 @@ export class LedgerComponent implements OnInit {
     const end = this.endDate ? this.formatDateForAPI(this.endDate) : this.formatDateForAPI(new Date());
     const type = this.transactionType || 'All';
 
-    // Call filter endpoint with query params: GET /api/ledger/entries/filter
-    const url = `${enviort.ledgerFilterUrl}?partyId=${this.partyId}&startDate=${start}&endDate=${end}&type=${type}`;
+    const params: any = { startDate: start, endDate: end, type };
     
-    this.http.get<any[]>(url, { headers: this.authService.getAuthHeaders() }).subscribe(data => {
+    this.ledgerService.getLedgerForPartyByDateRange(this.partyId, params).subscribe(data => {
       this.results = data || [];
       // Calculate last balance from results
       this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
@@ -141,14 +139,10 @@ export class LedgerComponent implements OnInit {
       queryParams.append('type', this.transactionType);
     }
 
-    // Call PDF download endpoint: GET /api/ledger/entries/report/pdf
-    const url = `${enviort.ledgerReportUrl}?${queryParams.toString()}`;
+    const params: any = Object.fromEntries(queryParams);
     
-    // Download PDF directly without opening in new tab
-    this.http.get(url, { 
-      headers: this.authService.getAuthHeaders(),
-      responseType: 'blob'
-    }).subscribe(
+    // Download PDF using service
+    this.ledgerService.downloadLedger(this.partyId, params).subscribe(
       (blob: Blob) => {
         // Create blob URL and trigger download
         const blobUrl = window.URL.createObjectURL(blob);
@@ -162,7 +156,7 @@ export class LedgerComponent implements OnInit {
       },
       err => {
         console.error('Failed to download PDF:', err);
-        alert('Failed to download ledger report. Please try again.');
+        alert(LEDGER_CONSTANTS.MESSAGES.DOWNLOAD_ERROR);
       }
     );
   }
