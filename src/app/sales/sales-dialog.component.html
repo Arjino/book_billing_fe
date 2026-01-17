@@ -74,7 +74,7 @@
                   <mat-error>
                     <span *ngIf="qtyModel.errors?.['required'] && (qtyModel.dirty && qtyModel.touched)">Required</span>
                     <span *ngIf="qtyModel.errors?.['min'] && (qtyModel.dirty && qtyModel.touched)">Min 1</span>
-                    <span *ngIf="!qtyModel.errors?.['required'] && !qtyModel.errors?.['min'] && qtyModel.touched && hasExceededStock(item)">Exceeds stock ({{ item.book?.stock }})</span>
+                    <span *ngIf="data.type !== 'PURCHASE' && !qtyModel.errors?.['required'] && !qtyModel.errors?.['min'] && qtyModel.touched && hasExceededStock(item)">Exceeds stock ({{ item.book?.stock }})</span>
                   </mat-error>
                 </mat-form-field>
 

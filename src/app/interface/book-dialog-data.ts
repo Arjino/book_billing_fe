@@ -4,7 +4,6 @@ export interface BookDialogData {
   title: string;
   publisher: string;
   hsn: string;
-  costPrice: number;
-  salePrice: number;
+  mrp: number;
   stock: number;
 }

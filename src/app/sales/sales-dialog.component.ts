@@ -126,7 +126,7 @@ export class SalesDialogComponent implements OnInit {
     if (!book) return;
     item.book = book;
     item.bookSearch = book.title;
-    item.rate = typeof book.salePrice === 'number' ? book.salePrice : (item.rate || 0);
+    item.rate = typeof book.mrp === 'number' ? book.mrp : (item.rate || 0);
     item.qty = null;
     this.calculateAmount(item);
   }
@@ -139,6 +139,10 @@ export class SalesDialogComponent implements OnInit {
   }
 
   isQtyExceedsStock(item: any): boolean {
+    // Skip validation for PURCHASE as we're adding to stock
+    if (this.data.type === 'PURCHASE') {
+      return false;
+    }
     return item && item.book && typeof item.book.stock === 'number' && Number(item.qty) > Number(item.book.stock);
   }
 
@@ -148,7 +152,8 @@ export class SalesDialogComponent implements OnInit {
 
   validateQty(item: any, qtyModel: any): void {
     this.calculateAmount(item);
-    if (this.hasExceededStock(item)) {
+    // Skip exceeded stock validation for PURCHASE
+    if (this.data.type !== 'PURCHASE' && this.hasExceededStock(item)) {
       qtyModel.control.setErrors({ ...qtyModel.errors, 'exceededStock': true });
     }
   }

@@ -4,8 +4,8 @@
 
 export const BOOKING_CONSTANTS = {
   // Table Configuration
-  TABLE_COLUMNS: ['id', 'sku', 'title', 'publisher', 'hsn', 'costPrice', 'salePrice', 'stock', 'actions'],
-  DISPLAY_COLUMNS: ['ID', 'SKU', 'Title', 'Publisher', 'HSN', 'Cost Price', 'Sale Price', 'Stock', 'Actions'],
+  TABLE_COLUMNS: ['id', 'sku', 'title', 'publisher', 'hsn', 'mrp', 'stock', 'actions'],
+  DISPLAY_COLUMNS: ['ID', 'SKU', 'Title', 'Publisher', 'HSN', 'MRP', 'Stock', 'Actions'],
 
   // Dialog Configuration
   DIALOG_WIDTH: '400px',
@@ -38,8 +38,7 @@ export const BOOKING_CONSTANTS = {
     TITLE: 'Title',
     PUBLISHER: 'Publisher',
     HSN: 'HSN Code',
-    COST_PRICE: 'Cost Price',
-    SALE_PRICE: 'Sale Price',
+    MRP: 'MRP',
     STOCK: 'Stock'
   },
 
@@ -53,8 +52,7 @@ export const BOOKING_CONSTANTS = {
     PUBLISHER_MAX_LENGTH: 100,
     HSN_MIN_LENGTH: 1,
     HSN_MAX_LENGTH: 50,
-    COST_PRICE_MIN: 0,
-    SALE_PRICE_MIN: 0,
+    MRP_MIN: 0,
     STOCK_MIN: 0
   },
 

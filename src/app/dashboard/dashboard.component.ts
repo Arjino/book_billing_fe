@@ -208,8 +208,7 @@ export class DashboardComponent implements OnInit {
         title: '',
         publisher: '',
         hsn: '',
-        costPrice: 0,
-        salePrice: 0,
+        mrp: 0,
         stock: 0
       } as BookDialogData
     });
