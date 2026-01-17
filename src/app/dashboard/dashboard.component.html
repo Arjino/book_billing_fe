@@ -148,6 +148,17 @@
                   </mat-form-field>
                   <button mat-raised-button color="primary" class="w-full" (click)="navigateToSales(selectedSalesType)">Open Sales</button>
                 </div>
+
+                <!-- Transactions Card Content: Two buttons for create and open -->
+                <div *ngIf="card.title === 'Transactions'" class="space-y-3">
+                  <button mat-raised-button color="accent" class="w-full" (click)="openTransactionDialog()">
+                    <mat-icon>add</mat-icon>
+                    Create Transaction
+                  </button>
+                  <button mat-raised-button color="primary" class="w-full" (click)="navigateTo('/transaction')">
+                    Show Transactions
+                  </button>
+                </div>
                 
                 <!-- PDF Card Content: select party and open invoice list -->
                 <div *ngIf="card.pdfCard" class="space-y-3">
@@ -189,7 +200,7 @@
               <!-- Action Buttons -->
               <div class="absolute bottom-4 right-4 flex gap-2 items-center z-20">
                 <!-- Add Button -->
-                <button *ngIf="card.route && !card.pdfCard && !card.button && card.title !== 'Ledger' && card.title !== 'Analytics'" 
+                <button *ngIf="card.route && !card.pdfCard && !card.button && card.title !== 'Ledger' && card.title !== 'Analytics' && card.title !== 'Books' && card.title !== 'Parties' && card.title !== 'Sales'" 
                         mat-mini-fab
                         color="accent"
                         class="shadow-lg hover:shadow-xl transition-all duration-300 scale-100 sm:scale-0 sm:group-hover:scale-100 origin-bottom-right"
@@ -198,7 +209,7 @@
                   <mat-icon>add</mat-icon>
                 </button>
                 <!-- Navigation Arrow Button -->
-                <button *ngIf="card.route && card.title !== 'Ledger' && card.title !== 'Analytics'" 
+                <button *ngIf="card.route && card.title !== 'Ledger' && card.title !== 'Analytics' && card.title !== 'Books' && card.title !== 'Parties' && card.title !== 'Sales'" 
                         mat-mini-fab
                         color="primary"
                         class="shadow-lg hover:shadow-xl transition-all duration-300 scale-100 sm:scale-0 sm:group-hover:scale-100 origin-bottom-right"
