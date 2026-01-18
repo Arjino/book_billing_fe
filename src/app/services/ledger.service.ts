@@ -33,9 +33,9 @@ export class LedgerService {
   }
 
   downloadLedger(partyId: number, params: any): Observable<Blob> {
-    return this.http.get(`${enviort.ledgerUrl}/${partyId}/download`, {
+    return this.http.get(enviort.ledgerReportUrl, {
       headers: this.auth.getAuthHeaders(),
-      params,
+      params: { ...params, partyId },
       responseType: 'blob'
     }).pipe(
       catchError((error) => {
