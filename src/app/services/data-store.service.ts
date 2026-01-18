@@ -27,7 +27,9 @@ export class DataStoreService {
     if (!this.partiesLoaded) this.loadParties();
     return this.parties$.asObservable();
   }
-
+  getPartiesLoaded() {
+  this.partiesLoaded = false;
+  }
   loadParties(force = false): void {
     if (this.partiesLoaded && !force) return;
     // mark as loading immediately to prevent duplicate parallel requests

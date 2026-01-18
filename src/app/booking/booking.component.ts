@@ -56,10 +56,10 @@ export class BookingComponent implements OnInit {
     this.loadBooksByStatus();
   }
 
-  loadBooksByStatus() {
+  loadBooksByStatus(force: boolean = false) {
     if (this.bookStatus === BOOKING_CONSTANTS.STATUS.AVAILABLE) {
       this.loadingService.show('Loading books...');
-      this.store?.getBooks().subscribe(data => {
+      this.store?.getBooks(force).subscribe(data => {
         this.books = data || [];
         this.filteredBooks = [...this.books];
         this.loadingService.hide();
@@ -151,8 +151,8 @@ export class BookingComponent implements OnInit {
     this.router.navigate(['/dashboard']);
   }
 
-  loadBooks() {
-    this.loadBooksByStatus();
+  loadBooks(force: boolean = false) {
+    this.loadBooksByStatus(force);
   }
 
   addBook() {
@@ -179,7 +179,7 @@ export class BookingComponent implements OnInit {
               duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
               panelClass: ['success-snackbar']
             });
-            this.loadBooks();
+            this.loadBooks(true);
           },
           error: (err) => {
             this.loadingService.hide();

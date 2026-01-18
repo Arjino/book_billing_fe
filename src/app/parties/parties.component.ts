@@ -131,6 +131,7 @@ export class PartiesComponent implements OnInit {
               duration: 3000,
               panelClass: ['success-snackbar']
             });
+            this.store.getPartiesLoaded();
             this.loadParties();
           },
           error: (err) => {
@@ -162,7 +163,6 @@ export class PartiesComponent implements OnInit {
               duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT,
               panelClass: ['success-snackbar']
             });
-            this.store?.loadParties(true);
             this.loadParties();
           },
           error: (err) => {
@@ -188,7 +188,6 @@ export class PartiesComponent implements OnInit {
             duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT,
             panelClass: ['success-snackbar']
           });
-          this.store?.loadParties(true);
           this.loadParties();
         },
         error: (err) => {
@@ -218,7 +217,6 @@ export class PartiesComponent implements OnInit {
             duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT,
             panelClass: ['success-snackbar']
           });
-          this.store?.loadParties(true);
           this.loadParties();
         },
         error: (err) => {
