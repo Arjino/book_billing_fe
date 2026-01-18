@@ -4,7 +4,7 @@
 
 export const BOOKING_CONSTANTS = {
   // Table Configuration
-  TABLE_COLUMNS: ['id', 'sku', 'title', 'publisher', 'hsn', 'costPrice', 'salePrice', 'stock', 'actions'],
+  TABLE_COLUMNS: ['id', 'sku', 'title', 'publisher', 'hsn', 'mrp', 'stock', 'actions'],
   DISPLAY_COLUMNS: ['ID', 'SKU', 'Title', 'Publisher', 'HSN', 'Cost Price', 'Sale Price', 'Stock', 'Actions'],
 
   // Dialog Configuration

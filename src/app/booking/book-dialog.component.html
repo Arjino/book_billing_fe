@@ -49,19 +49,11 @@
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Cost Price</mat-label>
-            <input matInput type="number" [(ngModel)]="data.costPrice" name="costPrice" min="0" #costModel="ngModel" (ngModelChange)="costModel.control.markAsTouched()" />
-            <mat-error *ngIf="costModel.invalid && (costModel.dirty || costModel.touched)">
-              <span *ngIf="costModel.errors?.['min']">Cost price cannot be negative.</span>
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Sale Price</mat-label>
-            <input matInput type="number" [(ngModel)]="data.salePrice" name="salePrice" required min="0" #saleModel="ngModel" (ngModelChange)="saleModel.control.markAsTouched()" />
-            <mat-error *ngIf="saleModel.invalid && (saleModel.dirty || saleModel.touched)">
-              <span *ngIf="saleModel.errors?.['required']">Sale price is required.</span>
-              <span *ngIf="saleModel.errors?.['min']">Sale price cannot be negative.</span>
+            <mat-label>MRP</mat-label>
+            <input matInput type="number" [(ngModel)]="data.mrp" name="mrp" required min="0" #mrpModel="ngModel" (ngModelChange)="mrpModel.control.markAsTouched()" />
+            <mat-error *ngIf="mrpModel.invalid && (mrpModel.dirty || mrpModel.touched)">
+              <span *ngIf="mrpModel.errors?.['required']">MRP is required.</span>
+              <span *ngIf="mrpModel.errors?.['min']">MRP cannot be negative.</span>
             </mat-error>
           </mat-form-field>
 

@@ -126,7 +126,7 @@ export class SalesDialogComponent implements OnInit {
     if (!book) return;
     item.book = book;
     item.bookSearch = book.title;
-    item.rate = typeof book.salePrice === 'number' ? book.salePrice : (item.rate || 0);
+    item.rate = typeof book.mrp === 'number' ? book.mrp : (item.rate || 0);
     item.qty = null;
     this.calculateAmount(item);
   }

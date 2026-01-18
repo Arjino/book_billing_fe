@@ -67,20 +67,20 @@
                     required 
                     #qtyModel="ngModel" 
                     inputmode="numeric" 
-                    (ngModelChange)="qtyModel.control.markAsTouched(); validateQty(item, qtyModel)" 
+                    (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item); data.type === 'SALE' && validateQty(item, qtyModel)" 
                     min="1" 
-                    [attr.max]="item.book?.stock" 
+                    [attr.max]="data.type === 'SALE' ? item.book?.stock : null" 
                     step="1" />
                   <mat-error>
                     <span *ngIf="qtyModel.errors?.['required'] && (qtyModel.dirty && qtyModel.touched)">Required</span>
                     <span *ngIf="qtyModel.errors?.['min'] && (qtyModel.dirty && qtyModel.touched)">Min 1</span>
-                    <span *ngIf="!qtyModel.errors?.['required'] && !qtyModel.errors?.['min'] && qtyModel.touched && hasExceededStock(item)">Exceeds stock ({{ item.book?.stock }})</span>
+                    <span *ngIf="data.type === 'SALE' && !qtyModel.errors?.['required'] && !qtyModel.errors?.['min'] && qtyModel.touched && hasExceededStock(item)">Exceeds stock ({{ item.book?.stock }})</span>
                   </mat-error>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Rate</mat-label>
-                  <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="rateModel.control.markAsTouched(); calculateAmount(item)" />
+                  <mat-label>MRP</mat-label>
+                  <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" readonly />
                   <mat-error *ngIf="rateModel.invalid && (rateModel.dirty && rateModel.touched)">
                     <span *ngIf="rateModel.errors?.['required']">Required</span>
                   </mat-error>
@@ -162,7 +162,7 @@
       <mat-icon class="inline md:hidden mr-2">arrow_back</mat-icon>
       <span class="hidden md:inline">Cancel</span>
     </button>
-    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="saleForm.invalid || hasQtyError() || isOverpay()" aria-label="Save">
+    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="saleForm.invalid || (data.type === 'SALE' && hasQtyError()) || isOverpay()" aria-label="Save">
       <mat-icon class="inline md:hidden mr-2">add</mat-icon>
       <span class="hidden md:inline">Save</span>
     </button>

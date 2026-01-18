@@ -89,7 +89,17 @@ export class SalesComponent implements OnInit {
         paymentStatus: SALES_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
         paidAmount: 0,
         type: this.defaultSaleType,
-        items: []
+        items: [{
+          id: 0,
+          sale: null,
+          book: null,
+          qty: null,
+          rate: null,
+          discount: 0,
+          amount: null,
+          bookSearch: '',
+          filteredBooks: []
+        }]
       } as SalesDialogData,
       disableClose: false
     });

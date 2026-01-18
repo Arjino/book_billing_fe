@@ -81,7 +81,7 @@ export class DashboardComponent implements OnInit {
     {
       icon: 'shopping_cart',
       iconColor: 'text-red-600',
-      title: 'Sales',
+      title: 'Sales/Purchases',
       description: 'Track all sales transactions',
       route: '/sales',
       component: SalesComponent
@@ -208,8 +208,7 @@ export class DashboardComponent implements OnInit {
         title: '',
         publisher: '',
         hsn: '',
-        costPrice: 0,
-        salePrice: 0,
+        mrp: 0,
         stock: 0
       } as BookDialogData
     });
