@@ -16,7 +16,7 @@ import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
 import { LoadingService } from '../services/loading.service';
-import { formatTimeIST } from '../utils/date.utils';
+import { formatTimeIST, formatDateForAPI, formatDateLocal } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
 
@@ -60,7 +60,7 @@ export class SalesComponent implements OnInit {
 
     // Set end date to today by default
     const today = new Date();
-    this.endDate = today.toISOString().split('T')[0];
+    this.endDate = formatDateForAPI(today);
     
     this.loadSales();
   }
@@ -86,7 +86,7 @@ export class SalesComponent implements OnInit {
         id: 0,
         invoiceNo: '',
         party: null,
-        date: new Date().toISOString().split('T')[0],
+        date: formatDateForAPI(new Date()),
         totalAmount: 0,
         discount: 0,
         taxAmount: 0,
@@ -212,16 +212,13 @@ export class SalesComponent implements OnInit {
     if (typeof date === 'string') {
       return date;
     }
-    const d = new Date(date);
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    const year = d.getFullYear();
-    return `${year}-${month}-${day}`;
+    return formatDateForAPI(date);
   }
 
   formatSaleDateTime(s: Sale): string {
+    const datePart = formatDateLocal(s.date);
     const time = formatTimeIST(s.time, s.date)?.toUpperCase();
-    return `${s.date}  ${time}`;
+    return `${datePart}  ${time}`;
   }
 
   goBack() {

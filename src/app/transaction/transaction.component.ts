@@ -20,7 +20,7 @@ import { TransactionsService } from '../services/transactions.service';
 import { LoadingService } from '../services/loading.service';
 import { Party } from '../interface/party';
 import { Transaction } from '../interface/Transaction';
-import { formatDateLocal, getTodayLocal, parseLocalDate, formatTimeIST } from '../utils/date.utils';
+import { formatDateLocal, getTodayLocal, parseLocalDate, formatTimeIST, formatDateForAPI } from '../utils/date.utils';
 import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
 
 
@@ -143,8 +143,8 @@ export class TransactionComponent implements OnInit {
   filterTransactions() {
     // Build query params for startDate and endDate
     let params: any = {};
-    if (this.startDate) params.startDate = this.formatDate(this.startDate);
-    if (this.endDate) params.endDate = this.formatDate(this.endDate);
+    if (this.startDate) params.startDate = formatDateForAPI(this.startDate);
+    if (this.endDate) params.endDate = formatDateForAPI(this.endDate);
     this.loadingService.show('Fetching transactions...');
     this.transactionsService.getTransactionsByDateRange(params).subscribe(
       data => {
@@ -160,12 +160,13 @@ export class TransactionComponent implements OnInit {
   }
 
   formatDate(date: any): string {
-    return formatDateLocal(date);
+    return formatDateForAPI(date);
   }
 
   formatPaymentDateTime(t: Transaction): string {
+    const datePart = formatDateLocal(t.paymentDate);
     const time = formatTimeIST(t.paymentTime, t.paymentDate)?.toUpperCase();
-    return `${t.paymentDate}  ${time}`;
+    return `${datePart}  ${time}`;
   }
 
   viewPaymentReceipt(paymentId: number): void {

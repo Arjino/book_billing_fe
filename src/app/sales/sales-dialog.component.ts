@@ -15,6 +15,7 @@ import { DataStoreService } from '../services/data-store.service';
 import { Book } from '../interface/book';
 import { Party } from '../interface/party';
 import { SalesDialogData } from '../interface/sales-dialog-data';
+import { formatDateForAPI } from '../utils/date.utils';
 
 @Component({
   selector: 'app-sales-dialog',
@@ -41,10 +42,10 @@ export class SalesDialogComponent implements OnInit {
     if (!this.data.date) {
       // Set to today's date in YYYY-MM-DD format
       const today = new Date();
-      this.data.date = today.toISOString().split('T')[0];
+      this.data.date = formatDateForAPI(today);
     } else if (typeof this.data.date !== 'string') {
       const d = new Date(this.data.date);
-      this.data.date = d.toISOString().split('T')[0];
+      this.data.date = formatDateForAPI(d);
     }
     
     this.store.getBooks().subscribe(data => {
@@ -67,7 +68,7 @@ export class SalesDialogComponent implements OnInit {
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = d.getFullYear();
-    return `${day}-${month}-${year}`;
+    return `${day}/${month}/${year}`;
   }
 
   onCancel(): void {
@@ -80,7 +81,7 @@ export class SalesDialogComponent implements OnInit {
     if (this.data.date && typeof this.data.date === 'string') {
       // Already a string, ensure it's YYYY-MM-DD format
       const d = new Date(this.data.date);
-      this.data.date = d.toISOString().split('T')[0];
+      this.data.date = formatDateForAPI(d);
     }
     this.dialogRef.close(this.data);
   }

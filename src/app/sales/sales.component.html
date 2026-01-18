@@ -34,14 +34,14 @@
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <mat-form-field appearance="outline" class="w-full text-white">
           <mat-label class="text-white">Start Date</mat-label>
-          <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" placeholder="YYYY-MM-DD" class="text-white placeholder-white" [style.color]="'white'" />
+          <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" placeholder="dd/mm/yyyy" class="text-white placeholder-white" [style.color]="'white'" />
           <mat-datepicker-toggle matSuffix [for]="startPicker"></mat-datepicker-toggle>
           <mat-datepicker #startPicker></mat-datepicker>
           <mat-error *ngIf="showStartDateError" class="text-red-300">Start date is required.</mat-error>
         </mat-form-field>
         <mat-form-field appearance="outline" class="w-full text-white">
           <mat-label class="text-white">End Date</mat-label>
-          <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" placeholder="YYYY-MM-DD" class="text-white placeholder-white" [style.color]="'white'" />
+          <input matInput [matDatepicker]="endPicker" [(ngModel)]="endDate" placeholder="dd/mm/yyyy" class="text-white placeholder-white" [style.color]="'white'" />
           <mat-datepicker-toggle matSuffix [for]="endPicker"></mat-datepicker-toggle>
           <mat-datepicker #endPicker></mat-datepicker>
         </mat-form-field>

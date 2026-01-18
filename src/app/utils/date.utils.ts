@@ -3,7 +3,7 @@
  */
 
 /**
- * Formats a date to YYYY-MM-DD string in local timezone
+ * Formats a date to dd/mm/yyyy string in local timezone (Indian format)
  * @param date - Date object, string, or null/undefined
  * @returns Formatted date string or empty string
  */
@@ -17,12 +17,30 @@ export function formatDateLocal(date: Date | string | null | undefined): string 
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   
+  return `${day}/${month}/${year}`;
+}
+
+/**
+ * Formats a date to YYYY-MM-DD string for API calls
+ * @param date - Date object, string, or null/undefined
+ * @returns Formatted date string or empty string
+ */
+export function formatDateForAPI(date: Date | string | null | undefined): string {
+  if (!date) return '';
+  
+  const d = typeof date === 'string' ? new Date(date) : date;
+  
+  // Get local date components
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  
   return `${year}-${month}-${day}`;
 }
 
 /**
- * Parses a date string (YYYY-MM-DD) or Date object as local date
- * @param dateString - Date string in YYYY-MM-DD format or Date object
+ * Parses a date string (YYYY-MM-DD or dd/mm/yyyy) or Date object as local date
+ * @param dateString - Date string in YYYY-MM-DD or dd/mm/yyyy format or Date object
  * @returns Date object in local timezone
  */
 export function parseLocalDate(dateString: string | Date | null | undefined): Date {
@@ -33,12 +51,23 @@ export function parseLocalDate(dateString: string | Date | null | undefined): Da
     return dateString;
   }
   
-  const [year, month, day] = dateString.split('-').map(Number);
-  return new Date(year, month - 1, day);
+  // Try YYYY-MM-DD format first
+  if (dateString.includes('-')) {
+    const [year, month, day] = dateString.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  
+  // Try dd/mm/yyyy format
+  if (dateString.includes('/')) {
+    const [day, month, year] = dateString.split('/').map(Number);
+    return new Date(year, month - 1, day);
+  }
+  
+  return new Date();
 }
 
 /**
- * Gets today's date in YYYY-MM-DD format (local timezone)
+ * Gets today's date in dd/mm/yyyy format (local timezone, Indian format)
  * @returns Today's date string
  */
 export function getTodayLocal(): string {
@@ -47,7 +76,7 @@ export function getTodayLocal(): string {
   const month = String(today.getMonth() + 1).padStart(2, '0');
   const day = String(today.getDate()).padStart(2, '0');
   
-  return `${year}-${month}-${day}`;
+  return `${day}/${month}/${year}`;
 }
 
 /**

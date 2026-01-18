@@ -8,8 +8,8 @@ import { DataStoreService } from '../services/data-store.service';
 import { DashboardService } from '../services/dashboard.service';
 import { Sale } from '../interface/Sale';
 import { Transaction } from '../interface/Transaction';
+import { formatDateLocal, formatDateForAPI, getTodayLocal } from '../utils/date.utils';
 import { Party } from '../interface/party';
-import { formatDateLocal, getTodayLocal } from '../utils/date.utils';
 import { DASHBOARD_CONSTANTS } from '../constants/dashboard.constants';
 
 @Component({
@@ -111,7 +111,7 @@ export class AnalyticsComponent implements OnInit {
 
         if (Array.isArray(stats.last7DaysSales) && stats.last7DaysSales.length) {
           this.dailySalesData = stats.last7DaysSales.map((entry) => ({
-            date: new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            date: formatDateLocal(new Date(entry.date)),
             amount: entry.amount || 0
           }));
         }
@@ -209,20 +209,20 @@ export class AnalyticsComponent implements OnInit {
     for (let i = 6; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = formatDateForAPI(date);
       dailyMap.set(dateStr, 0);
     }
 
     // Add sales data
     sales.forEach(sale => {
-      const saleDate = new Date(sale.date).toISOString().split('T')[0];
+      const saleDate = formatDateForAPI(new Date(sale.date));
       if (dailyMap.has(saleDate)) {
         dailyMap.set(saleDate, (dailyMap.get(saleDate) || 0) + (sale.totalAmount || 0));
       }
     });
 
     this.dailySalesData = Array.from(dailyMap.entries()).map(([date, amount]) => ({
-      date: new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      date: formatDateLocal(new Date(date)),
       amount
     }));
   }

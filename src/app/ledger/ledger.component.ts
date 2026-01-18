@@ -13,7 +13,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { RouterModule } from '@angular/router';
 import { DataStoreService } from '../services/data-store.service';
 import { LedgerService } from '../services/ledger.service';
-import { parseLocalDate, formatTimeIST } from '../utils/date.utils';
+import { parseLocalDate, formatTimeIST, formatDateForAPI, formatDateLocal } from '../utils/date.utils';
 import { LoadingService } from '../services/loading.service';
 import { take } from 'rxjs/operators';
 
@@ -100,8 +100,8 @@ export class LedgerComponent implements OnInit {
     }
 
     // Prepare filter parameters
-    const start = this.startDate ? this.formatDateForAPI(this.startDate) : this.formatDateForAPI(new Date());
-    const end = this.endDate ? this.formatDateForAPI(this.endDate) : this.formatDateForAPI(new Date());
+    const start = this.startDate ? formatDateForAPI(this.startDate) : formatDateForAPI(new Date());
+    const end = this.endDate ? formatDateForAPI(this.endDate) : formatDateForAPI(new Date());
     const type = this.transactionType || 'All';
 
     const params: any = { startDate: start, endDate: end, type };
@@ -144,12 +144,12 @@ export class LedgerComponent implements OnInit {
     
     // Only add startDate if it's actually set by user
     if (this.startDate) {
-      queryParams.append('startDate', this.formatDateForAPI(this.startDate));
+      queryParams.append('startDate', formatDateForAPI(this.startDate));
     }
     
     // Only add endDate if it's actually set by user
     if (this.endDate) {
-      queryParams.append('endDate', this.formatDateForAPI(this.endDate));
+      queryParams.append('endDate', formatDateForAPI(this.endDate));
     }
     
     // Only add type if it's not 'All'
@@ -167,7 +167,7 @@ export class LedgerComponent implements OnInit {
         const blobUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = blobUrl;
-        link.download = `ledger_report_${this.formatDateForAPI(new Date())}.pdf`;
+        link.download = `ledger_report_${formatDateForAPI(new Date())}.pdf`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -183,12 +183,7 @@ export class LedgerComponent implements OnInit {
   }
 
   private formatDateForAPI(date: string | Date): string {
-    if (!date) return '';
-    const d = typeof date === 'string' ? new Date(date) : date;
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return formatDateForAPI(date);
   }
 
   private filterResults(input: any[]): any[] {
@@ -225,8 +220,9 @@ export class LedgerComponent implements OnInit {
   }
 
   formatLedgerDateTime(entry: any): string {
+    const datePart = entry?.date ? formatDateLocal(entry.date) : '';
     const time = formatTimeIST(entry?.time, entry?.date)?.toUpperCase();
-    return `${entry?.date || ''}  ${time}`;
+    return `${datePart}  ${time}`;
   }
 
   goBack(): void {
