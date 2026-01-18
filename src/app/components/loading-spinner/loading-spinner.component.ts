@@ -9,14 +9,15 @@ import { Observable } from 'rxjs';
   standalone: true,
   imports: [CommonModule, MatProgressSpinnerModule],
   templateUrl: './loading-spinner.component.html',
-  styleUrls: ['./loading-spinner.component.css'],
-  providers: [LoadingService]
+  styleUrls: ['./loading-spinner.component.css']
 })
 export class LoadingSpinnerComponent implements OnInit {
   isLoading$: Observable<boolean>;
+  loadingText$: Observable<string>;
 
   constructor(private loadingService: LoadingService) {
     this.isLoading$ = this.loadingService.isLoading();
+    this.loadingText$ = this.loadingService.getLoadingText();
   }
 
   ngOnInit(): void {

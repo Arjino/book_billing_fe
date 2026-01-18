@@ -7,9 +7,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../services/auth.service';
 import { DataStoreService } from '../services/data-store.service';
 import { DashboardService } from '../services/dashboard.service';
+import { LoadingService } from '../services/loading.service';
 import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
 import { BookDialogComponent } from '../booking/book-dialog.component';
 import { BookDialogData } from '../interface/book-dialog-data';
@@ -53,7 +55,8 @@ import { DashboardStats } from '../interface/dashboard-stats';
     FormsModule,
     MatFormFieldModule,
     MatInputModule,
-    MatSelectModule
+    MatSelectModule,
+    MatSnackBarModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
@@ -143,7 +146,9 @@ export class DashboardComponent implements OnInit {
     private router: Router,
     private dialog: MatDialog,
     private store: DataStoreService,
-    private dashboardService: DashboardService
+    private dashboardService: DashboardService,
+    private loadingService: LoadingService,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -215,13 +220,24 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: BookDialogData) => {
       if (result) {
-        this.store.createBook(result as any).subscribe(() => {
-          alert(BOOKING_CONSTANTS.MESSAGES.ADD_SUCCESS);
-          this.store.refreshBooks();
-        },
-        (error: any) => {
-          console.error('Failed to add book:', error);
-          alert(BOOKING_CONSTANTS.MESSAGES.ADD_ERROR);
+        this.loadingService.show('Adding book...');
+        this.store.createBook(result as any).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.store.refreshBooks();
+          },
+          error: (error: any) => {
+            this.loadingService.hide();
+            console.error('Failed to add book:', error);
+            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
         });
       }
     });
@@ -242,13 +258,24 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: PartyDialogData) => {
       if (result) {
-        this.store.createParty(result as Party).subscribe(() => {
-          alert(PARTIES_CONSTANTS.MESSAGES.ADD_SUCCESS);
-          this.store.refreshParties();
-        },
-        (error: any) => {
-          console.error('Failed to add party:', error);
-          alert(PARTIES_CONSTANTS.MESSAGES.ADD_ERROR);
+        this.loadingService.show('Adding party...');
+        this.store.createParty(result as Party).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.store.refreshParties();
+          },
+          error: (error: any) => {
+            this.loadingService.hide();
+            console.error('Failed to add party:', error);
+            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
         });
       }
     });
@@ -291,25 +318,48 @@ export class DashboardComponent implements OnInit {
           }))
         };
 
-        this.store.createSaleReturn(payload).subscribe(() => {
-          alert(SALES_CONSTANTS.MESSAGES.RETURN_IN_SUCCESS);
-          this.store.refreshBooks();
-        }, (error: any) => {
-          console.error('Failed to add sale return:', error);
-          alert(SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR);
+        this.loadingService.show('Processing return...');
+        this.store.createSaleReturn(payload).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_SUCCESS || 'Return created successfully!', 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.store.refreshBooks();
+          },
+          error: (error: any) => {
+            this.loadingService.hide();
+            console.error('Failed to add sale return:', error);
+            this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
         });
 
         return;
       }
 
-      this.store.createSale(result).subscribe(() => {
-        alert(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS);
-        // refresh books cache so UI sees updated stock after sale
-        this.store.refreshBooks();
-      },
-      (error: any) => {
-        console.error('Failed to add sale:', error);
-        alert(SALES_CONSTANTS.MESSAGES.CREATE_ERROR);
+      this.loadingService.show('Creating sale...');
+      this.store.createSale(result).subscribe({
+        next: () => {
+          this.loadingService.hide();
+          this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
+            duration: 3000,
+            panelClass: ['success-snackbar']
+          });
+          // refresh books cache so UI sees updated stock after sale
+          this.store.refreshBooks();
+        },
+        error: (error: any) => {
+          this.loadingService.hide();
+          console.error('Failed to add sale:', error);
+          this.snackBar.open(SALES_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', { 
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+        }
       });
     });
   }
@@ -332,12 +382,23 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
-        this.store.createTransaction(result).subscribe(() => {
-          alert(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS);
-        },
-        (error: any) => {
-          console.error('Failed to add transaction:', error);
-          alert(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR);
+        this.loadingService.show('Adding transaction...');
+        this.store.createTransaction(result).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+          },
+          error: (error: any) => {
+            this.loadingService.hide();
+            console.error('Failed to add transaction:', error);
+            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
         });
       }
     });
@@ -390,6 +451,7 @@ export class DashboardComponent implements OnInit {
   }
 
   private loadDashboardStats(): void {
+    this.loadingService.show('Loading dashboard...');
     this.dashboardService.getDashboardStats().subscribe({
       next: (data) => {
         this.dashboardStats = {
@@ -398,9 +460,11 @@ export class DashboardComponent implements OnInit {
           last7DaysSales: data?.last7DaysSales || []
         };
         this.lastUpdated = new Date();
+        this.loadingService.hide();
       },
       error: (error) => {
         console.error('Failed to load dashboard stats:', error);
+        this.loadingService.hide();
       }
     });
   }

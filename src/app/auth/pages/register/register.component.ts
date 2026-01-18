@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { LoadingService } from '../../../services/loading.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -24,7 +25,7 @@ import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
-    MatProgressSpinnerModule,
+    // MatProgressSpinnerModule removed; using global spinner
     MatCardModule,
     MatSnackBarModule,
     MatCheckboxModule
@@ -34,7 +35,6 @@ import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
 })
 export class RegisterComponent {
   registerForm: FormGroup;
-  loading = signal(false);
   hidePassword = signal(true);
   hideConfirmPassword = signal(true);
   passwordStrength = signal<'weak' | 'fair' | 'good' | 'strong'>('weak');
@@ -43,7 +43,8 @@ export class RegisterComponent {
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private loadingService: LoadingService
   ) {
     this.registerForm = this.fb.group(
       {
@@ -128,17 +129,17 @@ export class RegisterComponent {
       this.snackBar.open(AUTH_CONSTANTS.MESSAGES.INVALID_FORM, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
       return;
     }
-
-    this.loading.set(true);
+    this.loadingService.show('Creating account...');
     const { email, username, password } = this.registerForm.value;
 
     this.authService.register(username, password, email).subscribe({
       next: () => {
+        this.loadingService.hide();
         this.snackBar.open(AUTH_CONSTANTS.MESSAGES.REGISTER_SUCCESS, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
         this.router.navigate(['/dashboard']);
       },
       error: (error: any) => {
-        this.loading.set(false);
+        this.loadingService.hide();
         const message = error.error?.message || AUTH_CONSTANTS.MESSAGES.REGISTER_ERROR;
         this.snackBar.open(message, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
       }

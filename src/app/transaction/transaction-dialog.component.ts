@@ -40,7 +40,7 @@ export class TransactionDialogComponent {
   isOverpay(): boolean {
     const paid = Number(this.data?.paidAmount || 0);
     const total = Number(this.data?.totalAmount || 0);
-    return paid > total;
+    return Math.abs(paid) > Math.abs(total);
   }
   fetchLedgerForParty(partyId: any) {
       if (!partyId) return;

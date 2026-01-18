@@ -15,6 +15,7 @@ import { PartyDialogComponent } from './party-dialog.component';
 import { PartyDialogData } from '../interface/party-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { PartiesService } from '../services/parties.service';
+import { LoadingService } from '../services/loading.service';
 import { Party } from '../interface/party';
 import { PARTIES_CONSTANTS } from '../constants/parties.constants';
 
@@ -41,7 +42,8 @@ export class PartiesComponent implements OnInit {
     private route: ActivatedRoute, 
     private store: DataStoreService,
     private partiesService: PartiesService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private loadingService: LoadingService
   ) {}
 
   ngOnInit() {
@@ -53,9 +55,11 @@ export class PartiesComponent implements OnInit {
 
   loadPartiesByStatus() {
     if (this.partyStatus === PARTIES_CONSTANTS.STATUS.CURRENT) {
+      this.loadingService.show('Loading parties...');
       this.store.getParties().subscribe(data => {
         this.parties = data || [];
         this.filteredParties = [...this.parties];
+        this.loadingService.hide();
       });
     } else if (this.partyStatus === PARTIES_CONSTANTS.STATUS.OLD) {
       this.loadOldParties();
@@ -63,14 +67,17 @@ export class PartiesComponent implements OnInit {
   }
 
   loadOldParties() {
+    this.loadingService.show('Loading old parties...');
     this.partiesService.getOldParties().subscribe(
       (data) => {
         this.parties = data || [];
         this.filteredParties = [...this.parties];
+        this.loadingService.hide();
       },
       (error) => {
         this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.LOAD_OLD_ERROR, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
         console.error('Error loading old parties:', error);
+        this.loadingService.hide();
       }
     );
   }
@@ -116,8 +123,24 @@ export class PartiesComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: PartyDialogData) => {
       if (result) {
-        this.store.createParty(result as Party).subscribe(() => {
-          this.loadParties();
+        this.loadingService.show('Adding party...');
+        this.store.createParty(result as Party).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Party added successfully!', 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.loadParties();
+          },
+          error: (err) => {
+            this.loadingService.hide();
+            const errorMessage = err?.error?.message || err?.message || PARTIES_CONSTANTS.MESSAGES.ADD_ERROR;
+            this.snackBar.open(errorMessage, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
         });
       }
     });
@@ -131,14 +154,23 @@ export class PartiesComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: PartyDialogData) => {
       if (result) {
+        this.loadingService.show('Updating party...');
         this.store.updateParty(result.id, result as Party).subscribe({
           next: () => {
-            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.UPDATE_SUCCESS, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT });
+            this.loadingService.hide();
+            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.UPDATE_SUCCESS, 'Close', { 
+              duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT,
+              panelClass: ['success-snackbar']
+            });
             this.store?.loadParties(true);
             this.loadParties();
           },
           error: (err) => {
-            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.UPDATE_ERROR, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
+            this.loadingService.hide();
+            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.UPDATE_ERROR, 'Close', { 
+              duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+              panelClass: ['error-snackbar']
+            });
           }
         });
       }
@@ -148,15 +180,24 @@ export class PartiesComponent implements OnInit {
   deleteParty(party: Party) {
     const confirmMessage = PARTIES_CONSTANTS.MESSAGES.CONFIRM_DELETE.replace('{name}', party.name);
     if (confirm(confirmMessage)) {
+      this.loadingService.show('Deleting party...');
       this.store.deleteParty(party.id).subscribe({
         next: () => {
-          this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.DELETE_SUCCESS, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT });
+          this.loadingService.hide();
+          this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.DELETE_SUCCESS, 'Close', { 
+            duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT,
+            panelClass: ['success-snackbar']
+          });
           this.store?.loadParties(true);
           this.loadParties();
         },
         error: (err) => {
+          this.loadingService.hide();
           const serverMessage = err?.error || err?.message || 'Unknown error';
-          this.snackBar.open(`${PARTIES_CONSTANTS.MESSAGES.DELETE_ERROR}: ${serverMessage}`, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.LONG });
+          this.snackBar.open(`${PARTIES_CONSTANTS.MESSAGES.DELETE_ERROR}: ${serverMessage}`, 'Close', { 
+            duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.LONG,
+            panelClass: ['error-snackbar']
+          });
           if (err?.status === 409) {
             this.loadParties();
           }
@@ -169,15 +210,24 @@ export class PartiesComponent implements OnInit {
     const confirmMessage = PARTIES_CONSTANTS.MESSAGES.CONFIRM_ENABLE.replace('{name}', party.name);
     if (confirm(confirmMessage)) {
       const updatedParty = { ...party, hidden: false };
+      this.loadingService.show('Restoring party...');
       this.store.updateParty(party.id, updatedParty).subscribe({
         next: () => {
-          this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ENABLE_SUCCESS, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT });
+          this.loadingService.hide();
+          this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ENABLE_SUCCESS, 'Close', { 
+            duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT,
+            panelClass: ['success-snackbar']
+          });
           this.store?.loadParties(true);
           this.loadParties();
         },
         error: (err) => {
+          this.loadingService.hide();
           const serverMessage = err?.error || err?.message || 'Unknown error';
-          this.snackBar.open(`${PARTIES_CONSTANTS.MESSAGES.ENABLE_ERROR}: ${serverMessage}`, 'Close', { duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.LONG });
+          this.snackBar.open(`${PARTIES_CONSTANTS.MESSAGES.ENABLE_ERROR}: ${serverMessage}`, 'Close', { 
+            duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.LONG,
+            panelClass: ['error-snackbar']
+          });
         }
       });
     }

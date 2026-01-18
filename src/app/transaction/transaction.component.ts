@@ -12,10 +12,12 @@ import { MatIconModule, MatIcon } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { TransactionDialogComponent } from './transaction-dialog.component';
 import { PaymentReceiptPreviewComponent } from './payment-receipt-preview.component';
 import { DataStoreService } from '../services/data-store.service';
 import { TransactionsService } from '../services/transactions.service';
+import { LoadingService } from '../services/loading.service';
 import { Party } from '../interface/party';
 import { Transaction } from '../interface/Transaction';
 import { formatDateLocal, getTodayLocal, parseLocalDate, formatTimeIST } from '../utils/date.utils';
@@ -27,7 +29,7 @@ import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
   templateUrl: './transaction.component.html',
   styleUrls: ['./transaction.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon, MatDatepickerModule, MatNativeDateModule, MatTooltipModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon, MatDatepickerModule, MatNativeDateModule, MatTooltipModule, MatSnackBarModule]
 })
 export class TransactionComponent implements OnInit {
   transactions: Transaction[] = [];
@@ -42,7 +44,9 @@ export class TransactionComponent implements OnInit {
     private dialog: MatDialog,
     private router: Router,
     private store: DataStoreService,
-    private transactionsService: TransactionsService
+    private transactionsService: TransactionsService,
+    private loadingService: LoadingService,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
@@ -50,13 +54,16 @@ export class TransactionComponent implements OnInit {
   }
 
   loadTransactions() {
+    this.loadingService.show('Loading transactions...');
     this.transactionsService.getTransactions().subscribe(
       data => {
         this.transactions = data;
         this.applyDateFilter();
+        this.loadingService.hide();
       },
       error => {
         console.error('Failed to load transactions:', error);
+        this.loadingService.hide();
       }
     );
   }
@@ -107,12 +114,24 @@ export class TransactionComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
-        this.store.createTransaction(result).subscribe(() => {
-          this.loadTransactions();
-        },
-        error => {
-          console.error('Failed to add transaction:', error);
-          alert(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR);
+        this.loadingService.show('Adding transaction...');
+        this.store.createTransaction(result).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.loadTransactions();
+          },
+          error: (error) => {
+            this.loadingService.hide();
+            console.error('Failed to add transaction:', error);
+            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
         });
       }
     });
@@ -126,13 +145,16 @@ export class TransactionComponent implements OnInit {
     let params: any = {};
     if (this.startDate) params.startDate = this.formatDate(this.startDate);
     if (this.endDate) params.endDate = this.formatDate(this.endDate);
+    this.loadingService.show('Fetching transactions...');
     this.transactionsService.getTransactionsByDateRange(params).subscribe(
       data => {
         this.transactions = data;
         this.applyDateFilter();
+        this.loadingService.hide();
       },
       error => {
         console.error('Failed to load filtered transactions:', error);
+        this.loadingService.hide();
       }
     );
   }
@@ -158,18 +180,28 @@ export class TransactionComponent implements OnInit {
   }
 
   downloadPaymentReceipt(paymentId: number): void {
+    this.loadingService.show('Downloading receipt...');
     this.transactionsService.downloadPaymentReceipt(paymentId).subscribe({
       next: (blob: Blob) => {
+        this.loadingService.hide();
         const link = document.createElement('a');
         const url = window.URL.createObjectURL(blob);
         link.href = url;
         link.download = `Payment_Receipt_${paymentId}.pdf`;
         link.click();
         window.URL.revokeObjectURL(url);
+        this.snackBar.open('Receipt downloaded successfully!', 'Close', { 
+          duration: 3000,
+          panelClass: ['success-snackbar']
+        });
       },
       error: (error: any) => {
+        this.loadingService.hide();
         console.error('Failed to download receipt:', error);
-        alert(TRANSACTION_CONSTANTS.MESSAGES.DOWNLOAD_ERROR);
+        this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.DOWNLOAD_ERROR, 'Close', { 
+          duration: 5000,
+          panelClass: ['error-snackbar']
+        });
       }
     });
   }

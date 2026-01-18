@@ -10,10 +10,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { SalesDialogComponent } from './sales-dialog.component';
 import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
+import { LoadingService } from '../services/loading.service';
 import { formatTimeIST } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
@@ -23,7 +25,7 @@ import { SALES_CONSTANTS } from '../constants/sales.constants';
   templateUrl: './sales.component.html',
   styleUrls: ['./sales.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, FormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule, MatIconModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, FormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule, MatIconModule, MatSnackBarModule]
 })
 export class SalesComponent implements OnInit {
   sales: Sale[] = [];
@@ -38,7 +40,9 @@ export class SalesComponent implements OnInit {
     private router: Router, 
     private store: DataStoreService, 
     private route: ActivatedRoute,
-    private salesService: SalesService
+    private salesService: SalesService,
+    private loadingService: LoadingService,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
@@ -63,6 +67,7 @@ export class SalesComponent implements OnInit {
 
   
   loadSales() {
+    this.loadingService.show('Loading sales...');
     this.salesService.getSalesByDate().subscribe(data => {
       // Filter sales based on the current mode
       if (this.isPurchaseMode) {
@@ -70,6 +75,7 @@ export class SalesComponent implements OnInit {
       } else {
         this.sales = data.filter(sale => sale.type === 'SALE');
       }
+      this.loadingService.hide();
     });
   }
 
@@ -123,25 +129,51 @@ export class SalesComponent implements OnInit {
           }))
         };
 
-        this.salesService.createSaleReturn(payload).subscribe(() => {
-          this.loadSales();
-          this.store.refreshBooks();
-        }, err => {
-          console.error('Failed to post sale return:', err);
-          alert(SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR);
+        this.loadingService.show('Processing return...');
+        this.salesService.createSaleReturn(payload).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_SUCCESS || 'Return created successfully!', 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.loadSales();
+            this.store.refreshBooks();
+          },
+          error: (err) => {
+            this.loadingService.hide();
+            console.error('Failed to post sale return:', err);
+            this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
         });
 
         return;
       }
 
       // Normal sale
-      this.store.createSale(result).subscribe(() => {
-        this.loadSales();
-        // refresh cached books so stock updates after a sale
-        this.store.refreshBooks();
-      }, err => {
-        console.error('Failed to create sale:', err);
-        alert(SALES_CONSTANTS.MESSAGES.CREATE_ERROR);
+      this.loadingService.show('Creating sale...');
+      this.store.createSale(result).subscribe({
+        next: () => {
+          this.loadingService.hide();
+          this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
+            duration: 3000,
+            panelClass: ['success-snackbar']
+          });
+          this.loadSales();
+          // refresh cached books so stock updates after a sale
+          this.store.refreshBooks();
+        },
+        error: (err) => {
+          this.loadingService.hide();
+          console.error('Failed to create sale:', err);
+          this.snackBar.open(SALES_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', { 
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+        }
       });
     });
   }
@@ -157,6 +189,7 @@ export class SalesComponent implements OnInit {
     const start = this.formatDate(this.startDate);
     const end = this.formatDate(this.endDate);
 
+    this.loadingService.show('Fetching sales...');
     this.salesService.getSalesByDateRange(start, end).subscribe({
       next: (data) => {
         // Filter sales based on the current mode
@@ -165,10 +198,12 @@ export class SalesComponent implements OnInit {
         } else {
           this.sales = data.filter(sale => sale.type === 'SALE');
         }
+        this.loadingService.hide();
       },
       error: (err) => {
         console.error('Failed to fetch sales by date range:', err);
         alert(SALES_CONSTANTS.MESSAGES.DATE_RANGE_ERROR);
+        this.loadingService.hide();
       }
     });
   }

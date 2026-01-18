@@ -21,14 +21,14 @@ export class LoadingInterceptor implements HttpInterceptor {
   ) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
-    // Show loading spinner
-    this.loadingService.show();
-
+    // Note: Spinner is now manually controlled in components for better granularity
+    // The interceptor only handles error snackbar messages
+    
     return next.handle(request).pipe(
       tap((event: HttpEvent<any>) => {
         if (event instanceof HttpResponse) {
-          // Show success message for successful requests
-          if (event.status === 200 || event.status === 201) {
+          // Show success message for successful requests (only for non-GET)
+          if ((event.status === 200 || event.status === 201) && request.method !== 'GET') {
             const message = this.getSuccessMessage(request);
             if (message) {
               this.snackBar.open(message, 'Close', { duration: LOADING_CONSTANTS.DURATION.SUCCESS, panelClass: LOADING_CONSTANTS.PANEL_CLASS.SUCCESS });
@@ -37,16 +37,14 @@ export class LoadingInterceptor implements HttpInterceptor {
         }
       }),
       catchError((error: HttpErrorResponse) => {
-        // Show error message
-        const errorMessage = this.getErrorMessage(error);
-        this.snackBar.open(errorMessage, 'Close', { duration: LOADING_CONSTANTS.DURATION.ERROR, panelClass: LOADING_CONSTANTS.PANEL_CLASS.ERROR });
+        // Show error message only for errors not handled by components
+        if (error.status >= 500 || error.status === 0) {
+          const errorMessage = this.getErrorMessage(error);
+          this.snackBar.open(errorMessage, 'Close', { duration: LOADING_CONSTANTS.DURATION.ERROR, panelClass: LOADING_CONSTANTS.PANEL_CLASS.ERROR });
+        }
         
         console.error('HTTP Error:', error);
         return throwError(() => error);
-      }),
-      finalize(() => {
-        // Hide loading spinner
-        this.loadingService.hide();
       })
     );
   }

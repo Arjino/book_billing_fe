@@ -14,6 +14,8 @@ import { RouterModule } from '@angular/router';
 import { DataStoreService } from '../services/data-store.service';
 import { LedgerService } from '../services/ledger.service';
 import { parseLocalDate, formatTimeIST } from '../utils/date.utils';
+import { LoadingService } from '../services/loading.service';
+import { take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-ledger',
@@ -35,10 +37,20 @@ export class LedgerComponent implements OnInit {
   lastBalance: number = 0;
   totalAmount: number = 0;
 
-  constructor(private route: ActivatedRoute, private store: DataStoreService, private ledgerService: LedgerService, private location: Location) {}
+  constructor(
+    private route: ActivatedRoute,
+    private store: DataStoreService,
+    private ledgerService: LedgerService,
+    private location: Location,
+    private loadingService: LoadingService
+  ) {}
 
   ngOnInit(): void {
-    this.store.getParties().subscribe(d => this.parties = d || []);
+    this.loadingService.show('Loading parties...');
+    this.store.getParties().pipe(take(1)).subscribe(d => {
+      this.parties = d || [];
+      this.loadingService.hide();
+    });
     this.route.queryParams.subscribe(q => {
       if (q['partyId']) {
         this.partyId = parseInt(q['partyId'], 10);
@@ -62,6 +74,7 @@ export class LedgerComponent implements OnInit {
 
   fetchLedgerForParty(partyId: any) {
     if (!partyId) return;
+    this.loadingService.show('Loading ledger...');
     this.ledgerService.getLedgerForParty(partyId).subscribe(data => {
       // Apply client-side filters to the received data
       const filtered = this.filterResults(data || []);
@@ -70,11 +83,13 @@ export class LedgerComponent implements OnInit {
       this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
       // update totalAmount or Last Balance display accordingly
       this.totalAmount = this.lastBalance;
+      this.loadingService.hide();
     }, err => {
       console.error('Failed to load ledger for party:', err);
       this.results = [];
       this.lastBalance = 0;
       this.totalAmount = 0;
+      this.loadingService.hide();
     });
   }
 
@@ -91,14 +106,17 @@ export class LedgerComponent implements OnInit {
 
     const params: any = { startDate: start, endDate: end, type };
     
+    this.loadingService.show('Filtering ledger...');
     this.ledgerService.getLedgerForPartyByDateRange(this.partyId, params).subscribe(data => {
       this.results = data || [];
       // Calculate last balance from results
       this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
       this.totalAmount = this.lastBalance;
+      this.loadingService.hide();
     }, err => {
       console.error('Failed to load ledger:', err);
       this.results = [];
+      this.loadingService.hide();
     });
   }
 
@@ -142,6 +160,7 @@ export class LedgerComponent implements OnInit {
     const params: any = Object.fromEntries(queryParams);
     
     // Download PDF using service
+    this.loadingService.show('Exporting ledger...');
     this.ledgerService.downloadLedger(this.partyId, params).subscribe(
       (blob: Blob) => {
         // Create blob URL and trigger download
@@ -153,10 +172,12 @@ export class LedgerComponent implements OnInit {
         link.click();
         document.body.removeChild(link);
         window.URL.revokeObjectURL(blobUrl);
+        this.loadingService.hide();
       },
       err => {
         console.error('Failed to download PDF:', err);
         alert(LEDGER_CONSTANTS.MESSAGES.DOWNLOAD_ERROR);
+        this.loadingService.hide();
       }
     );
   }

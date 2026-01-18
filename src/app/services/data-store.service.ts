@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError, tap, finalize } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Party } from '../interface/party';
 import { Book } from '../interface/book';
@@ -17,6 +17,7 @@ export class DataStoreService {
   private transactions$ = new BehaviorSubject<Transaction[]>([]);
   private partiesLoaded = false;
   private booksLoaded = false;
+  private booksLoading = false;
   private salesLoaded = false;
   private transactionsLoaded = false;
 
@@ -66,20 +67,39 @@ export class DataStoreService {
     );
   }
 
-  getBooks(): Observable<Book[]> {
-    if (!this.booksLoaded) this.loadBooks();
+  getBooks(force = false): Observable<Book[]> {
+    if (!this.booksLoaded || force) {
+      return this.loadBooks(force);
+    }
     return this.books$.asObservable();
   }
 
-  loadBooks(force = false): void {
-    if (this.booksLoaded && !force) return;
-    // mark as loading immediately to prevent duplicate parallel requests
-    this.booksLoaded = true;
-    this.http.get<Book[]>(enviort.bookingUrl, { headers: this.auth.getAuthHeaders() })
-      .pipe(catchError(() => of([])))
-      .subscribe(data => {
-        this.books$.next(data || []);
-      });
+  loadBooks(force = false): Observable<Book[]> {
+    if (this.booksLoading) {
+      return this.books$.asObservable();
+    }
+    if (this.booksLoaded && !force) {
+      return this.books$.asObservable();
+    }
+    this.booksLoading = true;
+    const request$ = this.http.get<Book[]>(enviort.bookingUrl, { headers: this.auth.getAuthHeaders() })
+      .pipe(
+        catchError(() => {
+          this.booksLoaded = false;
+          return of([]);
+        }),
+        tap(data => {
+          this.booksLoaded = true;
+          this.books$.next(data || []);
+        }),
+        finalize(() => {
+          this.booksLoading = false;
+        })
+      );
+
+    // auto-subscribe so callers that don't subscribe still trigger the load
+    request$.subscribe();
+    return request$;
   }
 
   refreshBooks(): void {
@@ -107,8 +127,10 @@ export class DataStoreService {
     );
   }
 
-  getSales(): Observable<Sale[]> {
-    if (!this.salesLoaded) this.loadSales();
+  getSales(force = false): Observable<Sale[]> {
+    if (!this.salesLoaded || force) {
+      this.loadSales(force);
+    }
     return this.sales$.asObservable();
   }
 

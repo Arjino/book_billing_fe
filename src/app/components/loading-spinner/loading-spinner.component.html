@@ -1,6 +1,13 @@
-<div *ngIf="isLoading$ | async" class="fixed inset-0 flex items-center justify-center z-50 bg-black/30 backdrop-blur-sm">
-  <div class="flex flex-col items-center gap-4">
-    <mat-spinner [diameter]="60" [strokeWidth]="4"></mat-spinner>
-    <p class="text-white text-lg font-semibold">Loading...</p>
+<div *ngIf="isLoading$ | async" class="loading-overlay">
+  <div class="loading-container">
+    <div class="spinner-wrapper">
+      <div class="modern-spinner">
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
+        <div class="spinner-ring"></div>
+        <div class="spinner-core"></div>
+      </div>
+    </div>
+    <p class="loading-text">{{ loadingText$ | async }}</p>
   </div>
 </div>

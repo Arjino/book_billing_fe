@@ -15,6 +15,7 @@ import { DataStoreService } from '../services/data-store.service';
 import { InvoicesService } from '../services/invoices.service';
 import { InvoicePreviewComponent } from './invoice-preview.component';
 import { formatTimeIST, formatDateLocal } from '../utils/date.utils';
+import { LoadingService } from '../services/loading.service';
 
 @Component({
   selector: 'app-invoices',
@@ -33,10 +34,20 @@ export class InvoicesComponent implements OnInit {
   endDate = '';
   saleType = 'All';
 
-  constructor(private route: ActivatedRoute, private store: DataStoreService, private invoicesService: InvoicesService, private dialog: MatDialog) {}
+  constructor(
+    private route: ActivatedRoute,
+    private store: DataStoreService,
+    private invoicesService: InvoicesService,
+    private dialog: MatDialog,
+    private loadingService: LoadingService
+  ) {}
 
   ngOnInit(): void {
-    this.store.getParties().subscribe(d => this.parties = d || []);
+    this.loadingService.show('Loading parties...');
+    this.store.getParties().subscribe(d => {
+      this.parties = d || [];
+      this.loadingService.hide();
+    });
     this.route.queryParams.subscribe(q => {
       if (q['partyId']) {
         this.partyId = q['partyId'];
@@ -48,12 +59,15 @@ export class InvoicesComponent implements OnInit {
   }
 
   fetchInvoices(partyId?: any) {
+    this.loadingService.show('Loading invoices...');
     this.invoicesService.getInvoices(partyId).subscribe(data => {
       this.invoices = data || [];
       this.applyLocalFilters();
+      this.loadingService.hide();
     }, err => {
       console.error('Failed to load invoices', err);
       this.invoices = [];
+      this.loadingService.hide();
     });
   }
 
@@ -98,6 +112,7 @@ export class InvoicesComponent implements OnInit {
     if (!saleId) return;
     // Find the invoice object to get invoiceNo
     const invoice = this.invoices.find(inv => inv.id === saleId || inv.invoiceNo === saleId);
+    this.loadingService.show('Downloading invoice...');
     this.invoicesService.downloadInvoice(saleId).subscribe(blob => {
       const link = document.createElement('a');
       const objectUrl = URL.createObjectURL(blob);
@@ -105,8 +120,10 @@ export class InvoicesComponent implements OnInit {
       link.download = `${invoiceNo}.pdf`;
       link.click();
       URL.revokeObjectURL(objectUrl);
+      this.loadingService.hide();
     }, err => {
       console.error('Failed to download PDF', err);
+      this.loadingService.hide();
     });
   }
 }

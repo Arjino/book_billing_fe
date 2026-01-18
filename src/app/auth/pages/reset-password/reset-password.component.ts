@@ -7,6 +7,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { LoadingService } from '../../../services/loading.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services/auth.service';
@@ -23,7 +24,7 @@ import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
-    MatProgressSpinnerModule,
+    // MatProgressSpinnerModule removed; using global spinner
     MatCardModule,
     MatSnackBarModule
   ],
@@ -32,7 +33,6 @@ import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
 })
 export class ResetPasswordComponent {
   resetForm!: FormGroup;
-  loading = signal(false);
   submitted = signal(false);
   token = signal<string | null>(null);
   tokenMissing = computed(() => !this.token());
@@ -42,7 +42,8 @@ export class ResetPasswordComponent {
     private authService: AuthService,
     private route: ActivatedRoute,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private loadingService: LoadingService
   ) {
     this.resetForm = this.fb.group({
       password: [
@@ -82,15 +83,15 @@ export class ResetPasswordComponent {
     const password = this.resetForm.value.password as string;
     const token = this.token() as string;
 
-    this.loading.set(true);
+    this.loadingService.show('Updating password...');
     this.authService.resetPassword(token, password).subscribe({
       next: () => {
-        this.loading.set(false);
+        this.loadingService.hide();
         this.submitted.set(true);
         this.snackBar.open(AUTH_CONSTANTS.MESSAGES.PASSWORD_UPDATED, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.LONG });
       },
       error: (error: any) => {
-        this.loading.set(false);
+        this.loadingService.hide();
         const message = error?.error?.message || AUTH_CONSTANTS.MESSAGES.PASSWORD_RESET_ERROR;
         this.snackBar.open(message, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.LONG });
       }

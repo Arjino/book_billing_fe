@@ -1,4 +1,4 @@
-import { Component, Inject, Input, OnInit } from '@angular/core';
+import { Component, Inject, Input, OnDestroy, OnInit } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -17,6 +17,7 @@ import { INVOICE_CONSTANTS } from '../constants/invoice.constants';
 export class InvoicePreviewComponent implements OnInit {
   @Input() salesId?: string;
   pdfUrl?: SafeResourceUrl;
+  private pdfObjectUrl?: string;
   loading = false;
   error = '';
 
@@ -43,13 +44,26 @@ export class InvoicePreviewComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    if (this.pdfObjectUrl) {
+      URL.revokeObjectURL(this.pdfObjectUrl);
+    }
+  }
+
   fetchInvoicePdf(id: string) {
     this.loading = true;
     this.invoicesService.downloadInvoice(parseInt(id, 10)).subscribe({
       next: (blob) => {
-        const url = URL.createObjectURL(blob);
+        const typedBlob = blob.type ? blob : new Blob([blob], { type: 'application/pdf' });
+        const url = URL.createObjectURL(typedBlob);
+        this.pdfObjectUrl = url;
         this.pdfUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
         this.loading = false;
+
+        // Mobile Safari/Chrome often cannot render PDF inside iframe; auto-open in a new tab as fallback
+        if (this.isMobileDevice()) {
+          this.openInNewTab();
+        }
       },
       error: (err) => {
         this.error = INVOICE_CONSTANTS.MESSAGES.LOAD_ERROR;
@@ -59,11 +73,22 @@ export class InvoicePreviewComponent implements OnInit {
   }
 
   downloadPdf() {
-    if (!this.pdfUrl) return;
+    if (!this.pdfObjectUrl) return;
     const link = document.createElement('a');
-    link.href = (this.pdfUrl as any).changingThisBreaksApplicationSecurity || '';
+    link.href = this.pdfObjectUrl;
     const invoiceNo = this.data?.invoiceNo || this.salesId || 'invoice';
     link.download = `${invoiceNo}.pdf`;
     link.click();
+  }
+
+  openInNewTab() {
+    if (this.pdfObjectUrl) {
+      window.open(this.pdfObjectUrl, '_blank');
+    }
+  }
+
+  private isMobileDevice(): boolean {
+    const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+    return /android|iphone|ipad|ipod/i.test(ua);
   }
 }
