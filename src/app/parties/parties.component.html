@@ -27,9 +27,9 @@
 
     <!-- Filter Section -->
     <div class="mb-6 bg-gradient-to-br from-slate-900/90 to-slate-950 border border-orange-500/30 rounded-2xl backdrop-blur-xl p-6 text-white">
-      <div class="flex flex-col md:flex-row gap-4 items-end">
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end justify-items-stretch">
         <!-- Filter Dropdown -->
-        <div class="flex-1">
+        <div>
           <label class="block text-orange-300 font-semibold mb-2">Filter By</label>
           <select [(ngModel)]="filterBy" class="w-full px-4 py-2 bg-slate-800/50 border border-orange-500/30 rounded-lg text-white focus:outline-none focus:border-orange-400 transition-colors">
             <option *ngFor="let option of filterOptions" [value]="option.value">
@@ -39,7 +39,7 @@
         </div>
 
         <!-- Filter Input -->
-        <div class="flex-1">
+        <div>
           <label class="block text-orange-300 font-semibold mb-2">Search Value</label>
           <input 
             [(ngModel)]="filterValue" 
@@ -50,25 +50,26 @@
           />
         </div>
 
-        <!-- Filter Button -->
-        <button 
-          (click)="applyFilter()" 
-          mat-raised-button 
-          class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold px-6 py-2 rounded-lg transition-all"
-        >
-          <mat-icon class="mr-2">search</mat-icon>
-          Apply Filter
-        </button>
+        <!-- Buttons Group -->
+        <div class="flex flex-col sm:flex-row gap-3 sm:justify-start justify-center sm:col-span-2 md:col-span-1 lg:col-span-2">
+          <button 
+            (click)="applyFilter()" 
+            mat-raised-button 
+            class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold px-6 py-2 rounded-lg transition-all"
+          >
+            <mat-icon class="mr-2">search</mat-icon>
+            Apply Filter
+          </button>
 
-        <!-- Clear Button -->
-        <button 
-          (click)="clearFilter()" 
-          mat-outlined-button 
-          class="border border-orange-500/50 text-orange-300 hover:bg-orange-500/10 font-semibold px-6 py-2 rounded-lg transition-all"
-        >
-          <mat-icon class="mr-2">clear</mat-icon>
-          Clear
-        </button>
+          <button 
+            (click)="clearFilter()" 
+            mat-outlined-button 
+            class="w-full sm:w-auto border border-orange-500/50 text-orange-300 hover:bg-orange-500/10 font-semibold px-6 py-2 rounded-lg transition-all"
+          >
+            <mat-icon class="mr-2">clear</mat-icon>
+            Clear
+          </button>
+        </div>
       </div>
     </div>
 
