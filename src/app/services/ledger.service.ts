@@ -21,7 +21,7 @@ export class LedgerService {
   }
 
   getLedgerForPartyByDateRange(partyId: number, params: any): Observable<any[]> {
-    return this.http.get<any[]>(`${enviort.ledgerUrl}/${partyId}`, { 
+    return this.http.get<any[]>(enviort.ledgerFilterUrl, { 
       headers: this.auth.getAuthHeaders(),
       params
     }).pipe(

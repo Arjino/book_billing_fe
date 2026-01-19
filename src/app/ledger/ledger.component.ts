@@ -74,12 +74,19 @@ export class LedgerComponent implements OnInit {
 
   fetchLedgerForParty(partyId: any) {
     if (!partyId) return;
+    
+    // Fetch today's entries by default
+    const today = formatDateForAPI(new Date());
+    const params: any = { 
+      partyId: partyId,
+      startDate: today,
+      endDate: today
+    };
+    
     this.loadingService.show('Loading ledger...');
-    this.ledgerService.getLedgerForParty(partyId).subscribe(data => {
-      // Apply client-side filters to the received data
-      const filtered = this.filterResults(data || []);
-      this.results = filtered;
-      // Server returns entries ordered by date desc; last updated balance is first item's balance (from filtered set)
+    this.ledgerService.getLedgerForPartyByDateRange(partyId, params).subscribe(data => {
+      this.results = data || [];
+      // Server returns entries ordered by date desc; last updated balance is first item's balance
       this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
       // update totalAmount or Last Balance display accordingly
       this.totalAmount = this.lastBalance;
@@ -99,12 +106,20 @@ export class LedgerComponent implements OnInit {
       return;
     }
 
-    // Prepare filter parameters
-    const start = this.startDate ? formatDateForAPI(this.startDate) : formatDateForAPI(new Date());
-    const end = this.endDate ? formatDateForAPI(this.endDate) : formatDateForAPI(new Date());
-    const type = this.transactionType || 'All';
-
-    const params: any = { startDate: start, endDate: end, type };
+    // Prepare filter parameters - only include dates if they are set
+    const params: any = { partyId: this.partyId };
+    
+    if (this.startDate) {
+      params.startDate = formatDateForAPI(this.startDate);
+    }
+    
+    if (this.endDate) {
+      params.endDate = formatDateForAPI(this.endDate);
+    }
+    
+    if (this.transactionType && this.transactionType !== 'All') {
+      params.type = this.transactionType;
+    }
     
     this.loadingService.show('Filtering ledger...');
     this.ledgerService.getLedgerForPartyByDateRange(this.partyId, params).subscribe(data => {
