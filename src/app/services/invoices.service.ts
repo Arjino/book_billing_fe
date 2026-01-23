@@ -22,6 +22,19 @@ export class InvoicesService {
     );
   }
 
+  getPurchaseInvoices(partyId?: number): Observable<any[]> {
+    let url = enviort.purchasesUrl;
+    if (partyId) {
+      url += `/by-party/${partyId}`;
+    }
+    return this.http.get<any[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading purchase invoices:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   downloadInvoice(id: number): Observable<Blob> {
     return this.http.get(`${enviort.invoiceBase}/${id}/invoice/download`, {
       headers: this.auth.getAuthHeaders(),
@@ -29,6 +42,18 @@ export class InvoicesService {
     }).pipe(
       catchError((error) => {
         console.error('Error downloading invoice:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  downloadPurchaseInvoice(id: number): Observable<Blob> {
+    return this.http.get(`${enviort.purchasesUrl}/${id}/invoice/download`, {
+      headers: this.auth.getAuthHeaders(),
+      responseType: 'blob'
+    }).pipe(
+      catchError((error) => {
+        console.error('Error downloading purchase invoice:', error);
         return throwError(() => error);
       })
     );

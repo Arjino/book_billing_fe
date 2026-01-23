@@ -28,7 +28,12 @@ export const enviort = {
 
   // Sales by date
   salesByDateUrl: baseUrl + '/sales/by-date', // Returns today's sales by default
-  salesByDateRangeUrl: baseUrl + '/sales/by-date' // With startDate and endDate query params
+  salesByDateRangeUrl: baseUrl + '/sales/by-date', // With startDate and endDate query params
+
+  // Purchase URLs
+  purchasesUrl: baseUrl + '/purchases',
+  purchasesByDateUrl: baseUrl + '/purchases/by-date', // Returns today's purchases by default
+  purchaseReturnsUrl: baseUrl + '/purchases/returns'
 };
 
 export const environment = {

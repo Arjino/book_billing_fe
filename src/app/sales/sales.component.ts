@@ -15,6 +15,7 @@ import { SalesDialogComponent } from './sales-dialog.component';
 import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
+import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
 import { formatTimeIST, formatDateForAPI, formatDateLocal } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
@@ -41,6 +42,7 @@ export class SalesComponent implements OnInit {
     private store: DataStoreService, 
     private route: ActivatedRoute,
     private salesService: SalesService,
+    private purchaseService: PurchaseService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar
   ) {}
@@ -67,16 +69,19 @@ export class SalesComponent implements OnInit {
 
   
   loadSales() {
-    this.loadingService.show('Loading sales...');
-    this.salesService.getSalesByDate().subscribe(data => {
-      // Filter sales based on the current mode
-      if (this.isPurchaseMode) {
-        this.sales = data.filter(sale => sale.type === 'PURCHASE');
-      } else {
-        this.sales = data.filter(sale => sale.type === 'SALE');
-      }
-      this.loadingService.hide();
-    });
+    if (this.isPurchaseMode) {
+      this.loadingService.show('Loading purchases...');
+      this.purchaseService.getPurchasesByDate().subscribe(data => {
+        this.sales = data;
+        this.loadingService.hide();
+      });
+    } else {
+      this.loadingService.show('Loading sales...');
+      this.salesService.getSalesByDate().subscribe(data => {
+        this.sales = data;
+        this.loadingService.hide();
+      });
+    }
   }
 
   addSale() {
@@ -153,28 +158,51 @@ export class SalesComponent implements OnInit {
         return;
       }
 
-      // Normal sale
-      this.loadingService.show('Creating sale...');
-      this.store.createSale(result).subscribe({
-        next: () => {
-          this.loadingService.hide();
-          this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-          this.loadSales();
-          // refresh cached books so stock updates after a sale
-          this.store.refreshBooks();
-        },
-        error: (err) => {
-          this.loadingService.hide();
-          console.error('Failed to create sale:', err);
-          this.snackBar.open(SALES_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', { 
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          });
-        }
-      });
+      // Handle Purchase vs Sale
+      if (this.isPurchaseMode) {
+        this.loadingService.show('Creating purchase...');
+        this.purchaseService.createPurchase(result).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open('Purchase created successfully!', 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.loadSales();
+            this.store.refreshBooks();
+          },
+          error: (err) => {
+            this.loadingService.hide();
+            console.error('Failed to create purchase:', err);
+            this.snackBar.open('Failed to create purchase', 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
+      } else {
+        this.loadingService.show('Creating sale...');
+        this.store.createSale(result).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.loadSales();
+            // refresh cached books so stock updates after a sale
+            this.store.refreshBooks();
+          },
+          error: (err) => {
+            this.loadingService.hide();
+            console.error('Failed to create sale:', err);
+            this.snackBar.open(SALES_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
+      }
     });
   }
 
@@ -189,23 +217,33 @@ export class SalesComponent implements OnInit {
     const start = this.formatDate(this.startDate);
     const end = this.formatDate(this.endDate);
 
-    this.loadingService.show('Fetching sales...');
-    this.salesService.getSalesByDateRange(start, end).subscribe({
-      next: (data) => {
-        // Filter sales based on the current mode
-        if (this.isPurchaseMode) {
-          this.sales = data.filter(sale => sale.type === 'PURCHASE');
-        } else {
-          this.sales = data.filter(sale => sale.type === 'SALE');
+    if (this.isPurchaseMode) {
+      this.loadingService.show('Fetching purchases...');
+      this.purchaseService.getPurchasesByDateRange(start, end).subscribe({
+        next: (data) => {
+          this.sales = data;
+          this.loadingService.hide();
+        },
+        error: (err) => {
+          console.error('Failed to fetch purchases by date range:', err);
+          alert('Failed to fetch purchases by date range');
+          this.loadingService.hide();
         }
-        this.loadingService.hide();
-      },
-      error: (err) => {
-        console.error('Failed to fetch sales by date range:', err);
-        alert(SALES_CONSTANTS.MESSAGES.DATE_RANGE_ERROR);
-        this.loadingService.hide();
-      }
-    });
+      });
+    } else {
+      this.loadingService.show('Fetching sales...');
+      this.salesService.getSalesByDateRange(start, end).subscribe({
+        next: (data) => {
+          this.sales = data;
+          this.loadingService.hide();
+        },
+        error: (err) => {
+          console.error('Failed to fetch sales by date range:', err);
+          alert(SALES_CONSTANTS.MESSAGES.DATE_RANGE_ERROR);
+          this.loadingService.hide();
+        }
+      });
+    }
   }
 
   private formatDate(date: string | Date): string {
