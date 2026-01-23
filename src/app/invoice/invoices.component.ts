@@ -60,14 +60,41 @@ export class InvoicesComponent implements OnInit {
 
   fetchInvoices(partyId?: any) {
     this.loadingService.show('Loading invoices...');
-    this.invoicesService.getInvoices(partyId).subscribe(data => {
-      this.invoices = data || [];
-      this.applyLocalFilters();
-      this.loadingService.hide();
+    
+    // Fetch both sales and purchases
+    const salesObs = this.invoicesService.getInvoices(partyId);
+    const purchasesObs = this.invoicesService.getPurchaseInvoices(partyId);
+    
+    // Combine both observables
+    salesObs.subscribe(salesData => {
+      purchasesObs.subscribe(purchaseData => {
+        // Mark sales with type 'Sale' and purchases with type 'Purchase'
+        const sales = (salesData || []).map(inv => ({ ...inv, type: inv.type || 'Sale' }));
+        const purchases = (purchaseData || []).map(inv => ({ ...inv, type: inv.type || 'Purchase' }));
+        
+        // Combine both arrays
+        this.invoices = [...sales, ...purchases];
+        this.applyLocalFilters();
+        this.loadingService.hide();
+      }, err => {
+        console.error('Failed to load purchase invoices', err);
+        // Still show sales even if purchases fail
+        this.invoices = (salesData || []).map(inv => ({ ...inv, type: inv.type || 'Sale' }));
+        this.applyLocalFilters();
+        this.loadingService.hide();
+      });
     }, err => {
-      console.error('Failed to load invoices', err);
-      this.invoices = [];
-      this.loadingService.hide();
+      console.error('Failed to load sale invoices', err);
+      // Try to at least load purchases
+      purchasesObs.subscribe(purchaseData => {
+        this.invoices = (purchaseData || []).map(inv => ({ ...inv, type: inv.type || 'Purchase' }));
+        this.applyLocalFilters();
+        this.loadingService.hide();
+      }, err2 => {
+        console.error('Failed to load invoices', err2);
+        this.invoices = [];
+        this.loadingService.hide();
+      });
     });
   }
 
@@ -89,12 +116,16 @@ export class InvoicesComponent implements OnInit {
     this.invoices = filtered;
   }
 
-  openPreview(saleId: any) {
+  openPreview(saleId: any, invoiceType?: string) {
     if (!saleId) return;
     const invoice = this.invoices.find(inv => inv.id === saleId || inv.invoiceNo === saleId);
     const invoiceNo = invoice?.invoiceNo || '';
+    const isPurchase = invoiceType
+      ? invoiceType.toLowerCase().includes('purchase')
+      : (invoice?.type || '').toString().toLowerCase().includes('purchase');
+    const type = isPurchase ? 'purchase' : 'sale';
     this.dialog.open(InvoicePreviewComponent, {
-      data: { salesId: saleId, invoiceNo },
+      data: { salesId: saleId, invoiceNo, type },
       width: '900px',
       maxWidth: '95vw',
       panelClass: 'invoice-dialog'
@@ -108,12 +139,19 @@ export class InvoicesComponent implements OnInit {
     return timePart === '-' ? datePart : `${datePart} ${timePart}`;
   }
 
-  downloadPdf(saleId: any,invoiceNo?:string) {
+  downloadPdf(saleId: any, invoiceNo?: string) {
     if (!saleId) return;
-    // Find the invoice object to get invoiceNo
+    // Find the invoice object to get invoiceNo and type
     const invoice = this.invoices.find(inv => inv.id === saleId || inv.invoiceNo === saleId);
+    const isPurchase = invoice?.type?.toLowerCase().includes('purchase');
+    
     this.loadingService.show('Downloading invoice...');
-    this.invoicesService.downloadInvoice(saleId).subscribe(blob => {
+    
+    const downloadObs = isPurchase 
+      ? this.invoicesService.downloadPurchaseInvoice(saleId)
+      : this.invoicesService.downloadInvoice(saleId);
+    
+    downloadObs.subscribe(blob => {
       const link = document.createElement('a');
       const objectUrl = URL.createObjectURL(blob);
       link.href = objectUrl;

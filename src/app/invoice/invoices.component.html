@@ -68,7 +68,7 @@
               <td class="py-3 px-3">{{ inv.type || '-' }}</td>
               <td class="py-3 px-3 text-right">{{ inv.totalAmount }}</td>
               <td class="py-3 px-3 text-right">
-                <button mat-icon-button color="accent" (click)="openPreview(inv.id)"><mat-icon>visibility</mat-icon></button>
+                <button mat-icon-button color="accent" (click)="openPreview(inv.id,inv.type)"><mat-icon>visibility</mat-icon></button>
                 <button mat-icon-button color="primary" (click)="downloadPdf(inv.id,inv.invoiceNo)"><mat-icon>download</mat-icon></button>
               </td>
             </tr>
