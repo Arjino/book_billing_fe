@@ -16,6 +16,7 @@ import { INVOICE_CONSTANTS } from '../constants/invoice.constants';
 })
 export class InvoicePreviewComponent implements OnInit {
   @Input() salesId?: string;
+  invoiceType: 'sale' | 'purchase' = 'sale';
   pdfUrl?: SafeResourceUrl;
   private pdfObjectUrl?: string;
   loading = false;
@@ -31,6 +32,10 @@ export class InvoicePreviewComponent implements OnInit {
     if (data && data.salesId) {
       this.salesId = data.salesId;
     }
+    if (data && data.type) {
+      const type = (data.type as string).toLowerCase();
+      this.invoiceType = type === 'purchase' ? 'purchase' : 'sale';
+    }
   }
 
   ngOnInit() {
@@ -38,7 +43,7 @@ export class InvoicePreviewComponent implements OnInit {
       this.salesId = this.route.snapshot.paramMap.get('id') || undefined;
     }
     if (this.salesId) {
-      this.fetchInvoicePdf(this.salesId);
+      this.fetchInvoicePdf(this.salesId, this.invoiceType);
     } else {
       this.error = INVOICE_CONSTANTS.MESSAGES.INVALID_SALE_ID;
     }
@@ -50,9 +55,14 @@ export class InvoicePreviewComponent implements OnInit {
     }
   }
 
-  fetchInvoicePdf(id: string) {
+  fetchInvoicePdf(id: string, type: 'sale' | 'purchase' = 'sale') {
     this.loading = true;
-    this.invoicesService.downloadInvoice(parseInt(id, 10)).subscribe({
+    const numericId = parseInt(id, 10);
+    const download$ = type === 'purchase'
+      ? this.invoicesService.downloadPurchaseInvoice(numericId)
+      : this.invoicesService.downloadInvoice(numericId);
+
+    download$.subscribe({
       next: (blob) => {
         const typedBlob = blob.type ? blob : new Blob([blob], { type: 'application/pdf' });
         const url = URL.createObjectURL(typedBlob);

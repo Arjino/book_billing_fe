@@ -116,12 +116,16 @@ export class InvoicesComponent implements OnInit {
     this.invoices = filtered;
   }
 
-  openPreview(saleId: any) {
+  openPreview(saleId: any, invoiceType?: string) {
     if (!saleId) return;
     const invoice = this.invoices.find(inv => inv.id === saleId || inv.invoiceNo === saleId);
     const invoiceNo = invoice?.invoiceNo || '';
+    const isPurchase = invoiceType
+      ? invoiceType.toLowerCase().includes('purchase')
+      : (invoice?.type || '').toString().toLowerCase().includes('purchase');
+    const type = isPurchase ? 'purchase' : 'sale';
     this.dialog.open(InvoicePreviewComponent, {
-      data: { salesId: saleId, invoiceNo },
+      data: { salesId: saleId, invoiceNo, type },
       width: '900px',
       maxWidth: '95vw',
       panelClass: 'invoice-dialog'
