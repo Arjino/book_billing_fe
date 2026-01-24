@@ -160,6 +160,15 @@ export class DataStoreService {
     );
   }
 
+  createPurchase(purchase: Sale): Observable<Sale> {
+    return this.http.post<Sale>(enviort.purchasesUrl, purchase, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error creating purchase:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   createSaleReturn(payload: any): Observable<any> {
     return this.http.post(enviort.saleReturnsUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {

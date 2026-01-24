@@ -50,10 +50,10 @@
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>MRP</mat-label>
-            <input matInput type="number" [(ngModel)]="data.mrp" name="mrp" required min="0" #mrpModel="ngModel" (ngModelChange)="mrpModel.control.markAsTouched()" />
+            <input matInput type="number" [(ngModel)]="data.mrp" name="mrp" required min="0.01" #mrpModel="ngModel" (ngModelChange)="mrpModel.control.markAsTouched()" />
             <mat-error *ngIf="mrpModel.invalid && (mrpModel.dirty || mrpModel.touched)">
               <span *ngIf="mrpModel.errors?.['required']">MRP is required.</span>
-              <span *ngIf="mrpModel.errors?.['min']">MRP cannot be negative.</span>
+              <span *ngIf="mrpModel.errors?.['min']">MRP must be greater than zero.</span>
             </mat-error>
           </mat-form-field>
 
