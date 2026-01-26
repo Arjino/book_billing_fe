@@ -123,7 +123,7 @@
                     </mat-select>
                   </mat-form-field>
                   <div class="grid grid-cols-2 gap-2">
-                    <button mat-raised-button color="accent" class="w-full" (click)="openBookingDialog()">
+                    <button mat-raised-button color="accent" class="w-full" [disabled]="selectedBookingStatus === 'discarded'" (click)="openBookingDialog()">
                       <mat-icon>add</mat-icon>
                       Add Book
                     </button>
@@ -141,7 +141,7 @@
                     </mat-select>
                   </mat-form-field>
                   <div class="grid grid-cols-2 gap-2">
-                    <button mat-raised-button color="accent" class="w-full" (click)="openPartyDialog()">
+                    <button mat-raised-button color="accent" class="w-full" [disabled]="selectedPartyStatus === 'old'" (click)="openPartyDialog()">
                       <mat-icon>add</mat-icon>
                       Add Party
                     </button>

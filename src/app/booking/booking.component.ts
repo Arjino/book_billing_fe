@@ -38,6 +38,7 @@ export class BookingComponent implements OnInit {
   sortDirection: 'asc' | 'desc' | '' = '';
   
   filterOptions = BOOKING_CONSTANTS.FILTER_OPTIONS;
+  readonly BOOKING_CONSTANTS = BOOKING_CONSTANTS;
 
   constructor(
     private dialog: MatDialog, 

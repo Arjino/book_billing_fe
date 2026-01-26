@@ -35,6 +35,7 @@ export class PartiesComponent implements OnInit {
   partyStatus: string = PARTIES_CONSTANTS.DEFAULTS.STATUS; // Track current status
   
   filterOptions = PARTIES_CONSTANTS.FILTER_OPTIONS;
+  readonly PARTIES_CONSTANTS = PARTIES_CONSTANTS;
 
   constructor(
     private dialog: MatDialog, 

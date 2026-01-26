@@ -292,7 +292,17 @@ export class DashboardComponent implements OnInit {
         invoiceNo: '',
         party: null,
         date: formatDateForAPI(new Date()),
-        items: [],
+        items: [{
+          id: 0,
+          sale: null,
+          book: null,
+          qty: null,
+          rate: null,
+          discount: 0,
+          amount: null,
+          bookSearch: '',
+          filteredBooks: []
+        }],
         totalAmount: 0,
         discount: 0,
         taxAmount: 0,
