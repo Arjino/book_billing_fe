@@ -32,11 +32,12 @@ import { TransactionComponent } from '../transaction/transaction.component';
 import { AnalyticsComponent } from './analytics.component';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
-import { getTodayLocal } from '../utils/date.utils';
+import { getTodayLocal, formatDateForAPI } from '../utils/date.utils';
 import { BOOKING_CONSTANTS } from '../constants/booking.constants';
 import { PARTIES_CONSTANTS } from '../constants/parties.constants';
 import { DASHBOARD_CONSTANTS } from '../constants/dashboard.constants';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
+import { PURCHASE_CONSTANTS } from '../constants/purchase.constants';
 import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
 import { DashboardStats } from '../interface/dashboard-stats';
 
@@ -281,15 +282,27 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  openSalesDialog() {
+  openSalesDialog(type?: string) {
+    const transactionType = type || this.selectedSalesType;
+    
     const dialogRef = this.dialog.open(SalesDialogComponent, {
       width: '600px',
       data: {
         id: 0,
         invoiceNo: '',
         party: null,
-        date: getTodayLocal(),
-        items: [],
+        date: formatDateForAPI(new Date()),
+        items: [{
+          id: 0,
+          sale: null,
+          book: null,
+          qty: null,
+          rate: null,
+          discount: 0,
+          amount: null,
+          bookSearch: '',
+          filteredBooks: []
+        }],
         totalAmount: 0,
         discount: 0,
         taxAmount: 0,
@@ -297,7 +310,7 @@ export class DashboardComponent implements OnInit {
         grandTotal: 0,
         paymentStatus: 'Pending',
         paidAmount: 0,
-        type: ''
+        type: transactionType === 'purchase' ? 'PURCHASE' : 'SALE'
       } as unknown as SalesDialogData
     });
 
@@ -332,6 +345,31 @@ export class DashboardComponent implements OnInit {
             this.loadingService.hide();
             console.error('Failed to add sale return:', error);
             this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
+
+        return;
+      }
+
+      if (result.type === 'PURCHASE') {
+        this.loadingService.show('Creating purchase...');
+        this.store.createPurchase(result).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(PURCHASE_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            // refresh books cache so UI sees updated stock after purchase
+            this.store.refreshBooks();
+          },
+          error: (error: any) => {
+            this.loadingService.hide();
+            console.error('Failed to add purchase:', error);
+            this.snackBar.open(PURCHASE_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', { 
               duration: 5000,
               panelClass: ['error-snackbar']
             });

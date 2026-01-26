@@ -71,6 +71,13 @@ export class SalesDialogComponent implements OnInit {
     return `${day}/${month}/${year}`;
   }
 
+  dateFilter = (date: Date | null): boolean => {
+    // Disable future dates
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+    return date ? date <= today : true;
+  }
+
   onCancel(): void {
     this.dialogRef.close();
   }

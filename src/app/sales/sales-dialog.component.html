@@ -25,7 +25,7 @@
 
         <mat-form-field appearance="outline" class="w-full text-white">
           <mat-label>Date</mat-label>
-          <input matInput [matDatepicker]="salesDatePicker" class="text-white" [(ngModel)]="data.date" name="date" required #dateModel="ngModel" [placeholder]="'dd-MM-yyyy'" />
+          <input matInput [matDatepicker]="salesDatePicker" class="text-white" [(ngModel)]="data.date" name="date" required #dateModel="ngModel" [placeholder]="'dd-MM-yyyy'" [matDatepickerFilter]="dateFilter" />
           <mat-datepicker-toggle matSuffix [for]="salesDatePicker"></mat-datepicker-toggle>
           <mat-datepicker #salesDatePicker startView="month"></mat-datepicker>
           <mat-error *ngIf="dateModel.invalid && (dateModel.dirty && dateModel.touched)">
@@ -164,7 +164,7 @@
     </button>
     <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="saleForm.invalid || (data.type === 'SALE' && hasQtyError()) || isOverpay()" aria-label="Save">
       <mat-icon class="inline md:hidden mr-2">add</mat-icon>
-      <span class="hidden md:inline">Save</span>
+      <span class="hidden md:inline">{{ data.type === 'PURCHASE' ? 'Save Purchase' : 'Save Sale' }}</span>
     </button>
   </div>
 </div>

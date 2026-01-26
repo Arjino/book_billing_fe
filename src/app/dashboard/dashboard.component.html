@@ -122,7 +122,13 @@
                       <mat-option value="discarded">Discarded</mat-option>
                     </mat-select>
                   </mat-form-field>
-                  <button mat-raised-button color="primary" class="w-full" (click)="navigateToBooking(selectedBookingStatus)">Open Books</button>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button mat-raised-button color="accent" class="w-full" [disabled]="selectedBookingStatus === 'discarded'" (click)="openBookingDialog()">
+                      <mat-icon>add</mat-icon>
+                      Add Book
+                    </button>
+                    <button mat-raised-button color="primary" class="w-full" (click)="navigateToBooking(selectedBookingStatus)">Open Books</button>
+                  </div>
                 </div>
 
                 <!-- Parties Card Content: select Current or Old -->
@@ -134,7 +140,13 @@
                       <mat-option value="old">Old Parties</mat-option>
                     </mat-select>
                   </mat-form-field>
-                  <button mat-raised-button color="primary" class="w-full" (click)="navigateToParties(selectedPartyStatus)">Open Parties</button>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button mat-raised-button color="accent" class="w-full" [disabled]="selectedPartyStatus === 'old'" (click)="openPartyDialog()">
+                      <mat-icon>add</mat-icon>
+                      Add Party
+                    </button>
+                    <button mat-raised-button color="primary" class="w-full" (click)="navigateToParties(selectedPartyStatus)">Open Parties</button>
+                  </div>
                 </div>
 
                 <!-- Sales/Purchases Card Content: select Sale or Purchase -->
@@ -146,7 +158,13 @@
                       <mat-option value="purchase">Purchase</mat-option>
                     </mat-select>
                   </mat-form-field>
-                  <button mat-raised-button color="primary" class="w-full" (click)="navigateToSales(selectedSalesType)">Open {{ selectedSalesType === 'sale' ? 'Sale' : 'Purchase' }}</button>
+                  <div class="grid grid-cols-2 gap-2">
+                    <button mat-raised-button color="accent" class="w-full" (click)="openSalesDialog()">
+                      <mat-icon>add</mat-icon>
+                      Add {{ selectedSalesType === 'sale' ? 'Sale' : 'Purchase' }}
+                    </button>
+                    <button mat-raised-button color="primary" class="w-full" (click)="navigateToSales(selectedSalesType)">Open {{ selectedSalesType === 'sale' ? 'Sale' : 'Purchase' }}</button>
+                  </div>
                 </div>
 
                 <!-- Transactions Card Content: Two buttons for create and open -->
