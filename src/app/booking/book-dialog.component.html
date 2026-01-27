@@ -21,12 +21,12 @@
 
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>SKU</mat-label>
-            <input matInput [(ngModel)]="data.sku" name="sku" required pattern="^[A-Za-z0-9_/.\-]+$" #skuModel="ngModel" (ngModelChange)="skuModel.control.markAsTouched()" />
-            <mat-hint>Allowed: letters, numbers, -, _, /, .</mat-hint>
-            <mat-error *ngIf="skuModel.invalid && (skuModel.dirty || skuModel.touched)">
-              <span *ngIf="skuModel.errors?.['required']">SKU is required.</span>
-              <span *ngIf="skuModel.errors?.['pattern']">Invalid SKU format.</span>
-            </mat-error>
+            <input matInput [(ngModel)]="data.sku" name="sku" required readonly #skuModel="ngModel" />
+            <button mat-icon-button matSuffix type="button" (click)="fetchSku()" [disabled]="isEditMode || isFetchingSku" title="Refresh SKU">
+              <mat-icon [class.spinning]="isFetchingSku">refresh</mat-icon>
+            </button>
+            <mat-hint *ngIf="!isEditMode">Auto-generated. Click refresh to regenerate.</mat-hint>
+            <mat-hint *ngIf="isEditMode">SKU cannot be changed in edit mode.</mat-hint>
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="w-full">

@@ -9,6 +9,7 @@ export const enviort = {
 
   // Resources
   bookingUrl: baseUrl + '/books',
+  bookSkuUrl: baseUrl + '/books/sku',
   updateBookUrl: (id: number) => baseUrl + `/books/${id}`,
   deleteBookUrl: (id: number) => baseUrl + `/books/${id}`,
   partiesUrl: baseUrl + '/parties',
@@ -22,6 +23,7 @@ export const enviort = {
   ledgerReportUrl: baseUrl + '/ledger/entries/report/pdf',
   statsDashboardUrl: baseUrl + '/stats/dashboard',
   saleReturnsUrl: baseUrl + '/sales/returns',
+  feedbackUrl: baseUrl + '/feedback',
 
   // Invoice (download endpoint uses /sales/{id}/invoice/download)
   invoiceBase: baseUrl + '/sales',

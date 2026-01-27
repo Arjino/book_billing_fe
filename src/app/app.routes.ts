@@ -22,6 +22,7 @@ export const routes: Routes = [
     {
       path: 'transaction', loadComponent: () => import('./transaction/transaction.component').then(m => m.TransactionComponent), canActivate: [AuthGuard]
     },
+    { path: 'feedback', loadComponent: () => import('./feedback/feedback.component').then(m => m.FeedbackComponent), canActivate: [AuthGuard] },
     { path: 'ledger', loadComponent: () => import('./ledger/ledger.component').then(m => m.LedgerComponent), canActivate: [AuthGuard] },
     { path: 'invoices', loadComponent: () => import('./invoice/invoices.component').then(m => m.InvoicesComponent), canActivate: [AuthGuard] },
     {

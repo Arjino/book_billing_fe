@@ -38,17 +38,3 @@ select:focus {
 :host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline .mat-form-field-outline-gap {
   stroke: rgba(179,71,233,0.95) !important;
 }
-
-/* Spinning animation for refresh button */
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}

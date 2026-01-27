@@ -104,8 +104,9 @@
                                 'from-orange-500 to-orange-600': card.title === 'Parties',
                                 'from-red-500 to-red-600': card.title === 'Sales/Purchases',
                                 'from-purple-600 to-purple-700': card.title === 'Transactions',
-                                'from-indigo-500 to-indigo-600': card.title === 'Invoice PDF',
-                                'from-blue-500 to-blue-600': card.title === 'Analytics'}">
+                                'from-indigo-500 to-indigo-600': card.title === 'Invoice PDF' || card.title === 'Ledger',
+                                'from-blue-500 to-blue-600': card.title === 'Analytics',
+                                'from-teal-500 to-teal-600': card.title === 'Feedback'}">
                   <mat-icon class="text-white text-2xl">{{ card.icon }}</mat-icon>
                 </div>
                 
@@ -213,12 +214,23 @@
                     View Analytics Dashboard
                   </button>
                 </div>
+
+                <!-- Feedback Card Content -->
+                <div *ngIf="card.title === 'Feedback'" class="space-y-3">
+                  <button mat-raised-button color="accent" class="w-full" (click)="openFeedbackDialog()">
+                    <mat-icon>add</mat-icon>
+                    Submit Feedback
+                  </button>
+                  <button mat-raised-button color="primary" class="w-full" (click)="navigateTo('/feedback')">
+                    Show All Feedback
+                  </button>
+                </div>
               </div>
 
               <!-- Action Buttons -->
               <div class="absolute bottom-4 right-4 flex gap-2 items-center z-20">
                 <!-- Add Button -->
-                <button *ngIf="card.route && !card.pdfCard && !card.button && card.title !== 'Ledger' && card.title !== 'Analytics' && card.title !== 'Books' && card.title !== 'Parties' && card.title !== 'Sales/Purchases' && card.title !== 'Transactions'" 
+                <button *ngIf="card.route && !card.pdfCard && !card.button && card.title !== 'Ledger' && card.title !== 'Analytics' && card.title !== 'Books' && card.title !== 'Parties' && card.title !== 'Sales/Purchases' && card.title !== 'Transactions' && card.title !== 'Feedback'" 
                         mat-mini-fab
                         color="accent"
                         class="shadow-lg hover:shadow-xl transition-all duration-300 scale-100 sm:scale-0 sm:group-hover:scale-100 origin-bottom-right"
@@ -227,7 +239,7 @@
                   <mat-icon>add</mat-icon>
                 </button>
                 <!-- Navigation Arrow Button -->
-                <button *ngIf="card.route && card.title !== 'Ledger' && card.title !== 'Analytics' && card.title !== 'Books' && card.title !== 'Parties' && card.title !== 'Sales/Purchases' && card.title !== 'Transactions'" 
+                <button *ngIf="card.route && card.title !== 'Ledger' && card.title !== 'Analytics' && card.title !== 'Books' && card.title !== 'Parties' && card.title !== 'Sales/Purchases' && card.title !== 'Transactions' && card.title !== 'Feedback'" 
                         mat-mini-fab
                         color="primary"
                         class="shadow-lg hover:shadow-xl transition-all duration-300 scale-100 sm:scale-0 sm:group-hover:scale-100 origin-bottom-right"

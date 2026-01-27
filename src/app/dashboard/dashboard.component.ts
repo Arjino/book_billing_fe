@@ -12,6 +12,7 @@ import { AuthService } from '../services/auth.service';
 import { DataStoreService } from '../services/data-store.service';
 import { DashboardService } from '../services/dashboard.service';
 import { LoadingService } from '../services/loading.service';
+import { FeedbackService } from '../services/feedback.service';
 import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
 import { BookDialogComponent } from '../booking/book-dialog.component';
 import { BookDialogData } from '../interface/book-dialog-data';
@@ -20,6 +21,7 @@ import { PartyDialogData } from '../interface/party-dialog-data';
 import { SalesDialogComponent } from '../sales/sales-dialog.component';
 import { SalesDialogData } from '../interface/sales-dialog-data';
 import { TransactionDialogComponent} from '../transaction/transaction-dialog.component';
+import { FeedbackDialogComponent } from '../feedback/feedback-dialog.component';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -39,6 +41,7 @@ import { DASHBOARD_CONSTANTS } from '../constants/dashboard.constants';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
 import { PURCHASE_CONSTANTS } from '../constants/purchase.constants';
 import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
+import { FEEDBACK_CONSTANTS } from '../constants/feedback.constants';
 import { DashboardStats } from '../interface/dashboard-stats';
 
 @Component({
@@ -119,6 +122,13 @@ export class DashboardComponent implements OnInit {
       description: 'View your analytics and insights',
       button: 'View'
     },
+    {
+      icon: 'feedback',
+      iconColor: 'text-teal-600',
+      title: 'Feedback',
+      description: 'Submit and view feedback',
+      route: '/feedback'
+    }
   ];
   invoiceSaleId: string = '';
   showInvoicePreview: boolean = false;
@@ -149,6 +159,7 @@ export class DashboardComponent implements OnInit {
     private store: DataStoreService,
     private dashboardService: DashboardService,
     private loadingService: LoadingService,
+    private feedbackService: FeedbackService,
     private snackBar: MatSnackBar
   ) {}
 
@@ -433,6 +444,36 @@ export class DashboardComponent implements OnInit {
             this.loadingService.hide();
             console.error('Failed to add transaction:', error);
             this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', { 
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
+      }
+    });
+  }
+
+  openFeedbackDialog() {
+    const dialogRef = this.dialog.open(FeedbackDialogComponent, {
+      width: '500px',
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe((result: any) => {
+      if (result) {
+        this.loadingService.show('Submitting feedback...');
+        this.feedbackService.createFeedback(result).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(FEEDBACK_CONSTANTS.MESSAGES.SUBMIT_SUCCESS, 'Close', { 
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+          },
+          error: (error: any) => {
+            this.loadingService.hide();
+            console.error('Failed to submit feedback:', error);
+            this.snackBar.open(FEEDBACK_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', { 
               duration: 5000,
               panelClass: ['error-snackbar']
             });
