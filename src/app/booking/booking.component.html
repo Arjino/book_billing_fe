@@ -19,6 +19,10 @@
           <mat-icon>add</mat-icon>
           Add Book
         </button>
+        <button mat-raised-button [disabled]="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED" (click)="bulkImport()" class="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600">
+          <mat-icon>cloud_upload</mat-icon>
+          <span class="hidden sm:inline">Bulk Import</span>
+        </button>
         <button mat-icon-button (click)="goBack()" class="bg-slate-800/50 hover:bg-slate-700/50 text-green-300 rounded-lg border border-green-500/30" title="Back to Dashboard">
           <mat-icon>arrow_back</mat-icon>
         </button>

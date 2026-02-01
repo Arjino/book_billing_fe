@@ -1,0 +1,55 @@
+.modern-dialog {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dialog-header {
+  background: linear-gradient(90deg, #7C3AED, #06B6D4);
+  color: white;
+  font-weight: 600;
+}
+
+.dialog-header mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+/* Scrollbar styling for preview table */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(34, 197, 94, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(34, 197, 94, 0.5);
+}
+
+/* Animation for file upload area */
+.border-dashed {
+  transition: all 0.3s ease;
+}
+
+.border-dashed:hover {
+  background-color: rgba(6, 182, 212, 0.1);
+}
+
+/* Button animations */
+button {
+  transition: all 0.2s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .modern-dialog {
+    max-width: 100% !important;
+  }
+}

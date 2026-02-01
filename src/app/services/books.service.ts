@@ -10,8 +10,9 @@ import { enviort } from '../../environments/environment';
 export class BooksService {
   constructor(private http: HttpClient, private auth: AuthService) {}
 
-  createBook(book: Book): Observable<Book> {
-    return this.http.post<Book>(enviort.bookingUrl, book, { headers: this.auth.getAuthHeaders() }).pipe(
+  createBook(books: Book | Book[]): Observable<any> {
+    const payload = Array.isArray(books) ? books : [books];
+    return this.http.post<any>(enviort.bookingUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating book:', error);
         return throwError(() => error);

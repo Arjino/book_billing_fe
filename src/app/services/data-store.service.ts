@@ -188,7 +188,7 @@ export class DataStoreService {
   }
 
   createBook(book: Book): Observable<Book> {
-    return this.http.post<Book>(enviort.bookingUrl, book, { headers: this.auth.getAuthHeaders() }).pipe(
+    return this.http.post<Book>(enviort.bookingUrl, [book], { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating book:', error);
         return throwError(() => error);

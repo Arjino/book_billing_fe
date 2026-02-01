@@ -12,6 +12,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { BookDialogComponent } from './book-dialog.component';
+import { BulkImportDialogComponent } from './bulk-import-dialog.component';
 import { DataStoreService } from '../services/data-store.service';
 import { BooksService } from '../services/books.service';
 import { LoadingService } from '../services/loading.service';
@@ -173,7 +174,7 @@ export class BookingComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result: BookDialogData) => {
       if (result) {
         this.loadingService.show('Adding book...');
-        this.store.createBook(result as any).subscribe({
+        this.booksService.createBook(result as any).subscribe({
           next: () => {
             this.loadingService.hide();
             this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', { 
@@ -189,6 +190,40 @@ export class BookingComponent implements OnInit {
               duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
               panelClass: ['error-snackbar']
             });
+          }
+        });
+      }
+    });
+  }
+
+  bulkImport() {
+    const dialogRef = this.dialog.open(BulkImportDialogComponent, {
+      width: '600px',
+      maxHeight: '90vh',
+      data: null
+    });
+
+    dialogRef.afterClosed().subscribe((result: Book[] | undefined) => {
+      if (result && result.length > 0) {
+        this.loadingService.show(`Importing ${result.length} book(s)...`);
+        this.booksService.createBook(result).subscribe({
+          next: (response) => {
+            this.loadingService.hide();
+            const successMessage = response?.message || `Successfully imported ${result.length} book(s)`;
+            this.snackBar.open(successMessage, 'Close', { 
+              duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
+              panelClass: ['success-snackbar']
+            });
+            this.loadBooks(true);
+          },
+          error: (err) => {
+            this.loadingService.hide();
+            const errorMessage = err?.error?.message || err?.message || `Failed to import books. Please check the file and try again.`;
+            this.snackBar.open(errorMessage, 'Close', { 
+              duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.LONG,
+              panelClass: ['error-snackbar']
+            });
+            console.error('Bulk import error:', err);
           }
         });
       }
