@@ -151,8 +151,9 @@ export class DataStoreService {
     this.loadSales(true);
   }
 
-  createSale(sale: Sale): Observable<Sale> {
-    return this.http.post<Sale>(enviort.salesUrl, sale, { headers: this.auth.getAuthHeaders() }).pipe(
+  createSale(sale: Sale | Sale[]): Observable<any> {
+    const payload = Array.isArray(sale) ? sale : [sale];
+    return this.http.post<any>(enviort.salesUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating sale:', error);
         return throwError(() => error);
@@ -196,8 +197,9 @@ export class DataStoreService {
     );
   }
 
-  createParty(party: Party): Observable<Party> {
-    return this.http.post<Party>(enviort.partiesUrl, party, { headers: this.auth.getAuthHeaders() }).pipe(
+  createParty(party: Party | Party[]): Observable<any> {
+    const payload = Array.isArray(party) ? party : [party];
+    return this.http.post<any>(enviort.partiesUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating party:', error);
         return throwError(() => error);

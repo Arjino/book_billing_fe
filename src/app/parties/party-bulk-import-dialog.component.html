@@ -1,0 +1,159 @@
+<div class="modern-dialog w-full max-w-2xl text-white">
+  <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#F97316,#F59E0B);">
+    <div class="flex items-center gap-3">
+      <mat-icon>upload_file</mat-icon>
+      <h2 class="text-lg font-semibold">Bulk Import Parties</h2>
+    </div>
+    <button mat-icon-button aria-label="close" (click)="onCancel()"><mat-icon>close</mat-icon></button>
+  </div>
+
+  <div mat-dialog-content class="p-6 rounded-b-lg" style="background: rgba(251,146,60,0.12); border: 1px solid rgba(251,146,60,0.7); backdrop-filter: blur(6px);">
+    <!-- File Upload Section -->
+    <div *ngIf="!previewMode" class="space-y-4">
+      <div class="border-2 border-dashed border-orange-500/50 rounded-lg p-6 hover:border-orange-400/70 transition-colors bg-orange-500/5">
+        <div class="flex flex-col items-center justify-center gap-3">
+          <mat-icon class="text-4xl text-orange-400">cloud_upload</mat-icon>
+          <div class="text-center">
+            <p class="text-sm text-orange-200 font-medium">Drop your Excel file here or click to browse</p>
+            <p class="text-xs text-orange-300/60 mt-1">Supported formats: .xlsx, .xls, .csv (Max 5MB)</p>
+          </div>
+          <input
+            type="file"
+            #fileInput
+            (change)="onFileSelected($event)"
+            accept=".xlsx,.xls,.csv"
+            class="hidden"
+            aria-label="Choose file"
+          />
+          <button
+            mat-raised-button
+            type="button"
+            (click)="fileInput.click()"
+            class="bg-orange-500 hover:bg-orange-600 text-white mt-2"
+          >
+            <mat-icon class="mr-2">folder_open</mat-icon>
+            Choose File
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="selectedFile" class="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <mat-icon class="text-green-400">check_circle</mat-icon>
+            <div>
+              <p class="text-sm font-semibold text-green-300">{{ selectedFile.name }}</p>
+              <p class="text-xs text-green-300/70">{{ (selectedFile.size / 1024).toFixed(2) }} KB</p>
+            </div>
+          </div>
+          <button
+            mat-icon-button
+            (click)="clearFile()"
+            class="text-red-400 hover:text-red-300"
+            aria-label="Remove file"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="fileError" class="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+        <div class="flex items-start gap-3">
+          <mat-icon class="text-red-400 mt-0.5">error</mat-icon>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-red-300">{{ fileError }}</p>
+            <div *ngIf="validationErrors.length > 0" class="mt-2 space-y-1 max-h-40 overflow-y-auto">
+              <p class="text-xs text-red-300/80" *ngFor="let error of validationErrors">• {{ error }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
+        <div class="flex gap-3">
+          <mat-icon class="text-amber-400 flex-shrink-0">info</mat-icon>
+          <div class="text-sm text-amber-200">
+            <p class="font-semibold mb-2">Required columns in Excel:</p>
+            <ul class="text-xs space-y-1 text-amber-300/80">
+              <li>• <strong>Name</strong> - Party name (required)</li>
+              <li>• <strong>Type</strong> - Supplier, Customer, Retailer, Distributor, Consumer</li>
+              <li>• <strong>Phone</strong> - 10 to 15 digits</li>
+              <li>• <strong>Address</strong> - Full address</li>
+              <li>• <strong>GSTIN</strong> - 15 characters</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview Section -->
+    <div *ngIf="previewMode" class="space-y-4">
+      <div class="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4">
+        <div class="flex items-center gap-3">
+          <mat-icon class="text-emerald-400">preview</mat-icon>
+          <div>
+            <p class="text-sm font-semibold text-emerald-300">Ready to Import</p>
+            <p class="text-xs text-emerald-300/70">{{ extractedParties.length }} party(s) will be imported</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-800/50 border border-emerald-500/20 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-gradient-to-r from-orange-500/20 to-amber-500/20 sticky top-0">
+            <tr class="border-b border-emerald-500/20">
+              <th class="px-4 py-3 text-left text-orange-300 font-semibold">Name</th>
+              <th class="px-4 py-3 text-left text-orange-300 font-semibold">Type</th>
+              <th class="px-4 py-3 text-left text-orange-300 font-semibold">Phone</th>
+              <th class="px-4 py-3 text-left text-orange-300 font-semibold">GSTIN</th>
+              <th class="px-4 py-3 text-left text-orange-300 font-semibold">Address</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-emerald-500/10">
+            <tr *ngFor="let party of extractedParties" class="hover:bg-emerald-500/5 transition-colors">
+              <td class="px-4 py-3 text-emerald-300">{{ party.name }}</td>
+              <td class="px-4 py-3 text-emerald-300">{{ party.type }}</td>
+              <td class="px-4 py-3 text-emerald-300">{{ party.phone }}</td>
+              <td class="px-4 py-3 text-emerald-300 font-mono text-xs">{{ party.gstin }}</td>
+              <td class="px-4 py-3 text-emerald-300">{{ party.address }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="flex gap-3">
+        <button
+          mat-outlined-button
+          (click)="clearFile()"
+          class="flex-1 border border-yellow-500/50 text-yellow-300 hover:bg-yellow-500/10"
+        >
+          <mat-icon class="mr-2">edit</mat-icon>
+          Choose Different File
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div mat-dialog-actions class="flex flex-col md:flex-row md:justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+    <button
+      mat-button
+      class="w-full md:w-auto"
+      (click)="onCancel()"
+      aria-label="Cancel"
+    >
+      <mat-icon class="inline md:hidden mr-2">arrow_back</mat-icon>
+      <span class="hidden md:inline">Cancel</span>
+    </button>
+    <button
+      mat-raised-button
+      color="primary"
+      class="w-full md:w-auto bg-emerald-500 hover:bg-emerald-600"
+      (click)="onProceed()"
+      [disabled]="!previewMode || extractedParties.length === 0 || isLoading"
+      aria-label="Proceed"
+    >
+      <mat-icon class="inline md:hidden mr-2">cloud_upload</mat-icon>
+      <span class="hidden md:inline">Proceed to Import</span>
+    </button>
+  </div>
+</div>

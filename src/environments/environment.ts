@@ -1,4 +1,5 @@
-export const baseUrl = 'https://book-billing.onrender.com/api';
+// export const baseUrl = 'https://book-billing.onrender.com/api';
+export const baseUrl = 'http://localhost:8081/api';
 
 export const enviort = {
   // Authentication
@@ -33,9 +34,11 @@ export const enviort = {
   salesByDateRangeUrl: baseUrl + '/sales/by-date', // With startDate and endDate query params
 
   // Purchase URLs
-  purchasesUrl: baseUrl + '/purchases',
-  purchasesByDateUrl: baseUrl + '/purchases/by-date', // Returns today's purchases by default
-  purchaseReturnsUrl: baseUrl + '/purchases/returns'
+  purchasesUrl: baseUrl + '/purchase',
+  purchasesByDateUrl: baseUrl + '/purchase/by-date', // Returns today's purchases by default
+  purchaseReturnsUrl: baseUrl + '/purchase/returns',
+  purchaseOrdersUrl: baseUrl + '/purchase-orders',
+  receivingOrdersUrl: baseUrl + '/receiving-orders'
 };
 
 export const environment = {

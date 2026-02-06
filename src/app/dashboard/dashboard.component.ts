@@ -13,7 +13,6 @@ import { DataStoreService } from '../services/data-store.service';
 import { DashboardService } from '../services/dashboard.service';
 import { LoadingService } from '../services/loading.service';
 import { FeedbackService } from '../services/feedback.service';
-import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
 import { BookDialogComponent } from '../booking/book-dialog.component';
 import { BookDialogData } from '../interface/book-dialog-data';
 import { PartyDialogComponent } from '../parties/party-dialog.component';
@@ -88,10 +87,17 @@ export class DashboardComponent implements OnInit {
     {
       icon: 'shopping_cart',
       iconColor: 'text-red-600',
-      title: 'Sales/Purchases',
+      title: 'Sales',
       description: 'Track all sales transactions',
       route: '/sales',
       component: SalesComponent
+    },
+    {
+      icon: 'inventory_2',
+      iconColor: 'text-emerald-600',
+      title: 'Purchase',
+      description: 'Track all purchase transactions',
+      route: '/purchase'
     },
     {
       icon: 'payment',
@@ -109,13 +115,6 @@ export class DashboardComponent implements OnInit {
       route: '/ledger'
     },
     {
-      icon: 'picture_as_pdf',
-      iconColor: 'text-indigo-600',
-      title: 'Invoice PDF',
-      description: 'Download and preview invoice PDF by Sale ID',
-      pdfCard: true
-    },
-    {
       icon: 'analytics',
       iconColor: 'text-blue-600',
       title: 'Analytics',
@@ -130,14 +129,12 @@ export class DashboardComponent implements OnInit {
       route: '/feedback'
     }
   ];
-  invoiceSaleId: string = '';
-  showInvoicePreview: boolean = false;
   parties: Party[] = [];
   selectedLedgerParty: any = null;
-  selectedInvoiceParty: any = null;
   selectedBookingStatus: string = BOOKING_CONSTANTS.DEFAULTS.STATUS; // 'available' or 'discarded'
   selectedPartyStatus: string = PARTIES_CONSTANTS.DEFAULTS.STATUS; // 'current' or 'old'
   selectedSalesType: string = SALES_CONSTANTS.DEFAULTS.SALE_TYPE; // 'sale' or 'purchase'
+  selectedPurchaseType: string = 'purchase-order'; // 'purchase-order' or 'receiving'
   dashboardStats: DashboardStats = {
     totalBooks: 0,
     totalBookStock: 0,
@@ -208,7 +205,10 @@ export class DashboardComponent implements OnInit {
         this.openPartyDialog();
         break;
       case 'Sales':
-        this.openSalesDialog();
+        this.openSalesDialog(this.selectedSalesType);
+        break;
+      case 'Purchase':
+        this.openPurchaseDialog(this.selectedPurchaseType);
         break;
       case 'Transactions':
         this.openTransactionDialog();
@@ -293,8 +293,8 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  openSalesDialog(type?: string) {
-    const transactionType = type || this.selectedSalesType;
+  openSalesDialog(type: string = 'sale') {
+    const transactionType = type;
     
     const dialogRef = this.dialog.open(SalesDialogComponent, {
       width: '600px',
@@ -391,7 +391,7 @@ export class DashboardComponent implements OnInit {
       }
 
       this.loadingService.show('Creating sale...');
-      this.store.createSale(result).subscribe({
+      this.store.createSale([result]).subscribe({
         next: () => {
           this.loadingService.hide();
           this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
@@ -405,6 +405,72 @@ export class DashboardComponent implements OnInit {
           this.loadingService.hide();
           console.error('Failed to add sale:', error);
           this.snackBar.open(SALES_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', { 
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+        }
+      });
+    });
+  }
+
+  openPurchaseDialog(mode: string = 'purchase-order') {
+    if (mode === 'receiving') {
+      this.navigateToPurchase('receiving');
+      return;
+    }
+    const transactionType = mode === 'purchase-order' ? 'PURCHASE_ORDER' : 'RECEIVING_ORDER';
+
+
+    const dialogRef = this.dialog.open(SalesDialogComponent, {
+      width: '600px',
+      data: {
+        invoiceNo: '',
+        party: null,
+        date: formatDateForAPI(new Date()),
+        items: [{
+          sale: null,
+          book: null,
+          qty: null,
+          rate: null,
+          discount: 0,
+          amount: null,
+          bookSearch: '',
+          filteredBooks: []
+        }],
+        totalAmount: 0,
+        discount: 0,
+        taxAmount: 0,
+        roundOff: 0,
+        grandTotal: 0,
+        paymentStatus: 'Pending',
+        paidAmount: 0,
+        type: transactionType
+      } as unknown as SalesDialogData
+    });
+
+    dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
+      if (!result) return;
+      if (result.paymentStatus === 'Paid') {
+        result.paidAmount = result.grandTotal;
+      }
+
+      this.loadingService.show(transactionType === 'RECEIVING_ORDER' ? 'Creating receiving order...' : 'Creating purchase...');
+      this.store.createPurchase(result).subscribe({
+        next: () => {
+          this.loadingService.hide();
+          const message = transactionType === 'RECEIVING_ORDER'
+            ? 'Receiving order created successfully!'
+            : (PURCHASE_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Purchase created successfully!');
+          this.snackBar.open(message, 'Close', {
+            duration: 3000,
+            panelClass: ['success-snackbar']
+          });
+          this.store.refreshBooks();
+        },
+        error: (error: any) => {
+          this.loadingService.hide();
+          console.error('Failed to add purchase:', error);
+          this.snackBar.open(PURCHASE_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', {
             duration: 5000,
             panelClass: ['error-snackbar']
           });
@@ -499,26 +565,15 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/sales'], { queryParams: { type } });
   }
 
+  navigateToPurchase(type: string) {
+    this.router.navigate(['/purchase'], { queryParams: { type } });
+  }
+
   getRouteByTitle(title: string): string {
     const card = this.cards.find(c => c.title === title);
     return card?.route || '/dashboard';
   }
 
-  onDownloadInvoice() {
-    if (this.invoiceSaleId) {
-      this.dialog.open(InvoicePreviewComponent, {
-        data: { salesId: this.invoiceSaleId },
-        width: '800px',
-        maxWidth: '95vw',
-        panelClass: 'invoice-dialog'
-      });
-    }
-  }
-
-  openInvoiceList(partyId: any) {
-    if (!partyId) return;
-    this.router.navigate(['/invoices'], { queryParams: { partyId } });
-  }
 
   openAnalyticsModal() {
     this.dialog.open(AnalyticsComponent, {

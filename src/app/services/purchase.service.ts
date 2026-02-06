@@ -4,6 +4,8 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Sale } from '../interface/Sale';
+import { ReceivingOrder } from '../interface/receiving-order';
+import { PurchaseOrder } from '../interface/purchase-order';
 import { enviort } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -52,6 +54,60 @@ export class PurchaseService {
     return this.http.post<Sale>(enviort.purchasesUrl, purchase, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating purchase:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getPurchaseOrders(): Observable<PurchaseOrder[]> {
+    return this.http.get<PurchaseOrder[]>(enviort.purchaseOrdersUrl, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading purchase orders:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getPurchaseOrderById(id: number): Observable<PurchaseOrder> {
+    return this.http.get<PurchaseOrder>(`${enviort.purchaseOrdersUrl}/${id}`, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading purchase order:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  createPurchaseOrder(payload: PurchaseOrder): Observable<PurchaseOrder> {
+    return this.http.post<PurchaseOrder>(enviort.purchaseOrdersUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error creating purchase order:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getReceivingOrders(): Observable<ReceivingOrder[]> {
+    return this.http.get<ReceivingOrder[]>(enviort.receivingOrdersUrl, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading receiving orders:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getReceivingOrderById(id: number): Observable<ReceivingOrder> {
+    return this.http.get<ReceivingOrder>(`${enviort.receivingOrdersUrl}/${id}`, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading receiving order:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  createReceivingOrderFromPo(poId: number, payload: ReceivingOrder): Observable<ReceivingOrder> {
+    return this.http.post<ReceivingOrder>(`${enviort.receivingOrdersUrl}/from-po/${poId}`, payload, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error creating receiving order:', error);
         return throwError(() => error);
       })
     );

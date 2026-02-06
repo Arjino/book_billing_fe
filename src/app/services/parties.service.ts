@@ -10,8 +10,9 @@ import { enviort } from '../../environments/environment';
 export class PartiesService {
   constructor(private http: HttpClient, private auth: AuthService) {}
 
-  createParty(party: Party): Observable<Party> {
-    return this.http.post<Party>(enviort.partiesUrl, party, { headers: this.auth.getAuthHeaders() }).pipe(
+  createParty(party: Party | Party[]): Observable<any> {
+    const payload = Array.isArray(party) ? party : [party];
+    return this.http.post<any>(enviort.partiesUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating party:', error);
         return throwError(() => error);

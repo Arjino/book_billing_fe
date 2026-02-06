@@ -29,8 +29,9 @@ export class SalesService {
     );
   }
 
-  createSale(sale: Sale): Observable<Sale> {
-    return this.http.post<Sale>(enviort.salesUrl, sale, { headers: this.auth.getAuthHeaders() }).pipe(
+  createSale(sale: Sale | Sale[]): Observable<any> {
+    const payload = Array.isArray(sale) ? sale : [sale];
+    return this.http.post<any>(enviort.salesUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating sale:', error);
         return throwError(() => error);

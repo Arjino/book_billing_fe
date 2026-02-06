@@ -1,0 +1,51 @@
+.modern-dialog {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.dialog-header {
+  background: linear-gradient(90deg, #EF4444, #F43F5E);
+  color: white;
+  font-weight: 600;
+}
+
+.dialog-header mat-icon {
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.35);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.55);
+}
+
+.border-dashed {
+  transition: all 0.3s ease;
+}
+
+.border-dashed:hover {
+  background-color: rgba(244, 63, 94, 0.08);
+}
+
+button {
+  transition: all 0.2s ease;
+}
+
+@media (max-width: 640px) {
+  .modern-dialog {
+    max-width: 100% !important;
+  }
+}

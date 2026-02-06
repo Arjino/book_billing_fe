@@ -67,14 +67,15 @@
                     required 
                     #qtyModel="ngModel" 
                     inputmode="numeric" 
-                    (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item); data.type === 'SALE' && validateQty(item, qtyModel)" 
+                    (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item); (data.type === 'SALE' || data.type === 'RECEIVING_ORDER') && validateQty(item, qtyModel)" 
                     min="1" 
-                    [attr.max]="data.type === 'SALE' ? item.book?.stock : null" 
+                    [attr.max]="data.type === 'SALE' ? item.book?.stock : (data.type === 'RECEIVING_ORDER' ? item.maxQty : null)" 
                     step="1" />
                   <mat-error>
                     <span *ngIf="qtyModel.errors?.['required'] && (qtyModel.dirty && qtyModel.touched)">Required</span>
                     <span *ngIf="qtyModel.errors?.['min'] && (qtyModel.dirty && qtyModel.touched)">Min 1</span>
                     <span *ngIf="data.type !== 'PURCHASE' && !qtyModel.errors?.['required'] && !qtyModel.errors?.['min'] && qtyModel.touched && hasExceededStock(item)">Exceeds stock ({{ item.book?.stock }})</span>
+                    <span *ngIf="data.type === 'RECEIVING_ORDER' && qtyModel.errors?.['exceededOrder']">Exceeds PO qty ({{ item.maxQty }})</span>
                   </mat-error>
                 </mat-form-field>
 
@@ -162,9 +163,9 @@
       <mat-icon class="inline md:hidden mr-2">arrow_back</mat-icon>
       <span class="hidden md:inline">Cancel</span>
     </button>
-    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="saleForm.invalid || (data.type === 'SALE' && hasQtyError()) || isOverpay()" aria-label="Save">
+    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="saleForm.invalid || ((data.type === 'SALE' || data.type === 'RECEIVING_ORDER') && hasQtyError()) || isOverpay()" aria-label="Save">
       <mat-icon class="inline md:hidden mr-2">add</mat-icon>
-      <span class="hidden md:inline">{{ data.type === 'PURCHASE' ? 'Save Purchase' : 'Save Sale' }}</span>
+      <span class="hidden md:inline">{{ data.type === 'PURCHASE' ? 'Save Purchase' : (data.type === 'RECEIVING_ORDER' ? 'Save Receiving Order' : 'Save Sale') }}</span>
     </button>
   </div>
 </div>

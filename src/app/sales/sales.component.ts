@@ -12,6 +12,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { SalesDialogComponent } from './sales-dialog.component';
+import { SalesBulkImportDialogComponent } from './sales-bulk-import-dialog.component';
 import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
@@ -182,7 +183,7 @@ export class SalesComponent implements OnInit {
         });
       } else {
         this.loadingService.show('Creating sale...');
-        this.store.createSale(result).subscribe({
+        this.store.createSale([result]).subscribe({
           next: () => {
             this.loadingService.hide();
             this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
@@ -200,6 +201,44 @@ export class SalesComponent implements OnInit {
               duration: 5000,
               panelClass: ['error-snackbar']
             });
+          }
+        });
+      }
+    });
+  }
+
+  bulkImport() {
+    const dialogRef = this.dialog.open(SalesBulkImportDialogComponent, {
+      width: '650px',
+      maxHeight: '90vh',
+      data: {
+        saleType: this.defaultSaleType,
+        isPurchaseMode: this.isPurchaseMode
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result: Sale[] | undefined) => {
+      if (result && result.length > 0) {
+        this.loadingService.show(`Importing ${result.length} sale(s)...`);
+        this.salesService.createSale(result).subscribe({
+          next: (response) => {
+            this.loadingService.hide();
+            const successMessage = response?.message || `Successfully imported ${result.length} sale(s)`;
+            this.snackBar.open(successMessage, 'Close', {
+              duration: SALES_CONSTANTS.SNACKBAR_DURATION.SHORT,
+              panelClass: ['success-snackbar']
+            });
+            this.loadSales();
+            this.store.refreshBooks();
+          },
+          error: (err) => {
+            this.loadingService.hide();
+            const errorMessage = err?.error?.message || err?.message || 'Failed to import sales. Please check the file and try again.';
+            this.snackBar.open(errorMessage, 'Close', {
+              duration: SALES_CONSTANTS.SNACKBAR_DURATION.LONG,
+              panelClass: ['error-snackbar']
+            });
+            console.error('Bulk import error:', err);
           }
         });
       }

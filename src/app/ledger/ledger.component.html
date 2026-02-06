@@ -77,6 +77,7 @@
               <th class="py-2 px-3 text-right">Credit (₹)</th>
               <th class="py-2 px-3 text-right">Balance (₹)</th>
               <th class="py-2 px-3 text-left">Remarks</th>
+              <th class="py-2 px-3 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -84,16 +85,25 @@
               <td class="py-3 px-3">{{ formatLedgerDateTime(r) }}</td>
               <td class="py-3 px-3">{{ r.refType }}</td>
               <td class="py-3 px-3">
-                <a *ngIf="r.refType === 'SALE' && r.refId" [routerLink]="['/invoice', r.refId]" class="text-sky-300 hover:underline">{{ r.refId }}</a>
-                <span *ngIf="!(r.refType === 'SALE' && r.refId)">{{ r.refId || '-' }}</span>
+                <span>{{ r.refId || '-' }}</span>
               </td>
               <td class="py-3 px-3 text-right text-emerald-300">{{ r.debit ? (r.debit ) : '-' }}</td>
               <td class="py-3 px-3 text-right text-emerald-300">{{ r.credit ? (r.credit) : '-' }}</td>
               <td class="py-3 px-3 text-right font-semibold">{{ r.balance }}</td>
               <td class="py-3 px-3">{{ r.remarks || '' }}</td>
+              <td class="py-3 px-3">
+                <div class="flex items-center gap-2">
+                  <button mat-icon-button (click)="openInvoicePreview(r)" [disabled]="!canShowInvoice(r)" class="text-sky-300 hover:text-sky-200" title="Preview PDF">
+                    <mat-icon>picture_as_pdf</mat-icon>
+                  </button>
+                  <button mat-icon-button (click)="downloadInvoice(r)" [disabled]="!canShowInvoice(r)" class="text-emerald-300 hover:text-emerald-200" title="Download PDF">
+                    <mat-icon>download</mat-icon>
+                  </button>
+                </div>
+              </td>
             </tr>
             <tr *ngIf="!results.length">
-              <td colspan="8" class="py-6 text-center text-indigo-300/60">No ledger entries found for selected filters.</td>
+              <td colspan="9" class="py-6 text-center text-indigo-300/60">No ledger entries found for selected filters.</td>
             </tr>
           </tbody>
         </table>

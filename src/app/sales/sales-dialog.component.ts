@@ -35,6 +35,7 @@ export class SalesDialogComponent implements OnInit {
   ) {}
 
   getDialogTitle(): string {
+    if (this.data.type === 'RECEIVING_ORDER') return 'Add Receiving Order';
     return this.data.type === 'PURCHASE' ? 'Add Purchase' : 'Add Sale';
   }
   ngOnInit() {
@@ -147,11 +148,17 @@ export class SalesDialogComponent implements OnInit {
   }
 
   isQtyExceedsStock(item: any): boolean {
-    // Skip validation for PURCHASE as we're adding to stock
-    if (this.data.type === 'PURCHASE') {
+    // Skip validation for PURCHASE/RECEIVING_ORDER as we're adding to stock
+    if (this.data.type === 'PURCHASE' || this.data.type === 'RECEIVING_ORDER') {
       return false;
     }
     return item && item.book && typeof item.book.stock === 'number' && Number(item.qty) > Number(item.book.stock);
+  }
+
+  isQtyExceedsOrder(item: any): boolean {
+    if (this.data.type !== 'RECEIVING_ORDER') return false;
+    if (item?.maxQty === undefined || item?.maxQty === null) return false;
+    return Number(item.qty) > Number(item.maxQty);
   }
 
   hasExceededStock(item: any): boolean {
@@ -161,13 +168,16 @@ export class SalesDialogComponent implements OnInit {
   validateQty(item: any, qtyModel: any): void {
     this.calculateAmount(item);
     // Skip exceeded stock validation for PURCHASE
-    if (this.data.type !== 'PURCHASE' && this.hasExceededStock(item)) {
+    if (this.data.type !== 'PURCHASE' && this.data.type !== 'RECEIVING_ORDER' && this.hasExceededStock(item)) {
       qtyModel.control.setErrors({ ...qtyModel.errors, 'exceededStock': true });
+    }
+    if (this.data.type === 'RECEIVING_ORDER' && this.isQtyExceedsOrder(item)) {
+      qtyModel.control.setErrors({ ...qtyModel.errors, 'exceededOrder': true });
     }
   }
 
   hasQtyError(): boolean {
-    return (this.data.items || []).some((item: any) => this.isQtyExceedsStock(item));
+    return (this.data.items || []).some((item: any) => this.isQtyExceedsStock(item) || this.isQtyExceedsOrder(item));
   }
 
   isOverpay(): boolean {

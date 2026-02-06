@@ -13,14 +13,18 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { RouterModule } from '@angular/router';
 import { DataStoreService } from '../services/data-store.service';
 import { LedgerService } from '../services/ledger.service';
+import { InvoicesService } from '../services/invoices.service';
 import { parseLocalDate, formatTimeIST, formatDateForAPI, formatDateLocal } from '../utils/date.utils';
 import { LoadingService } from '../services/loading.service';
 import { take } from 'rxjs/operators';
+import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
 
 @Component({
   selector: 'app-ledger',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatDatepickerModule, MatNativeDateModule, RouterModule],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatDatepickerModule, MatNativeDateModule, RouterModule, MatDialogModule, MatSnackBarModule],
   templateUrl: './ledger.component.html',
   styleUrls: ['./ledger.component.css']
 })
@@ -41,8 +45,11 @@ export class LedgerComponent implements OnInit {
     private route: ActivatedRoute,
     private store: DataStoreService,
     private ledgerService: LedgerService,
+    private invoicesService: InvoicesService,
     private location: Location,
-    private loadingService: LoadingService
+    private loadingService: LoadingService,
+    private dialog: MatDialog,
+    private snackBar: MatSnackBar
   ) {}
 
   ngOnInit(): void {
@@ -238,6 +245,64 @@ export class LedgerComponent implements OnInit {
     const datePart = entry?.date ? formatDateLocal(entry.date) : '';
     const time = formatTimeIST(entry?.time, entry?.date)?.toUpperCase();
     return `${datePart}  ${time}`;
+  }
+
+  canShowInvoice(entry: any): boolean {
+    if (!entry?.refId) return false;
+    const refType = (entry?.refType || '').toString().toLowerCase();
+    return refType.includes('sale') || refType.includes('purchase');
+  }
+
+  getInvoiceType(entry: any): 'sale' | 'purchase' {
+    const refType = (entry?.refType || '').toString().toLowerCase();
+    return refType.includes('purchase') ? 'purchase' : 'sale';
+  }
+
+  openInvoicePreview(entry: any): void {
+    if (!this.canShowInvoice(entry)) {
+      this.snackBar.open('No invoice available for this entry', 'Close', { duration: 3000 });
+      return;
+    }
+    const type = this.getInvoiceType(entry);
+    this.dialog.open(InvoicePreviewComponent, {
+      data: { salesId: entry.id, type },
+      width: '900px',
+      maxWidth: '95vw',
+      panelClass: 'invoice-dialog'
+    });
+  }
+
+  downloadInvoice(entry: any): void {
+    if (!this.canShowInvoice(entry)) {
+      this.snackBar.open('No invoice available for this entry', 'Close', { duration: 3000 });
+      return;
+    }
+    const type = this.getInvoiceType(entry);
+    const id = Number(entry?.id);
+    if (isNaN(id)) {
+      this.snackBar.open('Invalid invoice id', 'Close', { duration: 3000 });
+      return;
+    }
+    this.loadingService.show('Downloading invoice...');
+    const download$ = type === 'purchase'
+      ? this.invoicesService.downloadPurchaseInvoice(id)
+      : this.invoicesService.downloadInvoice(id);
+
+    download$.subscribe({
+      next: (blob) => {
+        const link = document.createElement('a');
+        const objectUrl = URL.createObjectURL(blob);
+        link.href = objectUrl;
+        link.download = `invoice_${entry.refId}.pdf`;
+        link.click();
+        URL.revokeObjectURL(objectUrl);
+        this.loadingService.hide();
+      },
+      error: () => {
+        this.loadingService.hide();
+        this.snackBar.open('Failed to download invoice', 'Close', { duration: 4000 });
+      }
+    });
   }
 
   goBack(): void {

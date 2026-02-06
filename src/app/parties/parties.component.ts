@@ -12,6 +12,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { PartyDialogComponent } from './party-dialog.component';
+import { PartyBulkImportDialogComponent } from './party-bulk-import-dialog.component';
 import { PartyDialogData } from '../interface/party-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { PartiesService } from '../services/parties.service';
@@ -142,6 +143,41 @@ export class PartiesComponent implements OnInit {
               duration: 5000,
               panelClass: ['error-snackbar']
             });
+          }
+        });
+      }
+    });
+  }
+
+  bulkImport() {
+    const dialogRef = this.dialog.open(PartyBulkImportDialogComponent, {
+      width: '600px',
+      maxHeight: '90vh',
+      data: null
+    });
+
+    dialogRef.afterClosed().subscribe((result: Party[] | undefined) => {
+      if (result && result.length > 0) {
+        this.loadingService.show(`Importing ${result.length} party(s)...`);
+        this.partiesService.createParty(result).subscribe({
+          next: (response) => {
+            this.loadingService.hide();
+            const successMessage = response?.message || `Successfully imported ${result.length} party(s)`;
+            this.snackBar.open(successMessage, 'Close', {
+              duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT,
+              panelClass: ['success-snackbar']
+            });
+            this.store.refreshParties();
+            this.loadParties();
+          },
+          error: (err) => {
+            this.loadingService.hide();
+            const errorMessage = err?.error?.message || err?.message || 'Failed to import parties. Please check the file and try again.';
+            this.snackBar.open(errorMessage, 'Close', {
+              duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.LONG,
+              panelClass: ['error-snackbar']
+            });
+            console.error('Bulk import error:', err);
           }
         });
       }
