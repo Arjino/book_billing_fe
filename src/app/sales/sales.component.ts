@@ -117,7 +117,7 @@ export class SalesComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-      if(result.paymentStatus === 'Paid'){
+      if (result.paymentStatus === 'PAID') {
         result.paidAmount = result.grandTotal;
       }
       // If this is a Return In, call the sale returns endpoint with mapped payload

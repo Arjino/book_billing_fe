@@ -161,9 +161,13 @@ export class SalesBulkImportDialogComponent implements OnInit {
         errors.push(`Row ${rowNum}: Date is required and must be a valid date.`);
       }
 
-      const statusRaw = row.paymentStatus ? String(row.paymentStatus).trim() : 'Pending';
-      const statusMatch = this.PAYMENT_STATUSES.find(s => s.toLowerCase() === statusRaw.toLowerCase());
-      const paymentStatus = statusMatch || 'Pending';
+      const statusRaw = row.paymentStatus ? String(row.paymentStatus).trim() : 'UNPAID';
+      const normalizedStatus = statusRaw.toUpperCase();
+      const mappedStatus = normalizedStatus === 'PENDING' || normalizedStatus === 'OVERDUE'
+        ? 'UNPAID'
+        : normalizedStatus;
+      const statusMatch = this.PAYMENT_STATUSES.find(s => s.toUpperCase() === mappedStatus);
+      const paymentStatus = statusMatch || 'UNPAID';
 
       const skuValue = row.sku ? String(row.sku).trim() : '';
       const book = this.findBookBySkuOrId(skuValue);
@@ -229,7 +233,7 @@ export class SalesBulkImportDialogComponent implements OnInit {
 
       saleEntry.totalAmount += amount;
       saleEntry.grandTotal = saleEntry.totalAmount + (saleEntry.taxAmount || 0) + (saleEntry.roundOff || 0);
-      if (saleEntry.paymentStatus === 'Paid') {
+      if (saleEntry.paymentStatus === 'PAID') {
         saleEntry.paidAmount = saleEntry.grandTotal;
         saleEntry.dueAmount = 0;
       }

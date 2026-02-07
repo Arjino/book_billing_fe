@@ -265,7 +265,7 @@ export class LedgerComponent implements OnInit {
     }
     const type = this.getInvoiceType(entry);
     this.dialog.open(InvoicePreviewComponent, {
-      data: { salesId: entry.id, type },
+      data: { salesId: entry?.refId, type },
       width: '900px',
       maxWidth: '95vw',
       panelClass: 'invoice-dialog'
@@ -278,22 +278,17 @@ export class LedgerComponent implements OnInit {
       return;
     }
     const type = this.getInvoiceType(entry);
-    const id = Number(entry?.id);
-    if (isNaN(id)) {
-      this.snackBar.open('Invalid invoice id', 'Close', { duration: 3000 });
-      return;
-    }
     this.loadingService.show('Downloading invoice...');
     const download$ = type === 'purchase'
-      ? this.invoicesService.downloadPurchaseInvoice(id)
-      : this.invoicesService.downloadInvoice(id);
+      ? this.invoicesService.downloadPurchaseInvoice(entry?.refId)
+      : this.invoicesService.downloadInvoice(entry?.refId);
 
     download$.subscribe({
       next: (blob) => {
         const link = document.createElement('a');
         const objectUrl = URL.createObjectURL(blob);
         link.href = objectUrl;
-        link.download = `invoice_${entry.refId}.pdf`;
+        link.download = `invoice_${entry?.refId}.pdf`;
         link.click();
         URL.revokeObjectURL(objectUrl);
         this.loadingService.hide();

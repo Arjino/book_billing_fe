@@ -55,13 +55,11 @@ export class InvoicePreviewComponent implements OnInit {
     }
   }
 
-  fetchInvoicePdf(id: string, type: 'sale' | 'purchase' = 'sale') {
+  fetchInvoicePdf(invoiceId: string, type: 'sale' | 'purchase' = 'sale') {
     this.loading = true;
-    const numericId = parseInt(id, 10);
     const download$ = type === 'purchase'
-      ? this.invoicesService.downloadPurchaseInvoice(numericId)
-      : this.invoicesService.downloadInvoice(numericId);
-
+      ? this.invoicesService.downloadPurchaseInvoice(invoiceId)
+      : this.invoicesService.downloadInvoice(invoiceId);  
     download$.subscribe({
       next: (blob) => {
         const typedBlob = blob.type ? blob : new Blob([blob], { type: 'application/pdf' });

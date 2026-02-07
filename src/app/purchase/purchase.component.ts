@@ -123,7 +123,7 @@ export class PurchaseComponent implements OnInit {
       width: SALES_CONSTANTS.DIALOG_WIDTH,
       data: {
         id: 0,
-        invoiceNo: isReceiving ? (this.selectedPurchaseOrder?.poNumber || '') : '',
+        invoiceNo: '',
         party: isReceiving ? (this.selectedPurchaseOrder?.party || null) : null,
         date: formatDateForAPI(new Date()),
         totalAmount: 0,
@@ -151,7 +151,7 @@ export class PurchaseComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-      if (result.paymentStatus === 'Paid') {
+      if (result.paymentStatus === 'PAID') {
         result.paidAmount = result.grandTotal;
       }
 
@@ -280,7 +280,6 @@ export class PurchaseComponent implements OnInit {
     }));
 
     return {
-      grnNumber: data.invoiceNo || '',
       purchaseOrderId: poId,
       receivedDate: data.date,
       party: data.party || null,

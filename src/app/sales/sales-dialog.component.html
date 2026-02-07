@@ -128,16 +128,16 @@
               <mat-form-field appearance="outline" class="w-full">
             <mat-label>Payment Status</mat-label>
             <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus" required #paymentStatusModel="ngModel">
-              <mat-option value="Pending">Pending</mat-option>
-              <mat-option value="Paid">Paid</mat-option>
-              <mat-option value="Partial">Partial</mat-option>
+              <mat-option value="UNPAID">UNPAID</mat-option>
+              <mat-option value="PAID">PAID</mat-option>
+              <mat-option value="PARTIAL">PARTIAL</mat-option>
             </mat-select>
             <mat-error *ngIf="paymentStatusModel.invalid && (paymentStatusModel.dirty && paymentStatusModel.touched)">
               <span *ngIf="paymentStatusModel.errors?.['required']">Payment status is required.</span>
             </mat-error>
           </mat-form-field>
 
-        <div *ngIf="data.paymentStatus === 'Partial'">
+        <div *ngIf="data.paymentStatus === 'PARTIAL'">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Partial Payment Amount</mat-label>
             <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />

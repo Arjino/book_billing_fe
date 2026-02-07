@@ -14,7 +14,7 @@ export const SALES_CONSTANTS = {
 
   // Defaults
   DEFAULTS: {
-    PAYMENT_STATUS: 'Pending',
+    PAYMENT_STATUS: 'UNPAID',
     SALE_TYPE: 'sale',
     ROUND_OFF: null
   },
@@ -38,10 +38,9 @@ export const SALES_CONSTANTS = {
   
   // Payment Status Options
   PAYMENT_STATUS: [
-    { value: 'Pending', label: 'Pending' },
-    { value: 'Paid', label: 'Paid' },
-    { value: 'Partial', label: 'Partial' },
-    { value: 'Overdue', label: 'Overdue' }
+    { value: 'UNPAID', label: 'UNPAID' },
+    { value: 'PARTIAL', label: 'PARTIAL' },
+    { value: 'PAID', label: 'PAID' }
   ],
   
   // Validation Rules

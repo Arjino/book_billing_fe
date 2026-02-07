@@ -35,8 +35,8 @@ export class InvoicesService {
     );
   }
 
-  downloadInvoice(id: number): Observable<Blob> {
-    return this.http.get(`${enviort.invoiceBase}/${id}/invoice/download`, {
+  downloadInvoice(invoiceNo: string): Observable<Blob> {
+    return this.http.get(`${enviort.invoiceBase}/${invoiceNo}/invoice/download`, {
       headers: this.auth.getAuthHeaders(),
       responseType: 'blob'
     }).pipe(
@@ -47,8 +47,8 @@ export class InvoicesService {
     );
   }
 
-  downloadPurchaseInvoice(id: number): Observable<Blob> {
-    return this.http.get(`${enviort.purchasesUrl}/${id}/invoice/download`, {
+  downloadPurchaseInvoice(invoiceNo: string): Observable<Blob> {
+    return this.http.get(`${enviort.purchasesUrl}/${invoiceNo}/invoice/download`, {
       headers: this.auth.getAuthHeaders(),
       responseType: 'blob'
     }).pipe(

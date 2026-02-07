@@ -319,7 +319,7 @@ export class DashboardComponent implements OnInit {
         taxAmount: 0,
         roundOff: 0,
         grandTotal: 0,
-        paymentStatus: 'Pending',
+        paymentStatus: 'UNPAID',
         paidAmount: 0,
         type: transactionType === 'purchase' ? 'PURCHASE' : 'SALE'
       } as unknown as SalesDialogData
@@ -327,7 +327,7 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-      if(result.paymentStatus === 'Paid'){
+      if (result.paymentStatus === 'PAID') {
         result.paidAmount = result.grandTotal;
       }
       if (result.type === 'RETURN_IN') {
@@ -442,15 +442,14 @@ export class DashboardComponent implements OnInit {
         taxAmount: 0,
         roundOff: 0,
         grandTotal: 0,
-        paymentStatus: 'Pending',
-        paidAmount: 0,
-        type: transactionType
+        paymentStatus: 'UNPAID',
+        paidAmount: 0
       } as unknown as SalesDialogData
     });
 
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-      if (result.paymentStatus === 'Paid') {
+      if (result.paymentStatus === 'PAID') {
         result.paidAmount = result.grandTotal;
       }
 
