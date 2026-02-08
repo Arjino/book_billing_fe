@@ -18,6 +18,7 @@ import { BookDialogData } from '../interface/book-dialog-data';
 import { PartyDialogComponent } from '../parties/party-dialog.component';
 import { PartyDialogData } from '../interface/party-dialog-data';
 import { SalesDialogComponent } from '../sales/sales-dialog.component';
+import { PurchaseDialogComponent } from '../purchase/purchase-dialog.component';
 import { SalesDialogData } from '../interface/sales-dialog-data';
 import { TransactionDialogComponent} from '../transaction/transaction-dialog.component';
 import { FeedbackDialogComponent } from '../feedback/feedback-dialog.component';
@@ -425,7 +426,7 @@ export class DashboardComponent implements OnInit {
     const transactionType = mode === 'purchase-order' ? 'PURCHASE_ORDER' : 'RECEIVING_ORDER';
 
 
-    const dialogRef = this.dialog.open(SalesDialogComponent, {
+    const dialogRef = this.dialog.open(PurchaseDialogComponent, {
       width: '600px',
       data: {
         invoiceNo: '',
@@ -447,7 +448,8 @@ export class DashboardComponent implements OnInit {
         roundOff: 0,
         grandTotal: 0,
         paymentStatus: 'UNPAID',
-        paidAmount: 0
+        paidAmount: 0,
+        type: transactionType
       } as unknown as SalesDialogData
     });
 

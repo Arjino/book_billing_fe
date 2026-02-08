@@ -11,7 +11,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { SalesDialogComponent } from '../sales/sales-dialog.component';
+import { PurchaseDialogComponent } from './purchase-dialog.component';
 import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { PurchaseService } from '../services/purchase.service';
@@ -128,21 +128,100 @@ export class PurchaseComponent implements OnInit {
       return;
     }
 
-    if (isReceiving && (!this.selectedPurchaseOrder || this.selectedPurchaseOrder.id !== Number(this.receivingPoId))) {
-      this.loadPurchaseOrderForReceiving(Number(this.receivingPoId));
-      this.snackBar.open('Purchase order details are loading. Please try again.', 'Close', {
-        duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.MEDIUM
+    if (isReceiving) {
+      const poId = Number(this.receivingPoId);
+      this.loadingService.show('Loading purchase order...');
+      this.purchaseService.getPurchaseOrderById(poId).subscribe({
+        next: (po) => {
+          this.loadingService.hide();
+          this.selectedPurchaseOrder = po || null;
+          if (!this.selectedPurchaseOrder) {
+            this.snackBar.open('Purchase Order Not Found', 'Close', {
+              duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+              panelClass: ['error-snackbar']
+            });
+            return;
+          }
+
+          const receivingItems = this.buildReceivingItemsFromPo(this.selectedPurchaseOrder);
+          const dialogRef = this.dialog.open(PurchaseDialogComponent, {
+            width: SALES_CONSTANTS.DIALOG_WIDTH,
+            data: {
+              id: 0,
+              invoiceNo: '',
+              party: this.selectedPurchaseOrder.party || null,
+              date: formatDateForAPI(new Date()),
+              totalAmount: 0,
+              discount: 0,
+              taxAmount: 0,
+              roundOff: 0,
+              grandTotal: 0,
+              paymentStatus: SALES_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
+              paidAmount: 0,
+              type: 'RECEIVING_ORDER',
+              items: receivingItems && receivingItems.length > 0 ? receivingItems : [{
+                id: 0,
+                sale: null,
+                book: null,
+                qty: null,
+                rate: null,
+                discount: 0,
+                amount: null,
+                bookSearch: '',
+                filteredBooks: []
+              }]
+            } as SalesDialogData,
+            disableClose: false
+          });
+
+          dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
+            if (!result) return;
+            if (result.paymentStatus === 'PAID') {
+              result.paidAmount = result.grandTotal;
+            }
+
+            const payload = this.mapToReceivingOrder(result, poId);
+            this.loadingService.show('Creating receiving order...');
+            this.purchaseService.createReceivingOrderFromPo(poId, payload).subscribe({
+              next: () => {
+                this.loadingService.hide();
+                this.snackBar.open('Receiving order created successfully!', 'Close', {
+                  duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.SHORT,
+                  panelClass: ['success-snackbar']
+                });
+                this.loadPurchases();
+                this.store.refreshBooks();
+              },
+              error: (err) => {
+                this.loadingService.hide();
+                console.error('Failed to create receiving order:', err);
+                this.snackBar.open(PURCHASE_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', {
+                  duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.LONG,
+                  panelClass: ['error-snackbar']
+                });
+              }
+            });
+          });
+        },
+        error: (err) => {
+          this.loadingService.hide();
+          console.error('Failed to load purchase order:', err);
+          this.selectedPurchaseOrder = null;
+          this.snackBar.open('Purchase Order Not Found', 'Close', {
+            duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+            panelClass: ['error-snackbar']
+          });
+        }
       });
       return;
     }
 
-    const receivingItems = isReceiving ? this.buildReceivingItemsFromPo(this.selectedPurchaseOrder!) : undefined;
-    const dialogRef = this.dialog.open(SalesDialogComponent, {
+    const dialogRef = this.dialog.open(PurchaseDialogComponent, {
       width: SALES_CONSTANTS.DIALOG_WIDTH,
       data: {
         id: 0,
         invoiceNo: '',
-        party: isReceiving ? (this.selectedPurchaseOrder?.party || null) : null,
+        party: null,
         date: formatDateForAPI(new Date()),
         totalAmount: 0,
         discount: 0,
@@ -151,8 +230,8 @@ export class PurchaseComponent implements OnInit {
         grandTotal: 0,
         paymentStatus: SALES_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
         paidAmount: 0,
-        type: isReceiving ? 'RECEIVING_ORDER' : 'PURCHASE',
-        items: receivingItems && receivingItems.length > 0 ? receivingItems : [{
+        type: 'PURCHASE_ORDER',
+        items: [{
           id: 0,
           sale: null,
           book: null,
@@ -171,32 +250,6 @@ export class PurchaseComponent implements OnInit {
       if (!result) return;
       if (result.paymentStatus === 'PAID') {
         result.paidAmount = result.grandTotal;
-      }
-
-      if (isReceiving) {
-        const poId = Number(this.receivingPoId);
-        const payload = this.mapToReceivingOrder(result, poId);
-        this.loadingService.show('Creating receiving order...');
-        this.purchaseService.createReceivingOrderFromPo(poId, payload).subscribe({
-          next: () => {
-            this.loadingService.hide();
-            this.snackBar.open('Receiving order created successfully!', 'Close', {
-              duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.SHORT,
-              panelClass: ['success-snackbar']
-            });
-            this.loadPurchases();
-            this.store.refreshBooks();
-          },
-          error: (err) => {
-            this.loadingService.hide();
-            console.error('Failed to create receiving order:', err);
-            this.snackBar.open(PURCHASE_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', {
-              duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.LONG,
-              panelClass: ['error-snackbar']
-            });
-          }
-        });
-        return;
       }
 
       const payload = this.mapToPurchaseOrder(result);
@@ -356,25 +409,8 @@ export class PurchaseComponent implements OnInit {
       this.poError = '';
       return;
     }
-    this.loadPurchaseOrderForReceiving(Number(value));
-  }
-
-  private loadPurchaseOrderForReceiving(poId: number) {
-    if (!poId || isNaN(poId)) return;
-    this.poLoading = true;
+    this.selectedPurchaseOrder = null;
     this.poError = '';
-    this.purchaseService.getPurchaseOrderById(poId).subscribe({
-      next: (po) => {
-        this.selectedPurchaseOrder = po || null;
-        this.poLoading = false;
-      },
-      error: (err) => {
-        console.error('Failed to load purchase order:', err);
-        this.selectedPurchaseOrder = null;
-        this.poError = 'Purchase order not found.';
-        this.poLoading = false;
-      }
-    });
   }
 
   private buildReceivingItemsFromPo(po: PurchaseOrder) {

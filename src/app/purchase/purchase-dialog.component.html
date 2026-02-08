@@ -10,9 +10,11 @@
   <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
     <form #saleForm="ngForm">
       <div class="grid grid-cols-1 gap-4">
-        <!-- Invoice No removed per user request -->
-
-        <mat-form-field appearance="outline" class="w-full">
+        <mat-form-field appearance="outline" class="w-full" *ngIf="data.type === 'RECEIVING_ORDER'">
+          <mat-label>Party</mat-label>
+          <input matInput [value]="data.party?.name || ''" readonly/>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="w-full" *ngIf="data.type !== 'RECEIVING_ORDER'">
           <mat-label>Party</mat-label>
           <mat-select [(ngModel)]="data.party" name="party" required #partyModel="ngModel">
             <mat-option [value]="null">Select Party</mat-option>
@@ -33,20 +35,17 @@
           </mat-error>
         </mat-form-field>
 
-        <!-- Items Section -->
         <div class="mt-2 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
           <div class="flex items-center mb-2">
             <h3 class="font-bold">Items</h3>
           </div>
 
-          <!-- Items Card Layout -->
           <div *ngIf="data.items.length" class="space-y-4">
             <div *ngFor="let item of data.items; let i = index; let last = last; trackBy: trackByIndex" class="border p-3 rounded bg-[rgba(0,0,0,0.2)]">
-              <!-- Row 1: Book Selection -->
               <div class="mb-3">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Book</mat-label>
-                  <input type="text" matInput [matAutocomplete]="autoBook" [(ngModel)]="item.bookSearch" [name]="'bookSearch_' + i" (ngModelChange)="filterBooks($event, i)" placeholder="Search or select book" required #bookModel="ngModel">
+                  <input type="text" matInput [matAutocomplete]="autoBook" [(ngModel)]="item.bookSearch" [name]="'bookSearch_' + i" (ngModelChange)="filterBooks($event, i)" placeholder="Search or select book" required #bookModel="ngModel" [readonly]="data.type === 'RECEIVING_ORDER'">
                   <mat-autocomplete #autoBook="matAutocomplete" (optionSelected)="onBookSelected($event.option.value, item)">
                     <mat-option *ngFor="let b of item.filteredBooks || books" [value]="b">{{ b.title }}</mat-option>
                   </mat-autocomplete>
@@ -56,25 +55,24 @@
                 </mat-form-field>
               </div>
 
-              <!-- Row 2: Qty, Rate, Discount -->
               <div class="grid grid-cols-3 gap-2 mb-3">
                 <mat-form-field appearance="outline" class="w-full" #qtyField="matFormField">
                   <mat-label>Qty</mat-label>
-                  <input matInput 
-                    type="number" 
-                    [(ngModel)]="item.qty" 
-                    [name]="'qty_' + i" 
-                    required 
-                    #qtyModel="ngModel" 
-                    inputmode="numeric" 
-                    (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item); validateQty(item, qtyModel)" 
-                    min="1" 
-                    [attr.max]="item.book?.stock" 
+                  <input matInput
+                    type="number"
+                    [(ngModel)]="item.qty"
+                    [name]="'qty_' + i"
+                    required
+                    #qtyModel="ngModel"
+                    inputmode="numeric"
+                    (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item); validateQty(item, qtyModel)"
+                    min="1"
+                    [attr.max]="data.type === 'RECEIVING_ORDER' ? item.maxQty : null"
                     step="1" />
                   <mat-error>
                     <span *ngIf="qtyModel.errors?.['required'] && (qtyModel.dirty && qtyModel.touched)">Required</span>
                     <span *ngIf="qtyModel.errors?.['min'] && (qtyModel.dirty && qtyModel.touched)">Min 1</span>
-                    <span *ngIf="!qtyModel.errors?.['required'] && !qtyModel.errors?.['min'] && qtyModel.touched && hasExceededStock(item)">Exceeds stock ({{ item.book?.stock }})</span>
+                    <span *ngIf="data.type === 'RECEIVING_ORDER' && qtyModel.errors?.['exceededOrder']">Exceeds PO qty ({{ item.maxQty }})</span>
                   </mat-error>
                 </mat-form-field>
 
@@ -92,7 +90,6 @@
                 </mat-form-field>
               </div>
 
-              <!-- Row 3: Amount and Remove -->
               <div class="flex items-center justify-between">
                 <div class="text-sm">
                   <span class="text-gray-300">Amount: </span>
@@ -100,19 +97,16 @@
                 </div>
                 <button type="button" (click)="removeItem(i)" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Remove</button>
               </div>
-              <!-- Add Item button after the last item -->
               <div *ngIf="last" class="flex justify-end mt-2">
                 <button type="button" (click)="addItem()" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Item</button>
               </div>
             </div>
           </div>
-          <!-- If no items, show Add Item button below header -->
           <div *ngIf="!data.items.length" class="flex justify-end mt-2">
             <button type="button" (click)="addItem()" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Item</button>
           </div>
         </div>
 
-        <!-- Totals Section -->
         <div class="mt-3 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Total Amount (after item discounts)</mat-label>
@@ -124,28 +118,28 @@
               <input matInput type="number" [(ngModel)]="data.taxAmount" name="taxAmount" (ngModelChange)="calculateTotals()" #taxModel="ngModel" (ngModelChange)="taxModel.control.markAsTouched()" />
             </mat-form-field>
 
-              <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Payment Status</mat-label>
-            <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus" required #paymentStatusModel="ngModel">
-              <mat-option value="UNPAID">UNPAID</mat-option>
-              <mat-option value="PAID">PAID</mat-option>
-              <mat-option value="PARTIAL">PARTIAL</mat-option>
-            </mat-select>
-            <mat-error *ngIf="paymentStatusModel.invalid && (paymentStatusModel.dirty && paymentStatusModel.touched)">
-              <span *ngIf="paymentStatusModel.errors?.['required']">Payment status is required.</span>
-            </mat-error>
-          </mat-form-field>
+            <mat-form-field appearance="outline" class="w-full">
+              <mat-label>Payment Status</mat-label>
+              <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus" required #paymentStatusModel="ngModel">
+                <mat-option value="UNPAID">UNPAID</mat-option>
+                <mat-option value="PAID">PAID</mat-option>
+                <mat-option value="PARTIAL">PARTIAL</mat-option>
+              </mat-select>
+              <mat-error *ngIf="paymentStatusModel.invalid && (paymentStatusModel.dirty && paymentStatusModel.touched)">
+                <span *ngIf="paymentStatusModel.errors?.['required']">Payment status is required.</span>
+              </mat-error>
+            </mat-form-field>
 
-        <div *ngIf="data.paymentStatus === 'PARTIAL'">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Partial Payment Amount</mat-label>
-            <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
-            <mat-error *ngIf="paidAmountModel.invalid && (paidAmountModel.dirty && paidAmountModel.touched)">
-              <span *ngIf="paidAmountModel.errors?.['required']">Partial amount is required.</span>
-            </mat-error>
-            <mat-error *ngIf="isOverpay()">Paid amount cannot exceed grand total.</mat-error>
-          </mat-form-field>
-        </div>
+            <div *ngIf="data.paymentStatus === 'PARTIAL'">
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Partial Payment Amount</mat-label>
+                <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
+                <mat-error *ngIf="paidAmountModel.invalid && (paidAmountModel.dirty && paidAmountModel.touched)">
+                  <span *ngIf="paidAmountModel.errors?.['required']">Partial amount is required.</span>
+                </mat-error>
+                <mat-error *ngIf="isOverpay()">Paid amount cannot exceed grand total.</mat-error>
+              </mat-form-field>
+            </div>
 
             <mat-form-field appearance="outline" class="w-full">
               <mat-label>Grand Total</mat-label>
@@ -157,14 +151,14 @@
     </form>
   </div>
 
-    <div mat-dialog-actions class="flex flex-col md:flex-row md:justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+  <div mat-dialog-actions class="flex flex-col md:flex-row md:justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <button mat-button class="w-full md:w-auto" (click)="onCancel()" aria-label="Back">
       <mat-icon class="inline md:hidden mr-2">arrow_back</mat-icon>
       <span class="hidden md:inline">Cancel</span>
     </button>
-    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="saleForm.invalid || hasQtyError() || isOverpay()" aria-label="Save">
+    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="saleForm.invalid || ((data.type === 'SALE' || data.type === 'RECEIVING_ORDER') && hasQtyError()) || isOverpay()" aria-label="Save">
       <mat-icon class="inline md:hidden mr-2">add</mat-icon>
-      <span class="hidden md:inline">Save Sale</span>
+      <span class="hidden md:inline">{{ getSaveLabel() }}</span>
     </button>
   </div>
 </div>
