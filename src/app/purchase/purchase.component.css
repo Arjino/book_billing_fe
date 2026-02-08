@@ -11,3 +11,7 @@
 .animation-delay-2000 {
   animation-delay: 2s;
 }
+
+:host ::ng-deep .mat-mdc-table {
+  background-color: transparent !important;
+}
