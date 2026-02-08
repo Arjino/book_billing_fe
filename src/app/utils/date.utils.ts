@@ -39,6 +39,48 @@ export function formatDateForAPI(date: Date | string | null | undefined): string
 }
 
 /**
+ * Formats a date to UTC YYYY-MM-DD string for API payloads
+ * @param date - Date object, string, or null/undefined
+ * @returns UTC date string or empty string
+ */
+export function formatDateForUTC(date: Date | string | null | undefined): string {
+  if (!date) return '';
+
+  let year: number;
+  let month: number;
+  let day: number;
+
+  if (date instanceof Date) {
+    year = date.getFullYear();
+    month = date.getMonth() + 1;
+    day = date.getDate();
+  } else if (typeof date === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const [y, m, d] = date.split('-').map(Number);
+      year = y;
+      month = m;
+      day = d;
+    } else if (date.includes('/')) {
+      const [d, m, y] = date.split('/').map(Number);
+      year = y;
+      month = m;
+      day = d;
+    } else {
+      const parsed = new Date(date);
+      if (isNaN(parsed.getTime())) return '';
+      year = parsed.getFullYear();
+      month = parsed.getMonth() + 1;
+      day = parsed.getDate();
+    }
+  } else {
+    return '';
+  }
+
+  const utcDate = new Date(Date.UTC(year, month - 1, day));
+  return utcDate.toISOString().slice(0, 10);
+}
+
+/**
  * Parses a date string (YYYY-MM-DD or dd/mm/yyyy) or Date object as local date
  * @param dateString - Date string in YYYY-MM-DD or dd/mm/yyyy format or Date object
  * @returns Date object in local timezone

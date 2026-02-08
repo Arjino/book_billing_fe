@@ -1,0 +1,18 @@
+<div class="p-4">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-lg font-bold text-emerald-200">Receiving Order Preview</h2>
+    <button mat-icon-button aria-label="Close" (click)="closeDialog()" class="text-emerald-200">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="text-emerald-200">Loading...</div>
+  <div *ngIf="error" class="text-red-300">{{error}}</div>
+
+  <iframe *ngIf="pdfUrl" [src]="pdfUrl" class="w-full h-96 border border-emerald-500/30 rounded-lg bg-slate-900"></iframe>
+
+  <div class="mt-4 flex flex-wrap gap-2">
+    <button mat-raised-button color="primary" (click)="downloadPdf()">Download PDF</button>
+    <button mat-stroked-button color="primary" (click)="openInNewTab()">Open in new tab</button>
+  </div>
+</div>

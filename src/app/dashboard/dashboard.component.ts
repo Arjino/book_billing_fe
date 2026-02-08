@@ -33,7 +33,7 @@ import { TransactionComponent } from '../transaction/transaction.component';
 import { AnalyticsComponent } from './analytics.component';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
-import { getTodayLocal, formatDateForAPI } from '../utils/date.utils';
+import { getTodayLocal, formatDateForAPI, formatDateForUTC } from '../utils/date.utils';
 import { BOOKING_CONSTANTS } from '../constants/booking.constants';
 import { PARTIES_CONSTANTS } from '../constants/parties.constants';
 import { DASHBOARD_CONSTANTS } from '../constants/dashboard.constants';
@@ -330,10 +330,11 @@ export class DashboardComponent implements OnInit {
       if (result.paymentStatus === 'PAID') {
         result.paidAmount = result.grandTotal;
       }
+      result.date = formatDateForUTC(result.date);
       if (result.type === 'RETURN_IN') {
         const payload: any = {
           partyId: result.party && result.party.id ? result.party.id : result.party,
-          returnDate: result.date,
+          returnDate: formatDateForUTC(result.date),
           items: (result.items || []).map((it: any) => ({
             bookId:  it.book.sku ,
             qty: it.qty,
@@ -452,6 +453,7 @@ export class DashboardComponent implements OnInit {
       if (result.paymentStatus === 'PAID') {
         result.paidAmount = result.grandTotal;
       }
+      result.date = formatDateForUTC(result.date);
 
       this.loadingService.show(transactionType === 'RECEIVING_ORDER' ? 'Creating receiving order...' : 'Creating purchase...');
       this.store.createPurchase(result).subscribe({
@@ -496,6 +498,7 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
+        result.paymentDate = formatDateForUTC(result.paymentDate);
         this.loadingService.show('Adding transaction...');
         this.store.createTransaction(result).subscribe({
           next: () => {

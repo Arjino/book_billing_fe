@@ -18,7 +18,7 @@ import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
 import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
-import { formatTimeIST, formatDateForAPI, formatDateLocal } from '../utils/date.utils';
+import { formatTimeIST, formatDateForAPI, formatDateForUTC, formatDateLocal } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
 
@@ -120,11 +120,12 @@ export class SalesComponent implements OnInit {
       if (result.paymentStatus === 'PAID') {
         result.paidAmount = result.grandTotal;
       }
+      result.date = formatDateForUTC(result.date);
       // If this is a Return In, call the sale returns endpoint with mapped payload
       if (result.type === 'RETURN_IN') {
         const payload: any = {
           partyId: result.party && result.party.id ? result.party.id : result.party,
-          returnDate: result.date,
+          returnDate: formatDateForUTC(result.date),
           items: (result.items || []).map((it: any) => ({
             // Prefer sku when it looks numeric, else fallback to id
             bookId: it.book?.sku || it.book?.id || null,
@@ -287,9 +288,9 @@ export class SalesComponent implements OnInit {
 
   private formatDate(date: string | Date): string {
     if (typeof date === 'string') {
-      return date;
+      return formatDateForUTC(date);
     }
-    return formatDateForAPI(date);
+    return formatDateForUTC(date);
   }
 
   formatSaleDateTime(s: Sale): string {

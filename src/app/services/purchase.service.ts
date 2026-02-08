@@ -133,4 +133,28 @@ export class PurchaseService {
       })
     );
   }
+
+  downloadPurchaseOrderPdf(poNumber: string): Observable<Blob> {
+    return this.http.get(`${enviort.purchaseOrdersUrl}/${poNumber}/pdf`, {
+      headers: this.auth.getAuthHeaders(),
+      responseType: 'blob'
+    }).pipe(
+      catchError((error) => {
+        console.error('Error downloading purchase order PDF:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  downloadReceivingOrderPdf(grnNumber: string): Observable<Blob> {
+    return this.http.get(`${enviort.receivingOrdersUrl}/${grnNumber}/pdf`, {
+      headers: this.auth.getAuthHeaders(),
+      responseType: 'blob'
+    }).pipe(
+      catchError((error) => {
+        console.error('Error downloading receiving order PDF:', error);
+        return throwError(() => error);
+      })
+    );
+  }
 }

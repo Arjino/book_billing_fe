@@ -20,7 +20,7 @@ import { TransactionsService } from '../services/transactions.service';
 import { LoadingService } from '../services/loading.service';
 import { Party } from '../interface/party';
 import { Transaction } from '../interface/Transaction';
-import { formatDateLocal, getTodayLocal, parseLocalDate, formatTimeIST, formatDateForAPI } from '../utils/date.utils';
+import { formatDateLocal, getTodayLocal, parseLocalDate, formatTimeIST, formatDateForUTC } from '../utils/date.utils';
 import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
 
 
@@ -114,6 +114,7 @@ export class TransactionComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
+        result.paymentDate = formatDateForUTC(result.paymentDate);
         this.loadingService.show('Adding transaction...');
         this.store.createTransaction(result).subscribe({
           next: () => {
@@ -143,8 +144,8 @@ export class TransactionComponent implements OnInit {
   filterTransactions() {
     // Build query params for startDate and endDate
     let params: any = {};
-    if (this.startDate) params.startDate = formatDateForAPI(this.startDate);
-    if (this.endDate) params.endDate = formatDateForAPI(this.endDate);
+    if (this.startDate) params.startDate = formatDateForUTC(this.startDate);
+    if (this.endDate) params.endDate = formatDateForUTC(this.endDate);
     this.loadingService.show('Fetching transactions...');
     this.transactionsService.getTransactionsByDateRange(params).subscribe(
       data => {
@@ -160,7 +161,7 @@ export class TransactionComponent implements OnInit {
   }
 
   formatDate(date: any): string {
-    return formatDateForAPI(date);
+    return formatDateForUTC(date);
   }
 
   formatPaymentDateTime(t: Transaction): string {

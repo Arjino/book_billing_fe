@@ -84,16 +84,37 @@
               <span
                 class="px-3 py-1 rounded-full text-xs font-semibold"
                 [ngClass]="(getStatusLabel(s) || '').toUpperCase() === 'PAID'
-                  ? 'bg-emerald-500/30 text-emerald-300'
+                  ? 'bg-emerald-600/80 text-white'
                   : (getStatusLabel(s) || '').toUpperCase() === 'PARTIAL'
-                    ? 'bg-yellow-500/30 text-yellow-300'
-                    : 'bg-red-500/30 text-red-300'">
+                    ? 'bg-amber-500/80 text-white'
+                    : 'bg-rose-600/80 text-white'">
                 {{ (getStatusLabel(s) || '').toUpperCase() }}
               </span>
             </td>
           </ng-container>
-          <tr mat-header-row *matHeaderRowDef="['id','party','dateTime','grandTotal','paymentStatus']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['id','party','dateTime','grandTotal','paymentStatus'];" class="hover:bg-emerald-500/10 transition-colors"></tr>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef class="text-emerald-300 font-bold py-4 px-6 text-left">Actions</th>
+            <td mat-cell *matCellDef="let s" class="bg-transparent py-4 px-6 border-t border-emerald-500/20">
+              <div class="flex items-center gap-2" *ngIf="purchaseMode === 'purchase-order'">
+                <button mat-icon-button class="text-emerald-300" (click)="openPurchaseOrderPreview(s.poNumber)" title="Preview PDF">
+                  <mat-icon>picture_as_pdf</mat-icon>
+                </button>
+                <button mat-icon-button class="text-emerald-300" (click)="downloadPurchaseOrderPdf(s.poNumber)" title="Download PDF">
+                  <mat-icon>download</mat-icon>
+                </button>
+              </div>
+              <div class="flex items-center gap-2" *ngIf="purchaseMode === 'receiving'">
+                <button mat-icon-button class="text-emerald-300" (click)="openReceivingOrderPreview(s.grnNumber)" title="Preview PDF">
+                  <mat-icon>picture_as_pdf</mat-icon>
+                </button>
+                <button mat-icon-button class="text-emerald-300" (click)="downloadReceivingOrderPdf(s.grnNumber)" title="Download PDF">
+                  <mat-icon>download</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="['id','party','dateTime','grandTotal','paymentStatus','actions']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['id','party','dateTime','grandTotal','paymentStatus','actions'];" class="hover:bg-emerald-500/10 transition-colors"></tr>
         </table>
       </div>
       <div *ngIf="!purchases.length" class="p-8 text-center">

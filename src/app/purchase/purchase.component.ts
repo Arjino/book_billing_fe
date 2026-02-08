@@ -16,12 +16,14 @@ import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
-import { formatTimeIST, formatDateForAPI, formatDateLocal } from '../utils/date.utils';
+import { formatTimeIST, formatDateForAPI, formatDateForUTC, formatDateLocal } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
 import { ReceivingOrder, ReceivingOrderItem } from '../interface/receiving-order';
 import { PurchaseOrder, PurchaseOrderItem } from '../interface/purchase-order';
 import { PURCHASE_CONSTANTS } from '../constants/purchase.constants';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
+import { PurchaseOrderPreviewComponent } from './purchase-order-preview.component';
+import { ReceivingOrderPreviewComponent } from './receiving-order-preview.component';
 
 @Component({
   selector: 'app-purchase',
@@ -229,9 +231,9 @@ export class PurchaseComponent implements OnInit {
 
   private formatDate(date: string | Date): string {
     if (typeof date === 'string') {
-      return date;
+      return formatDateForUTC(date);
     }
-    return formatDateForAPI(date);
+    return formatDateForUTC(date);
   }
 
   formatPurchaseDateTime(s: Sale | ReceivingOrder | PurchaseOrder): string {
@@ -257,7 +259,7 @@ export class PurchaseComponent implements OnInit {
 
     return {
       poNumber: data.invoiceNo || '',
-      poDate: data.date,
+      poDate: formatDateForUTC(data.date),
       party: data.party || null,
       status: 'CREATED',
       totalAmount: data.totalAmount,
@@ -281,7 +283,7 @@ export class PurchaseComponent implements OnInit {
 
     return {
       purchaseOrderId: poId,
-      receivedDate: data.date,
+      receivedDate: formatDateForUTC(data.date),
       party: data.party || null,
       status: 'RECEIVED',
       totalAmount: data.totalAmount,
@@ -392,5 +394,65 @@ export class PurchaseComponent implements OnInit {
     return this.purchaseMode === 'receiving'
       ? 'No receiving orders found. Create your first receiving order entry.'
       : 'No purchase orders found. Create your first purchase order entry.';
+  }
+
+  openPurchaseOrderPreview(poNumber?: string) {
+    if (!poNumber || this.purchaseMode === 'receiving') return;
+    this.dialog.open(PurchaseOrderPreviewComponent, {
+      data: { poNumber },
+      width: '900px',
+      maxWidth: '95vw',
+      panelClass: 'invoice-dialog'
+    });
+  }
+
+  downloadPurchaseOrderPdf(poNumber?: string) {
+    if (!poNumber || this.purchaseMode === 'receiving') return;
+    this.loadingService.show('Downloading purchase order PDF...');
+    this.purchaseService.downloadPurchaseOrderPdf(poNumber).subscribe({
+      next: (blob) => {
+        const link = document.createElement('a');
+        const objectUrl = URL.createObjectURL(blob);
+        link.href = objectUrl;
+        link.download = `po-${poNumber}.pdf`;
+        link.click();
+        URL.revokeObjectURL(objectUrl);
+        this.loadingService.hide();
+      },
+      error: (err) => {
+        console.error('Failed to download purchase order PDF', err);
+        this.loadingService.hide();
+      }
+    });
+  }
+
+  openReceivingOrderPreview(grnNumber?: string) {
+    if (!grnNumber || this.purchaseMode !== 'receiving') return;
+    this.dialog.open(ReceivingOrderPreviewComponent, {
+      data: { grnNumber },
+      width: '900px',
+      maxWidth: '95vw',
+      panelClass: 'invoice-dialog'
+    });
+  }
+
+  downloadReceivingOrderPdf(grnNumber?: string) {
+    if (!grnNumber || this.purchaseMode !== 'receiving') return;
+    this.loadingService.show('Downloading receiving order PDF...');
+    this.purchaseService.downloadReceivingOrderPdf(grnNumber).subscribe({
+      next: (blob) => {
+        const link = document.createElement('a');
+        const objectUrl = URL.createObjectURL(blob);
+        link.href = objectUrl;
+        link.download = `ro-${grnNumber}.pdf`;
+        link.click();
+        URL.revokeObjectURL(objectUrl);
+        this.loadingService.hide();
+      },
+      error: (err) => {
+        console.error('Failed to download receiving order PDF', err);
+        this.loadingService.hide();
+      }
+    });
   }
 }

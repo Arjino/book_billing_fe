@@ -1,0 +1,8 @@
+:host {
+  display: block;
+  color: #d1fae5;
+}
+
+iframe {
+  min-height: 24rem;
+}

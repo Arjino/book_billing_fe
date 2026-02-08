@@ -9,7 +9,7 @@ import { DataStoreService } from '../services/data-store.service';
 import { Party } from '../interface/party';
 import { Book } from '../interface/book';
 import { Sale } from '../interface/Sale';
-import { formatDateForAPI } from '../utils/date.utils';
+import { formatDateForUTC } from '../utils/date.utils';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
 
 interface BulkSalesDialogData {
@@ -253,16 +253,16 @@ export class SalesBulkImportDialogComponent implements OnInit {
     if (typeof value === 'string') {
       const d = new Date(value);
       if (isNaN(d.getTime())) return null;
-      return formatDateForAPI(d);
+      return formatDateForUTC(d);
     }
     if (value instanceof Date) {
-      return formatDateForAPI(value);
+      return formatDateForUTC(value);
     }
     if (typeof value === 'number') {
       const excelEpoch = new Date(Date.UTC(1899, 11, 30));
       const date = new Date(excelEpoch.getTime() + value * 86400000);
       if (isNaN(date.getTime())) return null;
-      return formatDateForAPI(date);
+      return formatDateForUTC(date);
     }
     return null;
   }

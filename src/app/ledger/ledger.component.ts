@@ -14,7 +14,7 @@ import { RouterModule } from '@angular/router';
 import { DataStoreService } from '../services/data-store.service';
 import { LedgerService } from '../services/ledger.service';
 import { InvoicesService } from '../services/invoices.service';
-import { parseLocalDate, formatTimeIST, formatDateForAPI, formatDateLocal } from '../utils/date.utils';
+import { parseLocalDate, formatTimeIST, formatDateForAPI, formatDateForUTC, formatDateLocal } from '../utils/date.utils';
 import { LoadingService } from '../services/loading.service';
 import { take } from 'rxjs/operators';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
@@ -83,7 +83,7 @@ export class LedgerComponent implements OnInit {
     if (!partyId) return;
     
     // Fetch today's entries by default
-    const today = formatDateForAPI(new Date());
+    const today = formatDateForUTC(new Date());
     const params: any = { 
       partyId: partyId,
       startDate: today,
@@ -117,11 +117,11 @@ export class LedgerComponent implements OnInit {
     const params: any = { partyId: this.partyId };
     
     if (this.startDate) {
-      params.startDate = formatDateForAPI(this.startDate);
+      params.startDate = formatDateForUTC(this.startDate);
     }
     
     if (this.endDate) {
-      params.endDate = formatDateForAPI(this.endDate);
+      params.endDate = formatDateForUTC(this.endDate);
     }
     
     if (this.transactionType && this.transactionType !== 'All') {
@@ -166,12 +166,12 @@ export class LedgerComponent implements OnInit {
     
     // Only add startDate if it's actually set by user
     if (this.startDate) {
-      queryParams.append('startDate', formatDateForAPI(this.startDate));
+      queryParams.append('startDate', formatDateForUTC(this.startDate));
     }
     
     // Only add endDate if it's actually set by user
     if (this.endDate) {
-      queryParams.append('endDate', formatDateForAPI(this.endDate));
+      queryParams.append('endDate', formatDateForUTC(this.endDate));
     }
     
     // Only add type if it's not 'All'
@@ -205,7 +205,7 @@ export class LedgerComponent implements OnInit {
   }
 
   private formatDateForAPI(date: string | Date): string {
-    return formatDateForAPI(date);
+    return formatDateForUTC(date);
   }
 
   private filterResults(input: any[]): any[] {
