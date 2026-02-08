@@ -133,8 +133,7 @@ export class DashboardComponent implements OnInit {
   selectedLedgerParty: any = null;
   selectedBookingStatus: string = BOOKING_CONSTANTS.DEFAULTS.STATUS; // 'available' or 'discarded'
   selectedPartyStatus: string = PARTIES_CONSTANTS.DEFAULTS.STATUS; // 'current' or 'old'
-  selectedSalesType: string = SALES_CONSTANTS.DEFAULTS.SALE_TYPE; // 'sale' or 'purchase'
-  selectedPurchaseType: string = 'purchase-order'; // 'purchase-order' or 'receiving'
+  selectedPurchaseType: string = 'purchase-order'; // 'purchase-order' | 'receiving' |  'purchase'
   dashboardStats: DashboardStats = {
     totalBooks: 0,
     totalBookStock: 0,
@@ -205,7 +204,7 @@ export class DashboardComponent implements OnInit {
         this.openPartyDialog();
         break;
       case 'Sales':
-        this.openSalesDialog(this.selectedSalesType);
+        this.openSalesDialog('sale');
         break;
       case 'Purchase':
         this.openPurchaseDialog(this.selectedPurchaseType);
@@ -415,6 +414,10 @@ export class DashboardComponent implements OnInit {
   }
 
   openPurchaseDialog(mode: string = 'purchase-order') {
+    if (mode === 'purchase') {
+      this.navigateToPurchase('purchase');
+      return;
+    }
     if (mode === 'receiving') {
       this.navigateToPurchase('receiving');
       return;

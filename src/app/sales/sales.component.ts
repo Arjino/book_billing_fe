@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
@@ -16,7 +16,6 @@ import { SalesBulkImportDialogComponent } from './sales-bulk-import-dialog.compo
 import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
-import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
 import { formatTimeIST, formatDateForAPI, formatDateForUTC, formatDateLocal } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
@@ -34,33 +33,17 @@ export class SalesComponent implements OnInit {
   startDate: string = '';
   endDate: string = '';
   showStartDateError: boolean = false;
-  defaultSaleType: string = 'SALE'; // Default to 'SALE', can be 'PURCHASE'
-  isPurchaseMode: boolean = false; // Track if in purchase mode
 
   constructor(
     private dialog: MatDialog, 
     private router: Router, 
     private store: DataStoreService, 
-    private route: ActivatedRoute,
     private salesService: SalesService,
-    private purchaseService: PurchaseService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar
   ) {}
 
   ngOnInit() {
-    // Read the type query parameter
-    this.route.queryParams.subscribe(params => {
-      const type = params['type'];
-      if (type === 'sale') {
-        this.defaultSaleType = 'SALE';
-        this.isPurchaseMode = false;
-      } else if (type === 'purchase') {
-        this.defaultSaleType = 'PURCHASE';
-        this.isPurchaseMode = true;
-      }
-    });
-
     // Set end date to today by default
     const today = new Date();
     this.endDate = formatDateForAPI(today);
@@ -70,19 +53,11 @@ export class SalesComponent implements OnInit {
 
   
   loadSales() {
-    if (this.isPurchaseMode) {
-      this.loadingService.show('Loading purchases...');
-      this.purchaseService.getPurchasesByDate().subscribe(data => {
-        this.sales = data;
-        this.loadingService.hide();
-      });
-    } else {
-      this.loadingService.show('Loading sales...');
-      this.salesService.getSalesByDate().subscribe(data => {
-        this.sales = data;
-        this.loadingService.hide();
-      });
-    }
+    this.loadingService.show('Loading sales...');
+    this.salesService.getSalesByDate().subscribe(data => {
+      this.sales = data;
+      this.loadingService.hide();
+    });
   }
 
   addSale() {
@@ -100,7 +75,7 @@ export class SalesComponent implements OnInit {
         grandTotal: 0,
         paymentStatus: SALES_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
         paidAmount: 0,
-        type: this.defaultSaleType,
+        type: 'SALE',
         items: [{
           id: 0,
           sale: null,
@@ -160,51 +135,27 @@ export class SalesComponent implements OnInit {
         return;
       }
 
-      // Handle Purchase vs Sale
-      if (this.isPurchaseMode) {
-        this.loadingService.show('Creating purchase...');
-        this.purchaseService.createPurchase(result).subscribe({
-          next: () => {
-            this.loadingService.hide();
-            this.snackBar.open('Purchase created successfully!', 'Close', { 
-              duration: 3000,
-              panelClass: ['success-snackbar']
-            });
-            this.loadSales();
-            this.store.refreshBooks();
-          },
-          error: (err) => {
-            this.loadingService.hide();
-            console.error('Failed to create purchase:', err);
-            this.snackBar.open('Failed to create purchase', 'Close', { 
-              duration: 5000,
-              panelClass: ['error-snackbar']
-            });
-          }
-        });
-      } else {
-        this.loadingService.show('Creating sale...');
-        this.store.createSale([result]).subscribe({
-          next: () => {
-            this.loadingService.hide();
-            this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
-              duration: 3000,
-              panelClass: ['success-snackbar']
-            });
-            this.loadSales();
-            // refresh cached books so stock updates after a sale
-            this.store.refreshBooks();
-          },
-          error: (err) => {
-            this.loadingService.hide();
-            console.error('Failed to create sale:', err);
-            this.snackBar.open(SALES_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', { 
-              duration: 5000,
-              panelClass: ['error-snackbar']
-            });
-          }
-        });
-      }
+      this.loadingService.show('Creating sale...');
+      this.store.createSale([result]).subscribe({
+        next: () => {
+          this.loadingService.hide();
+          this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
+            duration: 3000,
+            panelClass: ['success-snackbar']
+          });
+          this.loadSales();
+          // refresh cached books so stock updates after a sale
+          this.store.refreshBooks();
+        },
+        error: (err) => {
+          this.loadingService.hide();
+          console.error('Failed to create sale:', err);
+          this.snackBar.open(SALES_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', { 
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+        }
+      });
     });
   }
 
@@ -213,8 +164,8 @@ export class SalesComponent implements OnInit {
       width: '650px',
       maxHeight: '90vh',
       data: {
-        saleType: this.defaultSaleType,
-        isPurchaseMode: this.isPurchaseMode
+        saleType: 'SALE',
+        isPurchaseMode: false
       }
     });
 
@@ -257,33 +208,18 @@ export class SalesComponent implements OnInit {
     const start = this.formatDate(this.startDate);
     const end = this.formatDate(this.endDate);
 
-    if (this.isPurchaseMode) {
-      this.loadingService.show('Fetching purchases...');
-      this.purchaseService.getPurchasesByDateRange(start, end).subscribe({
-        next: (data) => {
-          this.sales = data;
-          this.loadingService.hide();
-        },
-        error: (err) => {
-          console.error('Failed to fetch purchases by date range:', err);
-          alert('Failed to fetch purchases by date range');
-          this.loadingService.hide();
-        }
-      });
-    } else {
-      this.loadingService.show('Fetching sales...');
-      this.salesService.getSalesByDateRange(start, end).subscribe({
-        next: (data) => {
-          this.sales = data;
-          this.loadingService.hide();
-        },
-        error: (err) => {
-          console.error('Failed to fetch sales by date range:', err);
-          alert(SALES_CONSTANTS.MESSAGES.DATE_RANGE_ERROR);
-          this.loadingService.hide();
-        }
-      });
-    }
+    this.loadingService.show('Fetching sales...');
+    this.salesService.getSalesByDateRange(start, end).subscribe({
+      next: (data) => {
+        this.sales = data;
+        this.loadingService.hide();
+      },
+      error: (err) => {
+        console.error('Failed to fetch sales by date range:', err);
+        alert(SALES_CONSTANTS.MESSAGES.DATE_RANGE_ERROR);
+        this.loadingService.hide();
+      }
+    });
   }
 
   private formatDate(date: string | Date): string {
@@ -304,18 +240,18 @@ export class SalesComponent implements OnInit {
   }
 
   getPageTitle(): string {
-    return this.isPurchaseMode ? 'Purchase' : 'Sales';
+    return 'Sales';
   }
 
   getPageSubtitle(): string {
-    return this.isPurchaseMode ? 'Track and manage all purchase transactions' : 'Track and manage all sales transactions';
+    return 'Track and manage all sales transactions';
   }
 
   getButtonLabel(): string {
-    return this.isPurchaseMode ? 'Add Purchase' : 'Add Sale';
+    return 'Add Sale';
   }
 
   getEmptyMessage(): string {
-    return this.isPurchaseMode ? 'No purchases found. Create your first purchase entry.' : 'No sales found. Create your first sales entry.';
+    return 'No sales found. Create your first sales entry.';
   }
 }

@@ -151,42 +151,36 @@
                   </div>
                 </div>
 
-                <!-- Sales Card Content: select Sale or Purchase -->
+                <!-- Sales Card Content: Sales only -->
                 <div *ngIf="card.title === 'Sales'" class="space-y-3">
-                  <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Transaction Type</mat-label>
-                    <mat-select [(ngModel)]="selectedSalesType" class="text-white">
-                      <mat-option value="sale">Sale</mat-option>
-                      <mat-option value="purchase">Purchase</mat-option>
-                    </mat-select>
-                  </mat-form-field>
                   <div class="grid grid-cols-2 gap-2">
-                    <button mat-raised-button color="accent" class="w-full" (click)="openSalesDialog(selectedSalesType)">
+                    <button mat-raised-button color="accent" class="w-full" (click)="openSalesDialog('sale')">
                       <mat-icon>add</mat-icon>
-                      Add {{ selectedSalesType === 'sale' ? 'Sale' : 'Purchase' }}
+                      Add Sale
                     </button>
-                    <button mat-raised-button color="primary" class="w-full" (click)="navigateToSales(selectedSalesType)">
-                      Open {{ selectedSalesType === 'sale' ? 'Sale' : 'Purchase' }}
+                    <button mat-raised-button color="primary" class="w-full" (click)="navigateToSales('sale')">
+                      Open Sales
                     </button>
                   </div>
                 </div>
 
-                <!-- Purchase Card Content: select Purchase Order or Receiving Order -->
+                <!-- Purchase Card Content: Purchase / Purchase Order / Receiving Order -->
                 <div *ngIf="card.title === 'Purchase'" class="space-y-3">
                   <mat-form-field appearance="outline" class="w-full">
                     <mat-label>Purchase Type</mat-label>
                     <mat-select [(ngModel)]="selectedPurchaseType" class="text-white">
                       <mat-option value="purchase-order">Purchase Order</mat-option>
                       <mat-option value="receiving">Receiving Order</mat-option>
+                      <mat-option value="purchase">Purchase</mat-option>
                     </mat-select>
                   </mat-form-field>
                   <div class="grid grid-cols-2 gap-2">
-                    <button mat-raised-button color="accent" class="w-full" (click)="openPurchaseDialog(selectedPurchaseType)">
+                    <button *ngIf="selectedPurchaseType !== 'purchase'" mat-raised-button color="accent" class="w-full" (click)="openPurchaseDialog(selectedPurchaseType)">
                       <mat-icon>add</mat-icon>
-                      Add {{ selectedPurchaseType === 'receiving' ? 'Receiving Order' : 'Purchase Order' }}
+                      Add {{ selectedPurchaseType === 'purchase' ? 'Purchase' : (selectedPurchaseType === 'receiving' ? 'Receiving Order' : 'Purchase Order') }}
                     </button>
                     <button mat-raised-button color="primary" class="w-full" (click)="navigateToPurchase(selectedPurchaseType)">
-                      Open {{ selectedPurchaseType === 'receiving' ? 'Receiving Order' : 'Purchase Order' }}
+                      Open {{ selectedPurchaseType === 'purchase' ? 'Purchase' : (selectedPurchaseType === 'receiving' ? 'Receiving Order' : 'Purchase Order') }}
                     </button>
                   </div>
                 </div>

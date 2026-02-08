@@ -42,7 +42,7 @@ export class PurchaseComponent implements OnInit {
   startDate: string = '';
   endDate: string = '';
   showStartDateError: boolean = false;
-  purchaseMode: 'purchase-order' | 'receiving' = 'purchase-order';
+  purchaseMode: 'purchase' | 'purchase-order' | 'receiving' = 'purchase-order';
   receivingPoId: number | null = null;
 
   constructor(
@@ -58,7 +58,9 @@ export class PurchaseComponent implements OnInit {
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       const type = (params['type'] || 'purchase-order').toLowerCase();
-      this.purchaseMode = type === 'receiving' ? 'receiving' : 'purchase-order';
+      this.purchaseMode = type === 'purchase'
+        ? 'purchase'
+        : (type === 'receiving' ? 'receiving' : 'purchase-order');
       if (this.purchaseMode !== 'receiving') {
         this.receivingPoId = null;
         this.selectedPurchaseOrder = null;
@@ -74,6 +76,20 @@ export class PurchaseComponent implements OnInit {
   }
 
   loadPurchases() {
+    if (this.purchaseMode === 'purchase') {
+      this.loadingService.show('Loading purchases...');
+      this.purchaseService.getPurchasesByDate().subscribe({
+        next: (data) => {
+          this.purchases = data || [];
+          this.loadingService.hide();
+        },
+        error: () => {
+          this.loadingService.hide();
+        }
+      });
+      return;
+    }
+
     if (this.purchaseMode === 'receiving') {
       this.loadingService.show('Loading receiving orders...');
       this.purchaseService.getReceivingOrders().subscribe({
@@ -218,6 +234,21 @@ export class PurchaseComponent implements OnInit {
 
     const start = this.formatDate(this.startDate);
     const end = this.formatDate(this.endDate);
+
+    if (this.purchaseMode === 'purchase') {
+      this.loadingService.show('Fetching purchases...');
+      this.purchaseService.getPurchasesByDateRange(start, end).subscribe({
+        next: (data) => {
+          this.purchases = data || [];
+          this.loadingService.hide();
+        },
+        error: (err) => {
+          console.error('Failed to fetch purchases by date range:', err);
+          this.loadingService.hide();
+        }
+      });
+      return;
+    }
 
     if (this.purchaseMode === 'receiving') {
       const filtered = this.filterReceivingOrdersByDateRange(start, end);
@@ -377,20 +408,28 @@ export class PurchaseComponent implements OnInit {
   }
 
   getPageTitle(): string {
+    if (this.purchaseMode === 'purchase') return 'Purchase';
     return this.purchaseMode === 'receiving' ? 'Receiving Order' : 'Purchase Order';
   }
 
   getPageSubtitle(): string {
+    if (this.purchaseMode === 'purchase') {
+      return 'Track and manage all purchase transactions';
+    }
     return this.purchaseMode === 'receiving'
       ? 'Record supplier receiving bills and inbound stock'
       : 'Create and manage purchase orders';
   }
 
   getButtonLabel(): string {
+    if (this.purchaseMode === 'purchase') return 'Add Purchase';
     return this.purchaseMode === 'receiving' ? 'Add Receiving Order' : 'Add Purchase Order';
   }
 
   getEmptyMessage(): string {
+    if (this.purchaseMode === 'purchase') {
+      return 'No purchases found. Create your first purchase entry.';
+    }
     return this.purchaseMode === 'receiving'
       ? 'No receiving orders found. Create your first receiving order entry.'
       : 'No purchase orders found. Create your first purchase order entry.';
