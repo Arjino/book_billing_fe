@@ -185,13 +185,20 @@
                   </div>
                 </div>
 
-                <!-- Transactions Card Content: Two buttons for create and open -->
+                <!-- Transactions Card Content: Type selector + buttons -->
                 <div *ngIf="card.title === 'Transactions'" class="space-y-3">
-                  <button mat-raised-button color="accent" class="w-full" (click)="openTransactionDialog()">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Transaction Type</mat-label>
+                    <mat-select [(ngModel)]="selectedTransactionType" class="text-white">
+                      <mat-option value="SALE">Sale</mat-option>
+                      <mat-option value="PURCHASE">Purchase</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                  <button mat-raised-button color="accent" class="w-full" (click)="openTransactionDialog(selectedTransactionType)">
                     <mat-icon>add</mat-icon>
                     Create Transaction
                   </button>
-                  <button mat-raised-button color="primary" class="w-full" (click)="navigateTo('/transaction')">
+                  <button mat-raised-button color="primary" class="w-full" (click)="navigateToTransactions(selectedTransactionType)">
                     Show Transactions
                   </button>
                 </div>

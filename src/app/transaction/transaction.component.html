@@ -25,8 +25,15 @@
       </div>
     </div>
 
-    <!-- Date Filter -->
+    <!-- Filters -->
     <div class="mb-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <mat-form-field appearance="outline" class="w-full md:w-1/4">
+        <mat-label>Transaction Type</mat-label>
+        <mat-select [(ngModel)]="selectedTransactionType" (selectionChange)="filterTransactions()">
+          <mat-option value="SALE">Sale</mat-option>
+          <mat-option value="PURCHASE">Purchase</mat-option>
+        </mat-select>
+      </mat-form-field>
       <mat-form-field appearance="outline" class="w-full md:w-1/4">
         <mat-label>Start Date</mat-label>
         <input matInput [matDatepicker]="startPicker" [(ngModel)]="startDate" (dateChange)="applyDateFilter()" [max]="maxDate" placeholder="Start date">

@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,29 +9,43 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Transaction } from '../interface/Transaction';
-import { Party } from '../interface/party';
-import { DataStoreService } from '../services/data-store.service';
-import { LedgerService } from '../services/ledger.service';
+import { SalesService } from '../services/sales.service';
+import { PurchaseService } from '../services/purchase.service';
+import { LoadingService } from '../services/loading.service';
 
 @Component({
   selector: 'app-transaction-dialog',
   templateUrl: './transaction-dialog.component.html',
   styleUrls: ['./transaction-dialog.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatIconModule, MatDatepickerModule, MatNativeDateModule]
+  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatIconModule, MatDatepickerModule, MatNativeDateModule, MatSnackBarModule]
 })
-export class TransactionDialogComponent {
-  parties: Party[] = [];
+export class TransactionDialogComponent implements OnInit {
   paymentMethods = ['Cash', 'Cheque', 'Bank Transfer', 'Card', 'UPI', 'Other'];
+  isFetching = false;
+  isLoadingInvoices = false;
+  isLoadingSaleInvoices = false;
+  purchaseInvoices: string[] = [];
+  saleInvoices: string[] = [];
 
   constructor(
     public dialogRef: MatDialogRef<TransactionDialogComponent>,
-    private dataService: DataStoreService,
-    private ledgerService: LedgerService,
+    private salesService: SalesService,
+    private purchaseService: PurchaseService,
+    private loadingService: LoadingService,
+    private snackBar: MatSnackBar,
     @Inject(MAT_DIALOG_DATA) public data: Transaction
-  ) {
-    this.dataService.getParties().subscribe(party => this.parties = party || []);
+  ) {}
+
+  ngOnInit(): void {
+    if (this.data?.transactionType === 'PURCHASE') {
+      this.loadPurchaseInvoices();
+    }
+    if (this.data?.transactionType === 'SALE') {
+      this.loadSaleInvoices();
+    }
   }
 
   onCancel(): void {
@@ -42,19 +56,92 @@ export class TransactionDialogComponent {
     const total = Number(this.data?.totalAmount || 0);
     return Math.abs(paid) > Math.abs(total);
   }
-  fetchLedgerForParty(partyId: any) {
-      if (!partyId) return;
-      this.ledgerService.getLedgerForParty(partyId).subscribe(data => {
-        let results = data || [];
-        // Server returns entries ordered by date desc; last updated balance is first item's balance
-        let lastBalance = (results && results.length) ? (results[results.length-1].balance || 0) : 0;
-        // update totalAmount or Last Balance display accordingly
-        this.data.totalAmount = lastBalance;
-      }, err => {
-        console.error('Failed to load ledger for party:', err);
+
+  get referenceLabel(): string {
+    return this.data?.transactionType === 'PURCHASE' ? 'Purchase Number' : 'Sale Invoice No';
+  }
+
+  loadPurchaseInvoices(): void {
+    this.isLoadingInvoices = true;
+    this.loadingService.show('Loading purchase invoices...');
+    this.purchaseService.getUnpaidAndPartialPurchaseInvoices().subscribe({
+      next: (invoices) => {
+        this.loadingService.hide();
+        this.isLoadingInvoices = false;
+        this.purchaseInvoices = invoices || [];
+      },
+      error: (error) => {
+        this.loadingService.hide();
+        this.isLoadingInvoices = false;
+        console.error('Failed to load purchase invoices:', error);
+        this.purchaseInvoices = [];
+        this.snackBar.open('Failed to load purchase invoices.', 'Close', {
+          duration: 4000,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
+  }
+
+  loadSaleInvoices(): void {
+    this.isLoadingSaleInvoices = true;
+    this.loadingService.show('Loading sale invoices...');
+    this.salesService.getUnpaidAndPartialSaleInvoices().subscribe({
+      next: (invoices) => {
+        this.loadingService.hide();
+        this.isLoadingSaleInvoices = false;
+        this.saleInvoices = invoices || [];
+      },
+      error: (error) => {
+        this.loadingService.hide();
+        this.isLoadingSaleInvoices = false;
+        console.error('Failed to load sale invoices:', error);
+        this.saleInvoices = [];
+        this.snackBar.open('Failed to load sale invoices.', 'Close', {
+          duration: 4000,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
+  }
+
+  fetchDetails(): void {
+    const invoiceNo = (this.data?.invoiceNo || '').trim();
+    if (!invoiceNo || this.isFetching) return;
+
+    this.isFetching = true;
+    this.loadingService.show('Fetching details...');
+
+    const request$ = this.data?.transactionType === 'PURCHASE'
+      ? this.purchaseService.getPurchaseByInvoiceNumber(invoiceNo)
+      : this.salesService.getSaleByInvoiceNumber(invoiceNo);
+
+    request$.subscribe({
+      next: (result: any) => {
+        this.loadingService.hide();
+        this.isFetching = false;
+        if (!result) {
+          this.data.totalAmount = 0;
+          this.data.party = null as any;
+          return;
+        }
+        this.data.party = result.party || null;
+        this.data.totalAmount = result.grandTotal ?? result.totalAmount ?? 0;
+        this.data.dueAmount = result.dueAmount ?? this.data.dueAmount;
+      },
+      error: (error) => {
+        this.loadingService.hide();
+        this.isFetching = false;
+        console.error('Failed to fetch transaction details:', error);
         this.data.totalAmount = 0;
-      });
-    }
+        this.data.party = null as any;
+        this.snackBar.open('Failed to fetch details. Please check the number and try again.', 'Close', {
+          duration: 4000,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
+  }
 
   onSave(): void {
     this.dialogRef.close(this.data);

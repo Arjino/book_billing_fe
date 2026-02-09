@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
@@ -39,10 +39,12 @@ export class TransactionComponent implements OnInit {
   displayedColumns = ['id', 'party', 'paymentDateTime', 'amount', 'paymentMethod', 'referenceNo', 'notes', 'actions'];
   maxDate = new Date(); // Today as maximum date
   minEndDate: Date | null = null; // Minimum date for end date picker
+  selectedTransactionType: 'SALE' | 'PURCHASE' = 'SALE';
 
   constructor(
     private dialog: MatDialog,
     private router: Router,
+    private route: ActivatedRoute,
     private store: DataStoreService,
     private transactionsService: TransactionsService,
     private loadingService: LoadingService,
@@ -50,14 +52,19 @@ export class TransactionComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.loadTransactions();
+    this.route.queryParams.subscribe(params => {
+      const type = (params['type'] || 'SALE').toString().toUpperCase();
+      this.selectedTransactionType = type === 'PURCHASE' ? 'PURCHASE' : 'SALE';
+      this.loadTransactions();
+    });
   }
 
   loadTransactions() {
     this.loadingService.show('Loading transactions...');
-    this.transactionsService.getTransactions().subscribe(
+    const params: any = { type: this.selectedTransactionType };
+    this.transactionsService.getTransactionsByDateRange(params).subscribe(
       data => {
-        this.transactions = data;
+        this.transactions = data || [];
         this.applyDateFilter();
         this.loadingService.hide();
       },
@@ -93,6 +100,10 @@ export class TransactionComponent implements OnInit {
         return tDate <= e;
       });
     }
+    const type = this.selectedTransactionType?.toUpperCase();
+    if (type && filtered.some(t => !!t.transactionType)) {
+      filtered = filtered.filter(t => (t.transactionType || '').toUpperCase() === type);
+    }
     this.filteredTransactions = filtered;
   }
 
@@ -108,7 +119,8 @@ export class TransactionComponent implements OnInit {
         remarks: '',
         totalAmount: 0,
         invoiceNo: '',
-        dueAmount: 0
+        dueAmount: 0,
+        transactionType: this.selectedTransactionType
       } as unknown as Transaction,
       disableClose: false
     });
@@ -146,10 +158,11 @@ export class TransactionComponent implements OnInit {
     let params: any = {};
     if (this.startDate) params.startDate = formatDateForUTC(this.startDate);
     if (this.endDate) params.endDate = formatDateForUTC(this.endDate);
+    params.type = this.selectedTransactionType;
     this.loadingService.show('Fetching transactions...');
     this.transactionsService.getTransactionsByDateRange(params).subscribe(
       data => {
-        this.transactions = data;
+        this.transactions = data || [];
         this.applyDateFilter();
         this.loadingService.hide();
       },

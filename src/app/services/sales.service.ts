@@ -47,4 +47,24 @@ export class SalesService {
       })
     );
   }
+
+  getSaleByInvoiceNumber(invoiceNo: string): Observable<Sale> {
+    const url = `${enviort.salesUrl}/invoice/${encodeURIComponent(invoiceNo)}`;
+    return this.http.get<Sale>(url, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading sale by invoice number:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getUnpaidAndPartialSaleInvoices(): Observable<string[]> {
+    const url = `${enviort.salesUrl}/unpaid-and-partial/invoices`;
+    return this.http.get<string[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading unpaid/partial sale invoices:', error);
+        return throwError(() => error);
+      })
+    );
+  }
 }

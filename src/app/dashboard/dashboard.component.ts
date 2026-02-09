@@ -137,6 +137,7 @@ export class DashboardComponent implements OnInit {
   selectedBookingStatus: string = BOOKING_CONSTANTS.DEFAULTS.STATUS; // 'available' or 'discarded'
   selectedPartyStatus: string = PARTIES_CONSTANTS.DEFAULTS.STATUS; // 'current' or 'old'
   selectedPurchaseType: string = 'purchase-order'; // 'purchase-order' | 'receiving' |  'purchase'
+  selectedTransactionType: 'SALE' | 'PURCHASE' = 'SALE';
   dashboardStats: DashboardStats = {
     totalBooks: 0,
     totalBookStock: 0,
@@ -509,7 +510,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  openTransactionDialog() {
+  openTransactionDialog(transactionType: 'SALE' | 'PURCHASE' = 'SALE') {
     const dialogRef = this.dialog.open(TransactionDialogComponent, {
       width: '500px',
       data: {
@@ -521,7 +522,8 @@ export class DashboardComponent implements OnInit {
         remarks: '',
         totalAmount: 0,
         dueAmount: 0,
-        invoiceNo: ''
+        invoiceNo: '',
+        transactionType
       } as unknown as Transaction
     });
 
@@ -598,6 +600,10 @@ export class DashboardComponent implements OnInit {
 
   navigateToPurchase(type: string) {
     this.router.navigate(['/purchase'], { queryParams: { type } });
+  }
+
+  navigateToTransactions(type: 'SALE' | 'PURCHASE') {
+    this.router.navigate(['/transaction'], { queryParams: { type } });
   }
 
   private mapToPurchaseOrder(data: SalesDialogData): PurchaseOrder {

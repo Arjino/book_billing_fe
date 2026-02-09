@@ -10,15 +10,33 @@
   <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
     <form #transactionForm="ngForm">
       <div class="grid grid-cols-1 gap-3">
+        <mat-form-field *ngIf="data.transactionType === 'SALE'" appearance="outline" class="w-full">
+          <mat-label>{{ referenceLabel }}</mat-label>
+          <mat-select [(ngModel)]="data.invoiceNo" name="referenceNo" required #referenceModel="ngModel" (selectionChange)="fetchDetails()">
+            <mat-option *ngIf="isLoadingSaleInvoices" [value]="''" disabled>Loading...</mat-option>
+            <mat-option *ngFor="let invoice of saleInvoices" [value]="invoice">{{ invoice }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="referenceModel.invalid && (referenceModel.dirty || referenceModel.touched)">
+            <span *ngIf="referenceModel.errors?.['required']">Sale invoice is required.</span>
+          </mat-error>
+          <mat-hint *ngIf="!isLoadingSaleInvoices && !saleInvoices.length">No unpaid/partial invoices found.</mat-hint>
+        </mat-form-field>
+
+        <mat-form-field *ngIf="data.transactionType === 'PURCHASE'" appearance="outline" class="w-full">
+          <mat-label>{{ referenceLabel }}</mat-label>
+          <mat-select [(ngModel)]="data.invoiceNo" name="referenceNo" required #referenceModel="ngModel" (selectionChange)="fetchDetails()">
+            <mat-option *ngIf="isLoadingInvoices" [value]="''" disabled>Loading...</mat-option>
+            <mat-option *ngFor="let invoice of purchaseInvoices" [value]="invoice">{{ invoice }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="referenceModel.invalid && (referenceModel.dirty || referenceModel.touched)">
+            <span *ngIf="referenceModel.errors?.['required']">Purchase number is required.</span>
+          </mat-error>
+          <mat-hint *ngIf="!isLoadingInvoices && !purchaseInvoices.length">No unpaid/partial invoices found.</mat-hint>
+        </mat-form-field>
+
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Party</mat-label>
-          <mat-select [(ngModel)]="data.party" name="party" required #partyModel="ngModel" (selectionChange)="fetchLedgerForParty($event.value?.id)">
-            <mat-option [value]="null">Select Party</mat-option>
-            <mat-option *ngFor="let p of parties" [value]="p">{{ p.name }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="partyModel.invalid && (partyModel.dirty || partyModel.touched)">
-            <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
-          </mat-error>
+          <input matInput [value]="data.party?.name || ''" [disabled]="true" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full text-white">
@@ -32,8 +50,8 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Last Balance</mat-label>
-          <input matInput type="number" [(ngModel)]="data.totalAmount" name="totalAmount" [disabled]="true" #totalAmountModel="ngModel" (ngModelChange)="totalAmountModel.control.markAsTouched()" />
+          <mat-label>Last Amount</mat-label>
+          <input matInput type="number" [(ngModel)]="data.dueAmount" name="dueAmount" [disabled]="true" #dueAmountModel="ngModel" (ngModelChange)="dueAmountModel.control.markAsTouched()" />
           <mat-hint>Balance can be negative.</mat-hint>
         </mat-form-field>
 
@@ -54,11 +72,6 @@
           <mat-error *ngIf="paymentModeModel.invalid && (paymentModeModel.dirty || paymentModeModel.touched)">
             <span *ngIf="paymentModeModel.errors?.['required']">Payment method is required.</span>
           </mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Reference No (Cheque/UTR/Invoice No)</mat-label>
-          <input matInput [(ngModel)]="data.invoiceNo" name="referenceNo" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full">

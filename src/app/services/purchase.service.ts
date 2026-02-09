@@ -50,6 +50,26 @@ export class PurchaseService {
     );
   }
 
+  getPurchaseByInvoiceNumber(invoiceNo: string): Observable<Sale> {
+    const url = `${enviort.purchasesUrl}/invoice/${encodeURIComponent(invoiceNo)}`;
+    return this.http.get<Sale>(url, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading purchase by invoice number:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getUnpaidAndPartialPurchaseInvoices(): Observable<string[]> {
+    const url = `${enviort.purchasesUrl}/unpaid-and-partial/invoices`;
+    return this.http.get<string[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading unpaid/partial purchase invoices:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   createPurchase(purchase: Sale): Observable<Sale> {
     return this.http.post<Sale>(enviort.purchasesUrl, purchase, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
