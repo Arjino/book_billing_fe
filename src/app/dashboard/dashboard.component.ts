@@ -11,6 +11,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../services/auth.service';
 import { DataStoreService } from '../services/data-store.service';
 import { DashboardService } from '../services/dashboard.service';
+import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
 import { FeedbackService } from '../services/feedback.service';
 import { BookDialogComponent } from '../booking/book-dialog.component';
@@ -34,6 +35,7 @@ import { TransactionComponent } from '../transaction/transaction.component';
 import { AnalyticsComponent } from './analytics.component';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
+import { PurchaseOrder, PurchaseOrderItem } from '../interface/purchase-order';
 import { getTodayLocal, formatDateForAPI, formatDateForUTC } from '../utils/date.utils';
 import { BOOKING_CONSTANTS } from '../constants/booking.constants';
 import { PARTIES_CONSTANTS } from '../constants/parties.constants';
@@ -155,6 +157,7 @@ export class DashboardComponent implements OnInit {
     private dialog: MatDialog,
     private store: DataStoreService,
     private dashboardService: DashboardService,
+    private purchaseService: PurchaseService,
     private loadingService: LoadingService,
     private feedbackService: FeedbackService,
     private snackBar: MatSnackBar
@@ -460,14 +463,35 @@ export class DashboardComponent implements OnInit {
       }
       result.date = formatDateForUTC(result.date);
 
-      this.loadingService.show(transactionType === 'RECEIVING_ORDER' ? 'Creating receiving order...' : 'Creating purchase...');
+      if (transactionType === 'PURCHASE_ORDER') {
+        const payload = this.mapToPurchaseOrder(result);
+        this.loadingService.show('Creating purchase order...');
+        this.purchaseService.createPurchaseOrder(payload).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open('Purchase order created successfully!', 'Close', {
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.store.refreshBooks();
+          },
+          error: (error: any) => {
+            this.loadingService.hide();
+            console.error('Failed to create purchase order:', error);
+            this.snackBar.open(PURCHASE_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
+        return;
+      }
+
+      this.loadingService.show('Creating purchase...');
       this.store.createPurchase(result).subscribe({
         next: () => {
           this.loadingService.hide();
-          const message = transactionType === 'RECEIVING_ORDER'
-            ? 'Receiving order created successfully!'
-            : (PURCHASE_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Purchase created successfully!');
-          this.snackBar.open(message, 'Close', {
+          this.snackBar.open(PURCHASE_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Purchase created successfully!', 'Close', {
             duration: 3000,
             panelClass: ['success-snackbar']
           });
@@ -574,6 +598,28 @@ export class DashboardComponent implements OnInit {
 
   navigateToPurchase(type: string) {
     this.router.navigate(['/purchase'], { queryParams: { type } });
+  }
+
+  private mapToPurchaseOrder(data: SalesDialogData): PurchaseOrder {
+    const items: PurchaseOrderItem[] = (data.items || []).map((item: any) => ({
+      book: item.book || null,
+      orderedQty: item.qty ?? null,
+      receivedQty: 0,
+      rate: item.rate ?? null,
+      amount: item.amount ?? null
+    }));
+
+    return {
+      poNumber: data.invoiceNo || '',
+      poDate: formatDateForUTC(data.date),
+      party: data.party || null,
+      status: 'CREATED',
+      totalAmount: data.totalAmount,
+      taxAmount: data.taxAmount,
+      roundOff: data.roundOff,
+      grandTotal: data.grandTotal,
+      items
+    };
   }
 
   getRouteByTitle(title: string): string {
