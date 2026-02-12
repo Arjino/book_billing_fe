@@ -33,8 +33,8 @@ import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
 })
 export class TransactionComponent implements OnInit {
   transactions: Transaction[] = [];
-  startDate: string = '';
-  endDate: string = '';
+  startDate: string | Date = '';
+  endDate: string | Date = '';
   filteredTransactions: Transaction[] = [];
   displayedColumns = ['id', 'party', 'paymentDateTime', 'amount', 'paymentMethod', 'referenceNo', 'notes', 'actions'];
   maxDate = new Date(); // Today as maximum date
@@ -52,6 +52,11 @@ export class TransactionComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    const today = new Date();
+    this.startDate = today;
+    this.endDate = today;
+    this.minEndDate = today;
+
     this.route.queryParams.subscribe(params => {
       const type = (params['type'] || 'SALE').toString().toUpperCase();
       this.selectedTransactionType = type === 'PURCHASE' ? 'PURCHASE' : 'SALE';

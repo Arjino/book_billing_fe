@@ -13,7 +13,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { DataStoreService } from '../services/data-store.service';
 import { Book } from '../interface/book';
 import { Party } from '../interface/party';
-import { SalesDialogData } from '../interface/sales-dialog-data';
+import { PurchaseDialogData } from '../interface/purchase-dialog-data';
 import { formatDateForAPI } from '../utils/date.utils';
 
 @Component({
@@ -41,20 +41,20 @@ export class PurchaseDialogComponent implements OnInit {
 
   constructor(
     public dialogRef: MatDialogRef<PurchaseDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: SalesDialogData,
+    @Inject(MAT_DIALOG_DATA) public data: PurchaseDialogData,
     private store: DataStoreService
   ) {}
 
   getDialogTitle(): string {
     if (this.data.type === 'RECEIVING_ORDER') return 'Add Receiving Order';
     if (this.data.type === 'PURCHASE_ORDER') return 'Add Purchase Order';
-    return 'Add Purchase';
+    return 'Add Purchase Order';
   }
 
   getSaveLabel(): string {
     if (this.data.type === 'RECEIVING_ORDER') return 'Save RO';
     if (this.data.type === 'PURCHASE_ORDER') return 'Save PO';
-    return 'Save Purchase';
+    return 'Save PO';
   }
 
   ngOnInit() {
@@ -77,6 +77,8 @@ export class PurchaseDialogComponent implements OnInit {
       item.filteredBooks = this.books.slice();
       item.bookSearch = item.book ? item.book.title : '';
     });
+    // Calculate totals after items are set (e.g., for receiving orders from PO)
+    this.calculateTotals();
   }
 
   dateFilter = (date: Date | null): boolean => {
@@ -100,7 +102,6 @@ export class PurchaseDialogComponent implements OnInit {
   addItem(): void {
     this.data.items.push({
       id: 0,
-      sale: null,
       book: null,
       qty: null,
       rate: null,
@@ -149,10 +150,7 @@ export class PurchaseDialogComponent implements OnInit {
   }
 
   isQtyExceedsStock(item: any): boolean {
-    if (this.data.type === 'PURCHASE' || this.data.type === 'PURCHASE_ORDER' || this.data.type === 'RECEIVING_ORDER') {
-      return false;
-    }
-    return item && item.book && typeof item.book.stock === 'number' && Number(item.qty) > Number(item.book.stock);
+    return false;
   }
 
   isQtyExceedsOrder(item: any): boolean {
@@ -167,16 +165,13 @@ export class PurchaseDialogComponent implements OnInit {
 
   validateQty(item: any, qtyModel: any): void {
     this.calculateAmount(item);
-    if (this.data.type !== 'PURCHASE' && this.data.type !== 'PURCHASE_ORDER' && this.data.type !== 'RECEIVING_ORDER' && this.hasExceededStock(item)) {
-      qtyModel.control.setErrors({ ...qtyModel.errors, 'exceededStock': true });
-    }
     if (this.data.type === 'RECEIVING_ORDER' && this.isQtyExceedsOrder(item)) {
       qtyModel.control.setErrors({ ...qtyModel.errors, 'exceededOrder': true });
     }
   }
 
   hasQtyError(): boolean {
-    return (this.data.items || []).some((item: any) => this.isQtyExceedsStock(item) || this.isQtyExceedsOrder(item));
+    return (this.data.items || []).some((item: any) => this.isQtyExceedsOrder(item));
   }
 
   isOverpay(): boolean {

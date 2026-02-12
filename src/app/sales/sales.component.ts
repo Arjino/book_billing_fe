@@ -44,8 +44,9 @@ export class SalesComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Set end date to today by default
+    // Set start and end date to today by default
     const today = new Date();
+    this.startDate = formatDateForAPI(today);
     this.endDate = formatDateForAPI(today);
     
     this.loadSales();

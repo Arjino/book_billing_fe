@@ -19,6 +19,8 @@ export interface ReceivingOrder {
   receivedDate: string;
   party: Party | null;
   status?: string;
+  paymentStatus?: string;
+  paidAmount?: number;
   totalAmount: number;
   taxAmount: number;
   roundOff: number;

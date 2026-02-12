@@ -53,6 +53,10 @@ export class LedgerComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    const today = formatDateForAPI(new Date());
+    this.startDate = today;
+    this.endDate = today;
+
     this.loadingService.show('Loading parties...');
     this.store.getParties().pipe(take(1)).subscribe(d => {
       this.parties = d || [];
@@ -82,12 +86,13 @@ export class LedgerComponent implements OnInit {
   fetchLedgerForParty(partyId: any) {
     if (!partyId) return;
     
-    // Fetch today's entries by default
-    const today = formatDateForUTC(new Date());
+    // Fetch entries based on current filter dates (defaulted to today)
+    const start = this.startDate ? formatDateForUTC(this.startDate) : formatDateForUTC(new Date());
+    const end = this.endDate ? formatDateForUTC(this.endDate) : formatDateForUTC(new Date());
     const params: any = { 
       partyId: partyId,
-      startDate: today,
-      endDate: today
+      startDate: start,
+      endDate: end
     };
     
     this.loadingService.show('Loading ledger...');

@@ -11,29 +11,37 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { PurchaseDialogComponent } from './purchase-dialog.component';
-import { SalesDialogData } from '../interface/sales-dialog-data';
+import { PurchaseDialogData } from '../interface/purchase-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
 import { formatTimeIST, formatDateForAPI, formatDateForUTC, formatDateLocal } from '../utils/date.utils';
-import { Sale } from '../interface/Sale';
 import { ReceivingOrder, ReceivingOrderItem } from '../interface/receiving-order';
 import { PurchaseOrder, PurchaseOrderItem } from '../interface/purchase-order';
 import { PURCHASE_CONSTANTS } from '../constants/purchase.constants';
-import { SALES_CONSTANTS } from '../constants/sales.constants';
 import { PurchaseOrderPreviewComponent } from './purchase-order-preview.component';
 import { ReceivingOrderPreviewComponent } from './receiving-order-preview.component';
+
+type PurchaseTransaction = {
+  id: number;
+  date?: string;
+  time?: string;
+  paymentStatus?: string;
+  party?: any;
+  grandTotal?: number;
+};
 
 @Component({
   selector: 'app-purchase',
   templateUrl: './purchase.component.html',
   styleUrls: ['./purchase.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, FormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule, MatIconModule, MatSnackBarModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, FormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule, MatIconModule, MatSnackBarModule, MatAutocompleteModule]
 })
 export class PurchaseComponent implements OnInit {
-  purchases: Array<Sale | ReceivingOrder | PurchaseOrder> = [];
+  purchases: Array<PurchaseTransaction | ReceivingOrder | PurchaseOrder> = [];
   purchaseOrders: PurchaseOrder[] = [];
   receivingOrders: ReceivingOrder[] = [];
   selectedPurchaseOrder: PurchaseOrder | null = null;
@@ -43,7 +51,9 @@ export class PurchaseComponent implements OnInit {
   endDate: string = '';
   showStartDateError: boolean = false;
   purchaseMode: 'purchase' | 'purchase-order' | 'receiving' = 'purchase-order';
-  receivingPoId: number | null = null;
+  receivingPoNumber: string | null = null;
+  purchaseOrderNumberOptions: string[] = [];
+  filteredPurchaseOrderNumbers: string[] = [];
 
   constructor(
     private dialog: MatDialog,
@@ -62,7 +72,7 @@ export class PurchaseComponent implements OnInit {
         ? 'purchase'
         : (type === 'receiving' ? 'receiving' : 'purchase-order');
       if (this.purchaseMode !== 'receiving') {
-        this.receivingPoId = null;
+        this.receivingPoNumber = null;
         this.selectedPurchaseOrder = null;
         this.poError = '';
       }
@@ -70,6 +80,7 @@ export class PurchaseComponent implements OnInit {
     });
 
     const today = new Date();
+    this.startDate = formatDateForAPI(today);
     this.endDate = formatDateForAPI(today);
 
     this.loadPurchases();
@@ -80,7 +91,7 @@ export class PurchaseComponent implements OnInit {
       this.loadingService.show('Loading purchases...');
       this.purchaseService.getPurchasesByDate().subscribe({
         next: (data) => {
-          this.purchases = data || [];
+          this.purchases = (data || []) as PurchaseTransaction[];
           this.loadingService.hide();
         },
         error: () => {
@@ -102,6 +113,7 @@ export class PurchaseComponent implements OnInit {
           this.loadingService.hide();
         }
       });
+      this.loadPurchaseOrderNumbers();
       return;
     }
 
@@ -110,6 +122,11 @@ export class PurchaseComponent implements OnInit {
       next: (data) => {
         this.purchaseOrders = data || [];
         this.purchases = [...this.purchaseOrders];
+        this.purchaseOrderNumberOptions = this.purchaseOrders
+          .filter(po => (po.status || '').toString().toUpperCase() !== 'COMPLETED')
+          .map(po => (po.poNumber || '').toString())
+          .filter(number => number);
+        this.filteredPurchaseOrderNumbers = [...this.purchaseOrderNumberOptions].sort();
         this.loadingService.hide();
       },
       error: () => {
@@ -118,10 +135,27 @@ export class PurchaseComponent implements OnInit {
     });
   }
 
+  private loadPurchaseOrderNumbers() {
+    this.purchaseService.getPurchaseOrders().subscribe({
+      next: (data) => {
+        this.purchaseOrders = data || [];
+        this.purchaseOrderNumberOptions = this.purchaseOrders
+          .filter(po => (po.status || '').toString().toUpperCase() !== 'COMPLETED')
+          .map(po => (po.poNumber || '').toString())
+          .filter(number => number);
+        this.filteredPurchaseOrderNumbers = [...this.purchaseOrderNumberOptions].sort();
+      },
+      error: () => {
+        this.purchaseOrderNumberOptions = [];
+        this.filteredPurchaseOrderNumbers = [];
+      }
+    });
+  }
+
   addPurchase() {
     const isReceiving = this.purchaseMode === 'receiving';
-    if (isReceiving && !this.receivingPoId) {
-      this.snackBar.open('Please enter a Purchase Order ID first.', 'Close', {
+    if (isReceiving && !this.receivingPoNumber) {
+      this.snackBar.open('Please enter a Purchase Order Number first.', 'Close', {
         duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
         panelClass: ['error-snackbar']
       });
@@ -129,7 +163,17 @@ export class PurchaseComponent implements OnInit {
     }
 
     if (isReceiving) {
-      const poId = Number(this.receivingPoId);
+      const poNumber = (this.receivingPoNumber || '').trim();
+      const matchedPo = this.purchaseOrders.find(po => (po.poNumber || '').toString() === poNumber);
+      const poId = matchedPo?.id ? Number(matchedPo.id) : null;
+      if (!poId) {
+        this.selectedPurchaseOrder = null;
+        this.snackBar.open('Purchase Order Not Found', 'Close', {
+          duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+          panelClass: ['error-snackbar']
+        });
+        return;
+      }
       this.loadingService.show('Loading purchase order...');
       this.purchaseService.getPurchaseOrderById(poId).subscribe({
         next: (po) => {
@@ -145,10 +189,10 @@ export class PurchaseComponent implements OnInit {
 
           const receivingItems = this.buildReceivingItemsFromPo(this.selectedPurchaseOrder);
           const dialogRef = this.dialog.open(PurchaseDialogComponent, {
-            width: SALES_CONSTANTS.DIALOG_WIDTH,
+            width: PURCHASE_CONSTANTS.DIALOG_WIDTH,
             data: {
               id: 0,
-              invoiceNo: '',
+              poNumber: '',
               party: this.selectedPurchaseOrder.party || null,
               date: formatDateForAPI(new Date()),
               totalAmount: 0,
@@ -156,12 +200,11 @@ export class PurchaseComponent implements OnInit {
               taxAmount: 0,
               roundOff: 0,
               grandTotal: 0,
-              paymentStatus: SALES_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
+              paymentStatus: PURCHASE_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
               paidAmount: 0,
               type: 'RECEIVING_ORDER',
               items: receivingItems && receivingItems.length > 0 ? receivingItems : [{
                 id: 0,
-                sale: null,
                 book: null,
                 qty: null,
                 rate: null,
@@ -170,17 +213,21 @@ export class PurchaseComponent implements OnInit {
                 bookSearch: '',
                 filteredBooks: []
               }]
-            } as SalesDialogData,
+            } as PurchaseDialogData,
             disableClose: false
           });
 
-          dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
+          dialogRef.afterClosed().subscribe((result: PurchaseDialogData) => {
             if (!result) return;
             if (result.paymentStatus === 'PAID') {
               result.paidAmount = result.grandTotal;
             }
 
             const payload = this.mapToReceivingOrder(result, poId);
+            console.log('=== Receiving Order Payload ===');
+            console.log('Payment Status:', payload.paymentStatus);
+            console.log('Paid Amount:', payload.paidAmount);
+            console.log('Full Payload:', payload);
             this.loadingService.show('Creating receiving order...');
             this.purchaseService.createReceivingOrderFromPo(poId, payload).subscribe({
               next: () => {
@@ -217,10 +264,10 @@ export class PurchaseComponent implements OnInit {
     }
 
     const dialogRef = this.dialog.open(PurchaseDialogComponent, {
-      width: SALES_CONSTANTS.DIALOG_WIDTH,
+      width: PURCHASE_CONSTANTS.DIALOG_WIDTH,
       data: {
         id: 0,
-        invoiceNo: '',
+        poNumber: '',
         party: null,
         date: formatDateForAPI(new Date()),
         totalAmount: 0,
@@ -228,12 +275,11 @@ export class PurchaseComponent implements OnInit {
         taxAmount: 0,
         roundOff: 0,
         grandTotal: 0,
-        paymentStatus: SALES_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
+        paymentStatus: PURCHASE_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
         paidAmount: 0,
         type: 'PURCHASE_ORDER',
         items: [{
           id: 0,
-          sale: null,
           book: null,
           qty: null,
           rate: null,
@@ -242,11 +288,11 @@ export class PurchaseComponent implements OnInit {
           bookSearch: '',
           filteredBooks: []
         }]
-      } as SalesDialogData,
+      } as PurchaseDialogData,
       disableClose: false
     });
 
-    dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
+    dialogRef.afterClosed().subscribe((result: PurchaseDialogData) => {
       if (!result) return;
       if (result.paymentStatus === 'PAID') {
         result.paidAmount = result.grandTotal;
@@ -320,19 +366,19 @@ export class PurchaseComponent implements OnInit {
     return formatDateForUTC(date);
   }
 
-  formatPurchaseDateTime(s: Sale | ReceivingOrder | PurchaseOrder): string {
-    const dateValue = (s as ReceivingOrder).receivedDate || (s as PurchaseOrder).poDate || (s as Sale).date;
-    const timeValue = (s as Sale).time;
+  formatPurchaseDateTime(s: PurchaseTransaction | ReceivingOrder | PurchaseOrder): string {
+    const dateValue = (s as ReceivingOrder).receivedDate || (s as PurchaseOrder).poDate || (s as PurchaseTransaction).date;
+    const timeValue = (s as PurchaseTransaction).time;
     const datePart = dateValue ? formatDateLocal(dateValue) : '';
     const time = timeValue ? formatTimeIST(timeValue, dateValue)?.toUpperCase() : '';
     return time ? `${datePart}  ${time}` : datePart;
   }
 
-  getStatusLabel(s: Sale | ReceivingOrder | PurchaseOrder): string {
-    return (s as ReceivingOrder).status || (s as PurchaseOrder).status || (s as Sale).paymentStatus || '-';
+  getStatusLabel(s: PurchaseTransaction | ReceivingOrder | PurchaseOrder): string {
+    return (s as ReceivingOrder).status || (s as PurchaseOrder).status || (s as PurchaseTransaction).paymentStatus || '-';
   }
 
-  private mapToPurchaseOrder(data: SalesDialogData): PurchaseOrder {
+  private mapToPurchaseOrder(data: PurchaseDialogData): PurchaseOrder {
     const items: PurchaseOrderItem[] = (data.items || []).map((item: any) => ({
       book: item.book || null,
       orderedQty: item.qty ?? null,
@@ -342,7 +388,7 @@ export class PurchaseComponent implements OnInit {
     }));
 
     return {
-      poNumber: data.invoiceNo || '',
+      poNumber: data.poNumber || '',
       poDate: formatDateForUTC(data.date),
       party: data.party || null,
       status: 'CREATED',
@@ -354,7 +400,7 @@ export class PurchaseComponent implements OnInit {
     };
   }
 
-  private mapToReceivingOrder(data: SalesDialogData, poId: number): ReceivingOrder {
+  private mapToReceivingOrder(data: PurchaseDialogData, poId: number): ReceivingOrder {
     const items: ReceivingOrderItem[] = (data.items || []).map((item: any) => ({
       purchaseOrderItemId: item.purchaseOrderItemId || null,
       book: item.book || null,
@@ -370,6 +416,8 @@ export class PurchaseComponent implements OnInit {
       receivedDate: formatDateForUTC(data.date),
       party: data.party || null,
       status: 'RECEIVED',
+      paymentStatus: data.paymentStatus,
+      paidAmount: data.paidAmount,
       totalAmount: data.totalAmount,
       taxAmount: data.taxAmount,
       roundOff: data.roundOff,
@@ -402,15 +450,37 @@ export class PurchaseComponent implements OnInit {
     });
   }
 
-  onReceivingPoIdChange(value: number | null) {
+  onReceivingPoNumberInput(value: string | null) {
     if (this.purchaseMode !== 'receiving') return;
-    if (!value) {
+    const normalized = value === null || value === undefined || value === '' ? null : value;
+    this.receivingPoNumber = normalized;
+    this.filterPurchaseOrderNumbers(value);
+    if (!this.receivingPoNumber) {
       this.selectedPurchaseOrder = null;
       this.poError = '';
       return;
     }
     this.selectedPurchaseOrder = null;
     this.poError = '';
+  }
+
+  onReceivingPoNumberSelected(value: string) {
+    if (this.purchaseMode !== 'receiving') return;
+    this.receivingPoNumber = value;
+    this.filterPurchaseOrderNumbers(value);
+    this.selectedPurchaseOrder = null;
+    this.poError = '';
+  }
+
+  private filterPurchaseOrderNumbers(value: string | null) {
+    const term = value === null || value === undefined ? '' : value.trim();
+    if (!term) {
+      this.filteredPurchaseOrderNumbers = [...this.purchaseOrderNumberOptions].sort();
+      return;
+    }
+    this.filteredPurchaseOrderNumbers = this.purchaseOrderNumberOptions
+      .filter(number => number.toLowerCase().includes(term.toLowerCase()))
+      .sort();
   }
 
   private buildReceivingItemsFromPo(po: PurchaseOrder) {
@@ -423,7 +493,6 @@ export class PurchaseComponent implements OnInit {
       const amount = remainingQty * rate;
       return {
         id: 0,
-        sale: null,
         book: item.book,
         qty: remainingQty,
         rate,

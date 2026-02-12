@@ -3,6 +3,14 @@
  */
 
 export const PURCHASE_CONSTANTS = {
+  // Dialog Configuration
+  DIALOG_WIDTH: '800px',
+
+  // Defaults
+  DEFAULTS: {
+    PAYMENT_STATUS: 'UNPAID'
+  },
+
   // Success/Error Messages
   MESSAGES: {
     ADD_SUCCESS: 'Purchase created successfully!',
