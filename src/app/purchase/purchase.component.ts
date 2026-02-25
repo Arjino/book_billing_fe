@@ -193,23 +193,24 @@ export class PurchaseComponent implements OnInit {
             data: {
               id: 0,
               poNumber: '',
+              grnNumber: '',
               party: this.selectedPurchaseOrder.party || null,
               date: formatDateForAPI(new Date()),
+              receivedDate: formatDateForAPI(new Date()),
               totalAmount: 0,
               discount: 0,
               taxAmount: 0,
               roundOff: 0,
               grandTotal: 0,
-              paymentStatus: PURCHASE_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
-              paidAmount: 0,
               type: 'RECEIVING_ORDER',
               items: receivingItems && receivingItems.length > 0 ? receivingItems : [{
                 id: 0,
                 book: null,
                 qty: null,
                 rate: null,
-                discount: 0,
-                amount: null,
+                receivedQty: null,
+                acceptedQty: null,
+                rejectedQty: null,
                 bookSearch: '',
                 filteredBooks: []
               }]
@@ -219,18 +220,36 @@ export class PurchaseComponent implements OnInit {
 
           dialogRef.afterClosed().subscribe((result: PurchaseDialogData) => {
             if (!result) return;
-            if (result.paymentStatus === 'PAID') {
-              result.paidAmount = result.grandTotal;
-            }
-
             const payload = this.mapToReceivingOrder(result, poId);
             console.log('=== Receiving Order Payload ===');
-            console.log('Payment Status:', payload.paymentStatus);
-            console.log('Paid Amount:', payload.paidAmount);
             console.log('Full Payload:', payload);
             this.loadingService.show('Creating receiving order...');
             this.purchaseService.createReceivingOrderFromPo(poId, payload).subscribe({
-              next: () => {
+              next: (created) => {
+                const createdId = (created as any)?.id ? Number((created as any).id) : null;
+                if (createdId) {
+                  this.purchaseService.getReceivingOrderById(createdId).subscribe({
+                    next: () => {
+                      this.loadingService.hide();
+                      this.snackBar.open('Receiving order created successfully!', 'Close', {
+                        duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.SHORT,
+                        panelClass: ['success-snackbar']
+                      });
+                      this.loadPurchases();
+                      this.store.refreshBooks();
+                    },
+                    error: () => {
+                      this.loadingService.hide();
+                      this.snackBar.open('Receiving order saved, but failed to reload details.', 'Close', {
+                        duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+                        panelClass: ['error-snackbar']
+                      });
+                      this.loadPurchases();
+                      this.store.refreshBooks();
+                    }
+                  });
+                  return;
+                }
                 this.loadingService.hide();
                 this.snackBar.open('Receiving order created successfully!', 'Close', {
                   duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.SHORT,
@@ -275,16 +294,12 @@ export class PurchaseComponent implements OnInit {
         taxAmount: 0,
         roundOff: 0,
         grandTotal: 0,
-        paymentStatus: PURCHASE_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
-        paidAmount: 0,
         type: 'PURCHASE_ORDER',
         items: [{
           id: 0,
           book: null,
           qty: null,
           rate: null,
-          discount: 0,
-          amount: null,
           bookSearch: '',
           filteredBooks: []
         }]
@@ -294,14 +309,35 @@ export class PurchaseComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: PurchaseDialogData) => {
       if (!result) return;
-      if (result.paymentStatus === 'PAID') {
-        result.paidAmount = result.grandTotal;
-      }
-
       const payload = this.mapToPurchaseOrder(result);
       this.loadingService.show('Creating purchase order...');
       this.purchaseService.createPurchaseOrder(payload).subscribe({
-        next: () => {
+        next: (created) => {
+          const createdId = (created as any)?.id ? Number((created as any).id) : null;
+          if (createdId) {
+            this.purchaseService.getPurchaseOrderById(createdId).subscribe({
+              next: () => {
+                this.loadingService.hide();
+                const message = 'Purchase order created successfully!';
+                this.snackBar.open(message, 'Close', {
+                  duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.SHORT,
+                  panelClass: ['success-snackbar']
+                });
+                this.loadPurchases();
+                this.store.refreshBooks();
+              },
+              error: () => {
+                this.loadingService.hide();
+                this.snackBar.open('Purchase order saved, but failed to reload details.', 'Close', {
+                  duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+                  panelClass: ['error-snackbar']
+                });
+                this.loadPurchases();
+                this.store.refreshBooks();
+              }
+            });
+            return;
+          }
           this.loadingService.hide();
           const message = 'Purchase order created successfully!';
           this.snackBar.open(message, 'Close', {
@@ -384,14 +420,13 @@ export class PurchaseComponent implements OnInit {
       orderedQty: item.qty ?? null,
       receivedQty: 0,
       rate: item.rate ?? null,
-      amount: item.amount ?? null
+      amount: item.rate !== null && item.qty !== null ? Number(item.rate) * Number(item.qty) : null
     }));
 
     return {
       poNumber: data.poNumber || '',
       poDate: formatDateForUTC(data.date),
       party: data.party || null,
-      status: 'CREATED',
       totalAmount: data.totalAmount,
       taxAmount: data.taxAmount,
       roundOff: data.roundOff,
@@ -404,24 +439,22 @@ export class PurchaseComponent implements OnInit {
     const items: ReceivingOrderItem[] = (data.items || []).map((item: any) => ({
       purchaseOrderItemId: item.purchaseOrderItemId || null,
       book: item.book || null,
-      receivedQty: item.qty ?? null,
-      acceptedQty: item.qty ?? null,
-      rejectedQty: 0,
+      receivedQty: item.receivedQty ?? null,
+      acceptedQty: item.acceptedQty ?? null,
+      rejectedQty: item.rejectedQty ?? null,
       rate: item.rate ?? null,
-      amount: item.amount ?? null
+      amount: null
     }));
 
     return {
       purchaseOrderId: poId,
-      receivedDate: formatDateForUTC(data.date),
+      receivedDate: formatDateForUTC(data.receivedDate || data.date),
+      grnNumber: data.grnNumber || undefined,
       party: data.party || null,
-      status: 'RECEIVED',
-      paymentStatus: data.paymentStatus,
-      paidAmount: data.paidAmount,
-      totalAmount: data.totalAmount,
-      taxAmount: data.taxAmount,
-      roundOff: data.roundOff,
-      grandTotal: data.grandTotal,
+      totalAmount: 0,
+      taxAmount: 0,
+      roundOff: 0,
+      grandTotal: 0,
       items
     };
   }
@@ -490,14 +523,14 @@ export class PurchaseComponent implements OnInit {
       const remainingQty = Math.max(orderedQty - receivedQty, 0);
       if (!item.book || remainingQty <= 0) return null;
       const rate = item.rate ?? 0;
-      const amount = remainingQty * rate;
       return {
         id: 0,
         book: item.book,
-        qty: remainingQty,
+        qty: null,
+        receivedQty: remainingQty,
+        acceptedQty: remainingQty,
+        rejectedQty: 0,
         rate,
-        discount: 0,
-        amount,
         purchaseOrderItemId: item.id || null,
         maxQty: remainingQty,
         bookSearch: item.book?.title || '',

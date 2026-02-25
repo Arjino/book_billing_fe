@@ -177,4 +177,14 @@ export class PurchaseService {
       })
     );
   }
+
+  createPurchasePayment(purchaseId: number, payload: { paymentDate: string; paidAmount: number; paymentMode: string; remarks?: string }): Observable<any> {
+    const url = `${enviort.purchasesUrl}/${purchaseId}/payments`;
+    return this.http.post(url, payload, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error creating purchase payment:', error);
+        return throwError(() => error);
+      })
+    );
+  }
 }

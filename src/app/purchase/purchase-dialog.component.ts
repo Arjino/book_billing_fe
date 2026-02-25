@@ -58,12 +58,22 @@ export class PurchaseDialogComponent implements OnInit {
   }
 
   ngOnInit() {
-    if (!this.data.date) {
-      const today = new Date();
-      this.data.date = formatDateForAPI(today);
-    } else if (typeof this.data.date !== 'string') {
-      const d = new Date(this.data.date);
-      this.data.date = formatDateForAPI(d);
+    if (this.data.type === 'RECEIVING_ORDER') {
+      if (!this.data.receivedDate) {
+        const today = new Date();
+        this.data.receivedDate = formatDateForAPI(today);
+      } else if (typeof this.data.receivedDate !== 'string') {
+        const d = new Date(this.data.receivedDate);
+        this.data.receivedDate = formatDateForAPI(d);
+      }
+    } else {
+      if (!this.data.date) {
+        const today = new Date();
+        this.data.date = formatDateForAPI(today);
+      } else if (typeof this.data.date !== 'string') {
+        const d = new Date(this.data.date);
+        this.data.date = formatDateForAPI(d);
+      }
     }
 
     this.store.getBooks().subscribe(data => {
@@ -77,8 +87,6 @@ export class PurchaseDialogComponent implements OnInit {
       item.filteredBooks = this.books.slice();
       item.bookSearch = item.book ? item.book.title : '';
     });
-    // Calculate totals after items are set (e.g., for receiving orders from PO)
-    this.calculateTotals();
   }
 
   dateFilter = (date: Date | null): boolean => {
@@ -92,7 +100,12 @@ export class PurchaseDialogComponent implements OnInit {
   }
 
   onSave(): void {
-    if (this.data.date && typeof this.data.date === 'string') {
+    if (this.data.type === 'RECEIVING_ORDER') {
+      if (this.data.receivedDate && typeof this.data.receivedDate === 'string') {
+        const d = new Date(this.data.receivedDate);
+        this.data.receivedDate = formatDateForAPI(d);
+      }
+    } else if (this.data.date && typeof this.data.date === 'string') {
       const d = new Date(this.data.date);
       this.data.date = formatDateForAPI(d);
     }
@@ -100,13 +113,25 @@ export class PurchaseDialogComponent implements OnInit {
   }
 
   addItem(): void {
+    if (this.data.type === 'RECEIVING_ORDER') {
+      this.data.items.push({
+        id: 0,
+        book: null,
+        qty: null,
+        rate: null,
+        receivedQty: null,
+        acceptedQty: null,
+        rejectedQty: null,
+        bookSearch: '',
+        filteredBooks: this.books.slice()
+      });
+      return;
+    }
     this.data.items.push({
       id: 0,
       book: null,
       qty: null,
       rate: null,
-      discount: 0,
-      amount: null,
       bookSearch: '',
       filteredBooks: this.books.slice()
     });
@@ -128,25 +153,12 @@ export class PurchaseDialogComponent implements OnInit {
     this.data.items.splice(index, 1);
   }
 
-  calculateAmount(item: any): void {
-    const subtotal = item.qty * item.rate;
-    const discountAmount = subtotal * (item.discount || 0) / 100;
-    item.amount = subtotal - discountAmount;
-    this.calculateTotals();
-  }
-
   onBookSelected(book: Book | null, item: any): void {
     if (!book) return;
     item.book = book;
     item.bookSearch = book.title;
     item.rate = typeof book.mrp === 'number' ? book.mrp : (item.rate || 0);
     item.qty = null;
-    this.calculateAmount(item);
-  }
-
-  calculateTotals(): void {
-    this.data.totalAmount = this.data.items.reduce((sum, item) => sum + (item.amount || 0), 0);
-    this.data.grandTotal = (this.data.totalAmount ?? 0) + (this.data?.taxAmount ?? 0);
   }
 
   isQtyExceedsStock(item: any): boolean {
@@ -156,7 +168,7 @@ export class PurchaseDialogComponent implements OnInit {
   isQtyExceedsOrder(item: any): boolean {
     if (this.data.type !== 'RECEIVING_ORDER') return false;
     if (item?.maxQty === undefined || item?.maxQty === null) return false;
-    return Number(item.qty) > Number(item.maxQty);
+    return Number(item.receivedQty) > Number(item.maxQty);
   }
 
   hasExceededStock(item: any): boolean {
@@ -164,7 +176,6 @@ export class PurchaseDialogComponent implements OnInit {
   }
 
   validateQty(item: any, qtyModel: any): void {
-    this.calculateAmount(item);
     if (this.data.type === 'RECEIVING_ORDER' && this.isQtyExceedsOrder(item)) {
       qtyModel.control.setErrors({ ...qtyModel.errors, 'exceededOrder': true });
     }
@@ -172,12 +183,6 @@ export class PurchaseDialogComponent implements OnInit {
 
   hasQtyError(): boolean {
     return (this.data.items || []).some((item: any) => this.isQtyExceedsOrder(item));
-  }
-
-  isOverpay(): boolean {
-    const paid = Number(this.data?.paidAmount || 0);
-    const total = Number(this.data?.grandTotal || 0);
-    return paid > total;
   }
 
   trackByIndex(index: number): number {

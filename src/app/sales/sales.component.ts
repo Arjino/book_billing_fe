@@ -93,16 +93,14 @@ export class SalesComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-      if (result.paymentStatus === 'PAID') {
-        result.paidAmount = result.grandTotal;
-      }
       result.date = formatDateForUTC(result.date);
+      const { paymentStatus, ...payload } = result as any;
       // If this is a Return In, call the sale returns endpoint with mapped payload
-      if (result.type === 'RETURN_IN') {
-        const payload: any = {
-          partyId: result.party && result.party.id ? result.party.id : result.party,
-          returnDate: formatDateForUTC(result.date),
-          items: (result.items || []).map((it: any) => ({
+      if (payload.type === 'RETURN_IN') {
+        const returnPayload: any = {
+          partyId: payload.party && payload.party.id ? payload.party.id : payload.party,
+          returnDate: formatDateForUTC(payload.date),
+          items: (payload.items || []).map((it: any) => ({
             // Prefer sku when it looks numeric, else fallback to id
             bookId: it.book?.sku || it.book?.id || null,
             qty: it.qty,
@@ -113,7 +111,7 @@ export class SalesComponent implements OnInit {
         };
 
         this.loadingService.show('Processing return...');
-        this.salesService.createSaleReturn(payload).subscribe({
+        this.salesService.createSaleReturn(returnPayload).subscribe({
           next: () => {
             this.loadingService.hide();
             this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_SUCCESS || 'Return created successfully!', 'Close', { 
@@ -137,8 +135,34 @@ export class SalesComponent implements OnInit {
       }
 
       this.loadingService.show('Creating sale...');
-      this.store.createSale([result]).subscribe({
+      this.store.createSale([payload]).subscribe({
         next: () => {
+          const invoiceNo = (payload as any)?.invoiceNo ? String((payload as any).invoiceNo) : '';
+          const reload$ = invoiceNo ? this.salesService.getSaleByInvoiceNumber(invoiceNo) : null;
+          if (reload$) {
+            reload$.subscribe({
+              next: () => {
+                this.loadingService.hide();
+                this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
+                  duration: 3000,
+                  panelClass: ['success-snackbar']
+                });
+                this.loadSales();
+                // refresh cached books so stock updates after a sale
+                this.store.refreshBooks();
+              },
+              error: () => {
+                this.loadingService.hide();
+                this.snackBar.open('Sale saved, but failed to reload invoice details.', 'Close', {
+                  duration: 4000,
+                  panelClass: ['error-snackbar']
+                });
+                this.loadSales();
+                this.store.refreshBooks();
+              }
+            });
+            return;
+          }
           this.loadingService.hide();
           this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
             duration: 3000,
@@ -172,8 +196,12 @@ export class SalesComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: Sale[] | undefined) => {
       if (result && result.length > 0) {
+        const sanitized = result.map((sale: any) => {
+          const { paymentStatus, ...rest } = sale;
+          return rest;
+        });
         this.loadingService.show(`Importing ${result.length} sale(s)...`);
-        this.salesService.createSale(result).subscribe({
+        this.salesService.createSale(sanitized).subscribe({
           next: (response) => {
             this.loadingService.hide();
             const successMessage = response?.message || `Successfully imported ${result.length} sale(s)`;

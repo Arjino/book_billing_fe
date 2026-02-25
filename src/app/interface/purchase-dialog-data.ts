@@ -6,8 +6,9 @@ export interface PurchaseDialogItem {
   book: Book | null;
   qty: number | null;
   rate: number | null;
-  discount: number;
-  amount: number | null;
+  receivedQty?: number | null;
+  acceptedQty?: number | null;
+  rejectedQty?: number | null;
   bookSearch?: string;
   filteredBooks?: Book[];
   purchaseOrderItemId?: number | null;
@@ -17,15 +18,15 @@ export interface PurchaseDialogItem {
 export interface PurchaseDialogData {
   id: number;
   poNumber: string;
+  grnNumber?: string;
   party: Party | null;
   date: string | Date;
+  receivedDate?: string | Date;
   totalAmount: number;
   discount: number;
   taxAmount: number;
   roundOff: number;
   grandTotal: number;
-  paymentStatus: string;
-  paidAmount: number;
   type: 'PURCHASE_ORDER' | 'RECEIVING_ORDER';
   items: PurchaseDialogItem[];
 }

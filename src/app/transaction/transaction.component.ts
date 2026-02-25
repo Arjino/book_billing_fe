@@ -15,7 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { TransactionDialogComponent } from './transaction-dialog.component';
 import { PaymentReceiptPreviewComponent } from './payment-receipt-preview.component';
-import { DataStoreService } from '../services/data-store.service';
+import { PurchaseService } from '../services/purchase.service';
 import { TransactionsService } from '../services/transactions.service';
 import { LoadingService } from '../services/loading.service';
 import { Party } from '../interface/party';
@@ -45,7 +45,7 @@ export class TransactionComponent implements OnInit {
     private dialog: MatDialog,
     private router: Router,
     private route: ActivatedRoute,
-    private store: DataStoreService,
+    private purchaseService: PurchaseService,
     private transactionsService: TransactionsService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar
@@ -131,21 +131,57 @@ export class TransactionComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
-        result.paymentDate = formatDateForUTC(result.paymentDate);
+        if (result.transactionType !== 'PURCHASE') {
+          this.snackBar.open('Only purchase payments are supported.', 'Close', {
+            duration: 3000,
+            panelClass: ['error-snackbar']
+          });
+          return;
+        }
+
+        const purchaseId = result.purchaseId;
+        if (!purchaseId) {
+          this.snackBar.open('Purchase ID not found. Please reselect the invoice.', 'Close', {
+            duration: 4000,
+            panelClass: ['error-snackbar']
+          });
+          return;
+        }
+
+        const payload = {
+          paymentDate: formatDateForUTC(result.paymentDate),
+          paidAmount: result.paidAmount,
+          paymentMode: result.paymentMode,
+          remarks: result.remarks
+        };
+
         this.loadingService.show('Adding transaction...');
-        this.store.createTransaction(result).subscribe({
+        this.purchaseService.createPurchasePayment(purchaseId, payload).subscribe({
           next: () => {
-            this.loadingService.hide();
-            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', { 
-              duration: 3000,
-              panelClass: ['success-snackbar']
+            this.purchaseService.getPurchaseById(purchaseId).subscribe({
+              next: () => {
+                this.loadingService.hide();
+                this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', {
+                  duration: 3000,
+                  panelClass: ['success-snackbar']
+                });
+                this.loadTransactions();
+              },
+              error: (error) => {
+                this.loadingService.hide();
+                console.error('Failed to reload purchase details:', error);
+                this.snackBar.open('Payment saved, but failed to reload invoice details.', 'Close', {
+                  duration: 4000,
+                  panelClass: ['error-snackbar']
+                });
+                this.loadTransactions();
+              }
             });
-            this.loadTransactions();
           },
           error: (error) => {
             this.loadingService.hide();
             console.error('Failed to add transaction:', error);
-            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', { 
+            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
               duration: 5000,
               panelClass: ['error-snackbar']
             });

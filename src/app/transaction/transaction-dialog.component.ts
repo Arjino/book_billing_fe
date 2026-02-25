@@ -53,8 +53,8 @@ export class TransactionDialogComponent implements OnInit {
   }
   isOverpay(): boolean {
     const paid = Number(this.data?.paidAmount || 0);
-    const total = Number(this.data?.totalAmount || 0);
-    return Math.abs(paid) > Math.abs(total);
+    const due = Number(this.data?.dueAmount || 0);
+    return Math.abs(paid) > Math.abs(due);
   }
 
   get referenceLabel(): string {
@@ -123,11 +123,17 @@ export class TransactionDialogComponent implements OnInit {
         if (!result) {
           this.data.totalAmount = 0;
           this.data.party = null as any;
+          this.data.purchaseId = undefined;
           return;
         }
         this.data.party = result.party || null;
         this.data.totalAmount = result.grandTotal ?? result.totalAmount ?? 0;
         this.data.dueAmount = result.dueAmount ?? this.data.dueAmount;
+        if (this.data?.transactionType === 'PURCHASE') {
+          this.data.purchaseId = result.id ?? this.data.purchaseId;
+        } else {
+          this.data.purchaseId = undefined;
+        }
       },
       error: (error) => {
         this.loadingService.hide();
