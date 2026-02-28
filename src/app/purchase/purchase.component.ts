@@ -23,6 +23,7 @@ import { PurchaseOrder, PurchaseOrderItem } from '../interface/purchase-order';
 import { PURCHASE_CONSTANTS } from '../constants/purchase.constants';
 import { PurchaseOrderPreviewComponent } from './purchase-order-preview.component';
 import { ReceivingOrderPreviewComponent } from './receiving-order-preview.component';
+import { RoPaymentPromptDialogComponent } from './ro-payment-prompt-dialog.component';
 
 type PurchaseTransaction = {
   id: number;
@@ -237,6 +238,8 @@ export class PurchaseComponent implements OnInit {
                       });
                       this.loadPurchases();
                       this.store.refreshBooks();
+                      const partyName = (created as any)?.party?.name || this.selectedPurchaseOrder?.party?.name || '';
+                      this.promptRoPayment(createdId, partyName);
                     },
                     error: () => {
                       this.loadingService.hide();
@@ -246,6 +249,8 @@ export class PurchaseComponent implements OnInit {
                       });
                       this.loadPurchases();
                       this.store.refreshBooks();
+                      const partyName = (created as any)?.party?.name || this.selectedPurchaseOrder?.party?.name || '';
+                      this.promptRoPayment(createdId, partyName);
                     }
                   });
                   return;
@@ -630,6 +635,28 @@ export class PurchaseComponent implements OnInit {
         console.error('Failed to download receiving order PDF', err);
         this.loadingService.hide();
       }
+    });
+  }
+
+  private promptRoPayment(purchaseId: number, partyName?: string): void {
+    const dialogRef = this.dialog.open(RoPaymentPromptDialogComponent, {
+      width: '380px',
+      data: {
+        purchaseId,
+        partyName: partyName || '-'
+      },
+      disableClose: false
+    });
+
+    dialogRef.afterClosed().subscribe((shouldPay: boolean) => {
+      if (!shouldPay) return;
+      this.router.navigate(['/transaction'], {
+        queryParams: {
+          type: 'PURCHASE',
+          openPayment: 'true',
+          purchaseId
+        }
+      });
     });
   }
 }

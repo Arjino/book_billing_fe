@@ -42,6 +42,9 @@ export class TransactionDialogComponent implements OnInit {
   ngOnInit(): void {
     if (this.data?.transactionType === 'PURCHASE') {
       this.loadPurchaseInvoices();
+      if (this.data?.purchaseId) {
+        this.prefillPurchaseById(this.data.purchaseId);
+      }
     }
     if (this.data?.transactionType === 'SALE') {
       this.loadSaleInvoices();
@@ -142,6 +145,39 @@ export class TransactionDialogComponent implements OnInit {
         this.data.totalAmount = 0;
         this.data.party = null as any;
         this.snackBar.open('Failed to fetch details. Please check the number and try again.', 'Close', {
+          duration: 4000,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
+  }
+
+  private prefillPurchaseById(purchaseId: number): void {
+    if (!purchaseId) return;
+
+    this.isFetching = true;
+    this.loadingService.show('Loading purchase details...');
+    this.purchaseService.getPurchaseById(purchaseId).subscribe({
+      next: (result: any) => {
+        this.loadingService.hide();
+        this.isFetching = false;
+        if (!result) return;
+
+        this.data.invoiceNo = result.invoiceNo || this.data.invoiceNo;
+        this.data.party = result.party || this.data.party || null;
+        this.data.totalAmount = result.grandTotal ?? result.totalAmount ?? this.data.totalAmount ?? 0;
+        this.data.dueAmount = result.dueAmount ?? this.data.dueAmount;
+        this.data.purchaseId = result.id ?? this.data.purchaseId;
+
+        if (this.data.invoiceNo && !this.purchaseInvoices.includes(this.data.invoiceNo)) {
+          this.purchaseInvoices = [this.data.invoiceNo, ...this.purchaseInvoices];
+        }
+      },
+      error: (error) => {
+        this.loadingService.hide();
+        this.isFetching = false;
+        console.error('Failed to load purchase details by ID:', error);
+        this.snackBar.open('Failed to load selected purchase details.', 'Close', {
           duration: 4000,
           panelClass: ['error-snackbar']
         });

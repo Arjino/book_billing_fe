@@ -40,6 +40,7 @@ export class TransactionComponent implements OnInit {
   maxDate = new Date(); // Today as maximum date
   minEndDate: Date | null = null; // Minimum date for end date picker
   selectedTransactionType: 'SALE' | 'PURCHASE' = 'SALE';
+  private hasAutoOpenedPaymentDialog = false;
 
   constructor(
     private dialog: MatDialog,
@@ -61,6 +62,19 @@ export class TransactionComponent implements OnInit {
       const type = (params['type'] || 'SALE').toString().toUpperCase();
       this.selectedTransactionType = type === 'PURCHASE' ? 'PURCHASE' : 'SALE';
       this.loadTransactions();
+
+      const shouldOpenPaymentDialog = ['true', '1', 'yes'].includes((params['openPayment'] || '').toString().toLowerCase());
+      const purchaseId = Number(params['purchaseId']);
+      if (shouldOpenPaymentDialog && purchaseId > 0 && !this.hasAutoOpenedPaymentDialog) {
+        this.hasAutoOpenedPaymentDialog = true;
+        this.addTransaction(purchaseId);
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { openPayment: null, purchaseId: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true
+        });
+      }
     });
   }
 
@@ -88,21 +102,39 @@ export class TransactionComponent implements OnInit {
       this.minEndDate = null;
     }
     
+    const getDateOnly = (value: string | Date | null | undefined): Date | null => {
+      if (!value) return null;
+
+      if (value instanceof Date) {
+        return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+      }
+
+      const datePart = value.includes('T') ? value.split('T')[0] : value;
+      const parsed = parseLocalDate(datePart);
+      if (!isNaN(parsed.getTime())) {
+        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+      }
+
+      const fallback = new Date(value);
+      if (isNaN(fallback.getTime())) return null;
+      return new Date(fallback.getFullYear(), fallback.getMonth(), fallback.getDate());
+    };
+
     let filtered = this.transactions.slice();
     if (this.startDate) {
-      const s = parseLocalDate(this.startDate);
+      const s = getDateOnly(this.startDate);
       filtered = filtered.filter(t => {
         if (!t.paymentDate) return false;
-        const tDate = parseLocalDate(t.paymentDate);
-        return tDate >= s;
+        const tDate = getDateOnly(t.paymentDate);
+        return !!s && !!tDate && tDate >= s;
       });
     }
     if (this.endDate) {
-      const e = parseLocalDate(this.endDate);
+      const e = getDateOnly(this.endDate);
       filtered = filtered.filter(t => {
         if (!t.paymentDate) return false;
-        const tDate = parseLocalDate(t.paymentDate);
-        return tDate <= e;
+        const tDate = getDateOnly(t.paymentDate);
+        return !!e && !!tDate && tDate <= e;
       });
     }
     const type = this.selectedTransactionType?.toUpperCase();
@@ -112,7 +144,7 @@ export class TransactionComponent implements OnInit {
     this.filteredTransactions = filtered;
   }
 
-  addTransaction() {
+  addTransaction(purchaseId?: number) {
     const dialogRef = this.dialog.open(TransactionDialogComponent, {
       width: '500px',
       data: {
@@ -125,6 +157,7 @@ export class TransactionComponent implements OnInit {
         totalAmount: 0,
         invoiceNo: '',
         dueAmount: 0,
+        purchaseId,
         transactionType: this.selectedTransactionType
       } as unknown as Transaction,
       disableClose: false

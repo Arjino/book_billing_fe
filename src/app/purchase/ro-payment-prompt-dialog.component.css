@@ -1,0 +1,105 @@
+:host {
+  display: block;
+}
+
+.payment-prompt-wrapper {
+  min-width: 340px;
+  padding: 20px;
+  color: #e2e8f0;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.96));
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 16px;
+}
+
+.prompt-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.icon-badge {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.28), rgba(99, 102, 241, 0.28));
+  color: #bfdbfe;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.subtitle {
+  margin: 2px 0 0;
+  font-size: 0.84rem;
+  color: #cbd5e1;
+}
+
+.prompt-content {
+  margin-top: 8px;
+}
+
+.question {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  color: #e2e8f0;
+}
+
+.info-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.info-row + .info-row {
+  margin-top: 6px;
+}
+
+.label {
+  color: #94a3b8;
+}
+
+.value {
+  color: #f1f5f9;
+  font-weight: 600;
+  text-align: right;
+}
+
+.prompt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.cancel-btn,
+.pay-btn {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.cancel-btn:hover,
+.pay-btn:hover {
+  transform: translateY(-1px);
+}
+
+.pay-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
