@@ -423,6 +423,34 @@ export class PurchaseComponent implements OnInit {
     return (s as ReceivingOrder).status || (s as PurchaseOrder).status || (s as PurchaseTransaction).paymentStatus || '-';
   }
 
+  canMakePayment(s: PurchaseTransaction | ReceivingOrder | PurchaseOrder): boolean {
+    if (this.purchaseMode !== 'purchase') return false;
+    const status = (this.getStatusLabel(s) || '').toUpperCase();
+    return status === 'UNPAID' || status === 'PARTIAL';
+  }
+
+  openPaymentForPurchase(s: PurchaseTransaction | ReceivingOrder | PurchaseOrder): void {
+    if (!this.canMakePayment(s)) return;
+
+    const purchaseId = Number((s as any)?.id);
+    if (!purchaseId || isNaN(purchaseId)) {
+      this.snackBar.open('Purchase ID not found for selected invoice.', 'Close', {
+        duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
+    this.router.navigate(['/transaction'], {
+      queryParams: {
+        type: 'PURCHASE',
+        openPayment: 'true',
+        purchaseId,
+        invoiceId: purchaseId
+      }
+    });
+  }
+
   private mapToPurchaseOrder(data: PurchaseDialogData): PurchaseOrder {
     const items: PurchaseOrderItem[] = (data.items || []).map((item: any) => ({
       book: item.book || null,

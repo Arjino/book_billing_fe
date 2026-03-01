@@ -14,6 +14,8 @@ import { Transaction } from '../interface/Transaction';
 import { SalesService } from '../services/sales.service';
 import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
+import { DataStoreService } from '../services/data-store.service';
+import { Party } from '../interface/party';
 
 @Component({
   selector: 'app-transaction-dialog',
@@ -29,25 +31,60 @@ export class TransactionDialogComponent implements OnInit {
   isLoadingSaleInvoices = false;
   purchaseInvoices: string[] = [];
   saleInvoices: string[] = [];
+  parties: Party[] = [];
+  supplierParties: Party[] = [];
+  isPartyLocked = false;
 
   constructor(
     public dialogRef: MatDialogRef<TransactionDialogComponent>,
     private salesService: SalesService,
     private purchaseService: PurchaseService,
+    private store: DataStoreService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar,
     @Inject(MAT_DIALOG_DATA) public data: Transaction
   ) {}
 
   ngOnInit(): void {
+    this.isPartyLocked = !!this.data?.purchaseId;
+    this.store.getParties().subscribe((parties) => {
+      this.parties = parties || [];
+      this.supplierParties = this.parties.filter(p => (p?.type || '').toUpperCase() === 'SUPPLIER');
+      this.syncSelectedPartyReference();
+    });
+
     if (this.data?.transactionType === 'PURCHASE') {
-      this.loadPurchaseInvoices();
       if (this.data?.purchaseId) {
         this.prefillPurchaseById(this.data.purchaseId);
+      } else {
+        this.loadPurchaseInvoices(this.data?.party?.id);
       }
     }
     if (this.data?.transactionType === 'SALE') {
       this.loadSaleInvoices();
+    }
+  }
+
+  onPartyChange(): void {
+    if (this.data?.transactionType !== 'PURCHASE') return;
+    if (this.isPartyLocked) return;
+
+    this.data.invoiceNo = '';
+    this.data.purchaseId = undefined;
+    this.data.totalAmount = 0;
+    this.data.dueAmount = 0;
+    const partyId = this.data?.party?.id;
+    this.loadPurchaseInvoices(partyId);
+  }
+
+  private syncSelectedPartyReference(): void {
+    if (this.data?.transactionType !== 'PURCHASE') return;
+    const selectedPartyId = this.data?.party?.id;
+    if (!selectedPartyId) return;
+
+    const matchingSupplier = this.supplierParties.find(p => p?.id === selectedPartyId);
+    if (matchingSupplier) {
+      this.data.party = matchingSupplier as any;
     }
   }
 
@@ -64,10 +101,10 @@ export class TransactionDialogComponent implements OnInit {
     return this.data?.transactionType === 'PURCHASE' ? 'Purchase Number' : 'Sale Invoice No';
   }
 
-  loadPurchaseInvoices(): void {
+  loadPurchaseInvoices(partyId?: number): void {
     this.isLoadingInvoices = true;
     this.loadingService.show('Loading purchase invoices...');
-    this.purchaseService.getUnpaidAndPartialPurchaseInvoices().subscribe({
+    this.purchaseService.getUnpaidAndPartialPurchaseInvoices(partyId).subscribe({
       next: (invoices) => {
         this.loadingService.hide();
         this.isLoadingInvoices = false;
@@ -130,6 +167,7 @@ export class TransactionDialogComponent implements OnInit {
           return;
         }
         this.data.party = result.party || null;
+        this.syncSelectedPartyReference();
         this.data.totalAmount = result.grandTotal ?? result.totalAmount ?? 0;
         this.data.dueAmount = result.dueAmount ?? this.data.dueAmount;
         if (this.data?.transactionType === 'PURCHASE') {
@@ -165,9 +203,13 @@ export class TransactionDialogComponent implements OnInit {
 
         this.data.invoiceNo = result.invoiceNo || this.data.invoiceNo;
         this.data.party = result.party || this.data.party || null;
+        this.syncSelectedPartyReference();
         this.data.totalAmount = result.grandTotal ?? result.totalAmount ?? this.data.totalAmount ?? 0;
         this.data.dueAmount = result.dueAmount ?? this.data.dueAmount;
         this.data.purchaseId = result.id ?? this.data.purchaseId;
+
+        const partyId = this.data.party?.id;
+        this.loadPurchaseInvoices(partyId);
 
         if (this.data.invoiceNo && !this.purchaseInvoices.includes(this.data.invoiceNo)) {
           this.purchaseInvoices = [this.data.invoiceNo, ...this.purchaseInvoices];

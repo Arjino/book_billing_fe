@@ -60,8 +60,10 @@ export class PurchaseService {
     );
   }
 
-  getUnpaidAndPartialPurchaseInvoices(): Observable<string[]> {
-    const url = `${enviort.purchasesUrl}/unpaid-and-partial/invoices`;
+  getUnpaidAndPartialPurchaseInvoices(partyId?: number): Observable<string[]> {
+    const url = partyId
+      ? `${enviort.purchasesUrl}/unpaid-and-partial/invoices?partyId=${partyId}`
+      : `${enviort.purchasesUrl}/unpaid-and-partial/invoices`;
     return this.http.get<string[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading unpaid/partial purchase invoices:', error);

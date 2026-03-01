@@ -64,13 +64,13 @@ export class TransactionComponent implements OnInit {
       this.loadTransactions();
 
       const shouldOpenPaymentDialog = ['true', '1', 'yes'].includes((params['openPayment'] || '').toString().toLowerCase());
-      const purchaseId = Number(params['purchaseId']);
+      const purchaseId = Number(params['purchaseId'] || params['invoiceId']);
       if (shouldOpenPaymentDialog && purchaseId > 0 && !this.hasAutoOpenedPaymentDialog) {
         this.hasAutoOpenedPaymentDialog = true;
         this.addTransaction(purchaseId);
         this.router.navigate([], {
           relativeTo: this.route,
-          queryParams: { openPayment: null, purchaseId: null },
+          queryParams: { openPayment: null, purchaseId: null, invoiceId: null },
           queryParamsHandling: 'merge',
           replaceUrl: true
         });

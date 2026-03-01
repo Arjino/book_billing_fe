@@ -10,6 +10,31 @@
   <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
     <form #transactionForm="ngForm">
       <div class="grid grid-cols-1 gap-3">
+        <mat-form-field *ngIf="data.transactionType === 'PURCHASE' && !isPartyLocked" appearance="outline" class="w-full">
+          <mat-label>Party</mat-label>
+          <mat-select
+            [(ngModel)]="data.party"
+            name="party"
+            (selectionChange)="onPartyChange()"
+            required
+            #partyModel="ngModel">
+            <mat-option *ngFor="let party of supplierParties" [value]="party">{{ party.name }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="partyModel.invalid && (partyModel.dirty || partyModel.touched)">
+            <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field *ngIf="data.transactionType === 'PURCHASE' && isPartyLocked" appearance="outline" class="w-full">
+          <mat-label>Party</mat-label>
+          <input matInput [value]="(data.party && data.party.name) ? data.party.name : ''" [disabled]="true" />
+        </mat-form-field>
+
+        <mat-form-field *ngIf="data.transactionType !== 'PURCHASE'" appearance="outline" class="w-full">
+          <mat-label>Party</mat-label>
+          <input matInput [value]="(data.party && data.party.name) ? data.party.name : ''" [disabled]="true" />
+        </mat-form-field>
+
         <mat-form-field *ngIf="data.transactionType === 'SALE'" appearance="outline" class="w-full">
           <mat-label>{{ referenceLabel }}</mat-label>
           <mat-select [(ngModel)]="data.invoiceNo" name="referenceNo" required #referenceModel="ngModel" (selectionChange)="fetchDetails()">
@@ -24,7 +49,13 @@
 
         <mat-form-field *ngIf="data.transactionType === 'PURCHASE'" appearance="outline" class="w-full">
           <mat-label>{{ referenceLabel }}</mat-label>
-          <mat-select [(ngModel)]="data.invoiceNo" name="referenceNo" required #referenceModel="ngModel" (selectionChange)="fetchDetails()">
+          <mat-select
+            [(ngModel)]="data.invoiceNo"
+            name="referenceNo"
+            [disabled]="isPartyLocked"
+            required
+            #referenceModel="ngModel"
+            (selectionChange)="fetchDetails()">
             <mat-option *ngIf="isLoadingInvoices" [value]="''" disabled>Loading...</mat-option>
             <mat-option *ngFor="let invoice of purchaseInvoices" [value]="invoice">{{ invoice }}</mat-option>
           </mat-select>
@@ -32,11 +63,6 @@
             <span *ngIf="referenceModel.errors?.['required']">Purchase number is required.</span>
           </mat-error>
           <mat-hint *ngIf="!isLoadingInvoices && !purchaseInvoices.length">No unpaid/partial invoices found.</mat-hint>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Party</mat-label>
-          <input matInput [value]="data.party?.name || ''" [disabled]="true" />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full text-white">

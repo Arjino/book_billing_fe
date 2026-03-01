@@ -124,6 +124,17 @@
                   <mat-icon>download</mat-icon>
                 </button>
               </div>
+              <div class="flex items-center gap-2" *ngIf="purchaseMode === 'purchase'">
+                <button
+                  *ngIf="canMakePayment(s)"
+                  mat-stroked-button
+                  color="primary"
+                  (click)="openPaymentForPurchase(s)"
+                  title="Pay Now">
+                  <mat-icon>payments</mat-icon>
+                  Pay
+                </button>
+              </div>
             </td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="['id','party','dateTime','grandTotal','paymentStatus','actions']" class="bg-transparent"></tr>
