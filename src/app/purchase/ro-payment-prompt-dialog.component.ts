@@ -7,6 +7,8 @@ import { Inject } from '@angular/core';
 
 type RoPaymentPromptDialogData = {
   purchaseId: number;
+  invoiceNo?: string;
+  grnNumber?: string;
   partyName: string;
 };
 

@@ -193,7 +193,7 @@ export class PurchaseComponent implements OnInit {
             width: PURCHASE_CONSTANTS.DIALOG_WIDTH,
             data: {
               id: 0,
-              poNumber: '',
+              poNumber: this.selectedPurchaseOrder?.poNumber || '',
               grnNumber: '',
               party: this.selectedPurchaseOrder.party || null,
               date: formatDateForAPI(new Date()),
@@ -230,7 +230,7 @@ export class PurchaseComponent implements OnInit {
                 const createdId = (created as any)?.id ? Number((created as any).id) : null;
                 if (createdId) {
                   this.purchaseService.getReceivingOrderById(createdId).subscribe({
-                    next: () => {
+                    next: (ro) => {
                       this.loadingService.hide();
                       this.snackBar.open('Receiving order created successfully!', 'Close', {
                         duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.SHORT,
@@ -238,8 +238,10 @@ export class PurchaseComponent implements OnInit {
                       });
                       this.loadPurchases();
                       this.store.refreshBooks();
-                      const partyName = (created as any)?.party?.name || this.selectedPurchaseOrder?.party?.name || '';
-                      this.promptRoPayment(createdId, partyName);
+                      const partyName = (ro as any)?.party?.name || (created as any)?.party?.name || this.selectedPurchaseOrder?.party?.name || '';
+                      const invoiceNo = (ro as any)?.invoiceNo || (ro as any)?.invoiceNumber || (created as any)?.invoiceNo || (created as any)?.invoiceNumber || '';
+                      const grnNumber = (ro as any)?.grnNumber || (ro as any)?.grnNo || (created as any)?.grnNumber || (created as any)?.grnNo || '';
+                      this.promptRoPayment(createdId, partyName, invoiceNo, grnNumber);
                     },
                     error: () => {
                       this.loadingService.hide();
@@ -250,7 +252,9 @@ export class PurchaseComponent implements OnInit {
                       this.loadPurchases();
                       this.store.refreshBooks();
                       const partyName = (created as any)?.party?.name || this.selectedPurchaseOrder?.party?.name || '';
-                      this.promptRoPayment(createdId, partyName);
+                      const invoiceNo = (created as any)?.invoiceNo || (created as any)?.invoiceNumber || '';
+                      const grnNumber = (created as any)?.grnNumber || (created as any)?.grnNo || '';
+                      this.promptRoPayment(createdId, partyName, invoiceNo, grnNumber);
                     }
                   });
                   return;
@@ -638,11 +642,13 @@ export class PurchaseComponent implements OnInit {
     });
   }
 
-  private promptRoPayment(purchaseId: number, partyName?: string): void {
+  private promptRoPayment(purchaseId: number, partyName?: string, invoiceNo?: string, grnNumber?: string): void {
     const dialogRef = this.dialog.open(RoPaymentPromptDialogComponent, {
       width: '380px',
       data: {
         purchaseId,
+        invoiceNo: invoiceNo || undefined,
+        grnNumber: grnNumber || undefined,
         partyName: partyName || '-'
       },
       disableClose: false

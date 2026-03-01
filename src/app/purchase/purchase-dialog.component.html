@@ -22,8 +22,13 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full" *ngIf="data.type === 'RECEIVING_ORDER'">
-          <mat-label>GRN Number (optional)</mat-label>
-          <input matInput [(ngModel)]="data.grnNumber" name="grnNumber" />
+          <mat-label>Party Name</mat-label>
+          <input matInput [value]="data.party?.name || ''" readonly />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="w-full" *ngIf="data.type === 'RECEIVING_ORDER'">
+          <mat-label>PO Number</mat-label>
+          <input matInput [value]="data.poNumber || ''" readonly />
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full text-white" *ngIf="data.type !== 'RECEIVING_ORDER'">

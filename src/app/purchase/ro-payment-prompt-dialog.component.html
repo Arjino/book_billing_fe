@@ -14,8 +14,12 @@
 
     <div class="info-card">
       <div class="info-row">
-        <span class="label">Purchase ID</span>
-        <span class="value">#{{ data.purchaseId }}</span>
+        <span class="label">Invoice Number</span>
+        <span class="value">{{ data.invoiceNo || '-' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">GRN Number</span>
+        <span class="value">{{ data.grnNumber || '-' }}</span>
       </div>
       <div class="info-row">
         <span class="label">Party Name</span>
