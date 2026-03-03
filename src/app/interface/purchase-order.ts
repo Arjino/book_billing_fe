@@ -8,6 +8,7 @@ export interface PurchaseOrderItem {
   receivedQty: number | null;
   rate: number | null;
   amount: number | null;
+  discountPercent?: number | null;
 }
 
 export interface PurchaseOrder {
@@ -16,6 +17,7 @@ export interface PurchaseOrder {
   poDate: string;
   party: Party | null;
   totalAmount: number;
+  discount?: number;
   taxAmount: number;
   roundOff: number;
   grandTotal: number;

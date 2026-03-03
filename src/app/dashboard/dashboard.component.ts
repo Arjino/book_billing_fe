@@ -511,7 +511,7 @@ export class DashboardComponent implements OnInit {
       const { paymentStatus, ...payload } = result as any;
 
       if (transactionType === 'PURCHASE_ORDER') {
-        const poPayload = this.mapToPurchaseOrder(result);
+        const poPayload = this.mapToPurchaseOrder(result as any);
         this.loadingService.show('Creating purchase order...');
         this.purchaseService.createPurchaseOrder(poPayload).subscribe({
           next: (created) => {
@@ -709,23 +709,26 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/transaction'], { queryParams: { type } });
   }
 
-  private mapToPurchaseOrder(data: SalesDialogData): PurchaseOrder {
-    const items: PurchaseOrderItem[] = (data.items || []).map((item: any) => ({
+  private mapToPurchaseOrder(data: any): any {
+    const items = (data.items || []).map((item: any) => ({
       book: item.book || null,
       orderedQty: item.qty ?? null,
-      receivedQty: 0,
+      receivedQty: item.receivedQty ?? null,
       rate: item.rate ?? null,
-      amount: item.amount ?? null
+      amount: item.amount ?? (item.rate !== null && item.qty !== null ? Number(item.rate) * Number(item.qty) : 0),
+      supplierPercentageDiscount: item.discountPercent ?? null,
+      supplierDiscountApplied: Boolean(item.supplierDiscountApplied)
     }));
 
     return {
-      poNumber: data.invoiceNo || '',
+      poNumber: data.poNumber || undefined,
       poDate: formatDateForUTC(data.date),
       party: data.party || null,
-      totalAmount: data.totalAmount,
-      taxAmount: data.taxAmount,
-      roundOff: data.roundOff,
-      grandTotal: data.grandTotal,
+      totalAmount: data.totalAmount ?? 0,
+      discount: data.discount ?? 0,
+      taxAmount: data.taxAmount ?? 0,
+      roundOff: data.roundOff ?? 0,
+      grandTotal: data.grandTotal ?? 0,
       items
     };
   }

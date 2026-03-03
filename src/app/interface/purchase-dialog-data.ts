@@ -13,6 +13,8 @@ export interface PurchaseDialogItem {
   filteredBooks?: Book[];
   purchaseOrderItemId?: number | null;
   maxQty?: number;
+  supplierDiscountApplied?: boolean;
+  discountPercent?: number | null;
 }
 
 export interface PurchaseDialogData {
@@ -27,6 +29,7 @@ export interface PurchaseDialogData {
   taxAmount: number;
   roundOff: number;
   grandTotal: number;
+  supplierPercentageDiscount?: number | null;
   type: 'PURCHASE_ORDER' | 'RECEIVING_ORDER';
   items: PurchaseDialogItem[];
 }

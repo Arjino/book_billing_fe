@@ -319,6 +319,8 @@ export class PurchaseComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result: PurchaseDialogData) => {
       if (!result) return;
       const payload = this.mapToPurchaseOrder(result);
+      console.log('=== Purchase Order Payload ===');
+      console.log('Full Payload:', payload);
       this.loadingService.show('Creating purchase order...');
       this.purchaseService.createPurchaseOrder(payload).subscribe({
         next: (created) => {
@@ -359,7 +361,10 @@ export class PurchaseComponent implements OnInit {
         error: (err) => {
           this.loadingService.hide();
           console.error('Failed to create purchase order:', err);
-          const errorMessage = PURCHASE_CONSTANTS.MESSAGES.CREATE_ERROR || 'Failed to create purchase order. Please try again.';
+          const serverMessage = err?.error?.message || err?.error?.error || err?.message;
+          const errorMessage = err?.status === 400 && serverMessage
+            ? serverMessage
+            : (PURCHASE_CONSTANTS.MESSAGES.CREATE_ERROR || 'Failed to create purchase order. Please try again.');
           this.snackBar.open(errorMessage, 'Close', {
             duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.LONG,
             panelClass: ['error-snackbar']
@@ -451,23 +456,26 @@ export class PurchaseComponent implements OnInit {
     });
   }
 
-  private mapToPurchaseOrder(data: PurchaseDialogData): PurchaseOrder {
-    const items: PurchaseOrderItem[] = (data.items || []).map((item: any) => ({
+  private mapToPurchaseOrder(data: PurchaseDialogData): any {
+    const items = (data.items || []).map((item: any) => ({
       book: item.book || null,
       orderedQty: item.qty ?? null,
-      receivedQty: 0,
+      receivedQty: item.receivedQty ?? null,
       rate: item.rate ?? null,
-      amount: item.rate !== null && item.qty !== null ? Number(item.rate) * Number(item.qty) : null
+      amount: item.amount ?? (item.rate !== null && item.qty !== null ? Number(item.rate) * Number(item.qty) : 0),
+      supplierPercentageDiscount: item.discountPercent ?? data.supplierPercentageDiscount ?? null,
+      supplierDiscountApplied: Boolean(item.supplierDiscountApplied)
     }));
 
     return {
-      poNumber: data.poNumber || '',
+      poNumber: data.poNumber || undefined,
       poDate: formatDateForUTC(data.date),
       party: data.party || null,
-      totalAmount: data.totalAmount,
-      taxAmount: data.taxAmount,
-      roundOff: data.roundOff,
-      grandTotal: data.grandTotal,
+      totalAmount: data.totalAmount ?? 0,
+      discount: data.discount ?? 0,
+      taxAmount: data.taxAmount ?? 0,
+      roundOff: data.roundOff ?? 0,
+      grandTotal: data.grandTotal ?? 0,
       items
     };
   }

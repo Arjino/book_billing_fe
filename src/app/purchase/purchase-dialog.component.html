@@ -12,7 +12,7 @@
       <div class="grid grid-cols-1 gap-4">
         <mat-form-field appearance="outline" class="w-full" *ngIf="data.type !== 'RECEIVING_ORDER'">
           <mat-label>Party</mat-label>
-          <mat-select [(ngModel)]="data.party" name="party" required #partyModel="ngModel">
+          <mat-select [(ngModel)]="data.party" name="party" required #partyModel="ngModel" (selectionChange)="onSupplierChanged($event.value)">
             <mat-option [value]="null">Select Party</mat-option>
             <mat-option *ngFor="let p of parties" [value]="p">{{ p.name }}</mat-option>
           </mat-select>
@@ -57,7 +57,7 @@
           </div>
 
           <div *ngIf="data.items.length" class="space-y-4">
-            <div *ngFor="let item of data.items; let i = index; let last = last; trackBy: trackByIndex" class="border p-3 rounded bg-[rgba(0,0,0,0.2)]">
+            <div *ngFor="let item of data.items; let i = index; let last = last; trackBy: trackByIndex" class="border p-3 rounded bg-[rgba(0,0,0,0.2)]" [ngClass]="{ 'border-emerald-500/60 bg-[rgba(16,185,129,0.12)]': item.supplierDiscountApplied }">
               <div class="mb-3" *ngIf="data.type !== 'RECEIVING_ORDER'">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Book</mat-label>
@@ -96,6 +96,11 @@
                   <mat-error *ngIf="rateModel.invalid && (rateModel.dirty && rateModel.touched)">
                     <span *ngIf="rateModel.errors?.['required']">Required</span>
                   </mat-error>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Discount (%)</mat-label>
+                  <input matInput [value]="item.discountPercent ?? ''" readonly />
                 </mat-form-field>
               </div>
 
