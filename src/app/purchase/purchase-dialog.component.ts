@@ -100,7 +100,13 @@ export class PurchaseDialogComponent implements OnInit {
         this.onSupplierChanged(this.data.party);
       }
     });
-    this.store.getParties().subscribe(data => this.parties = data || []);
+    this.http.get<Party[]>(`${baseUrl}/parties`, {
+      headers: this.auth.getAuthHeaders(),
+      params: { type: 'Supplier' }
+    }).subscribe({
+      next: (data) => this.parties = data || [],
+      error: () => this.parties = []
+    });
     (this.data.items || []).forEach(item => {
       item.filteredBooks = this.getAvailableBooks();
       item.bookSearch = item.book ? item.book.title : '';

@@ -90,8 +90,8 @@ export class PurchaseService {
     );
   }
 
-  getPurchaseOrderById(id: number): Observable<PurchaseOrder> {
-    return this.http.get<PurchaseOrder>(`${enviort.purchaseOrdersUrl}/${id}`, { headers: this.auth.getAuthHeaders() }).pipe(
+  getPurchaseOrderByNumber(poNumber: string): Observable<PurchaseOrder> {
+    return this.http.get<PurchaseOrder>(`${enviort.purchaseOrdersUrl}/${encodeURIComponent(poNumber)}`, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading purchase order:', error);
         return throwError(() => error);
@@ -126,8 +126,8 @@ export class PurchaseService {
     );
   }
 
-  createReceivingOrderFromPo(poId: number, payload: ReceivingOrder): Observable<ReceivingOrder> {
-    return this.http.post<ReceivingOrder>(`${enviort.receivingOrdersUrl}/from-po/${poId}`, payload, { headers: this.auth.getAuthHeaders() }).pipe(
+  createReceivingOrderFromPo(poNumber: string, payload: ReceivingOrder): Observable<ReceivingOrder> {
+    return this.http.post<ReceivingOrder>(`${enviort.receivingOrdersUrl}/from-po/${encodeURIComponent(poNumber)}`, payload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating receiving order:', error);
         return throwError(() => error);

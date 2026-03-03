@@ -165,9 +165,7 @@ export class PurchaseComponent implements OnInit {
 
     if (isReceiving) {
       const poNumber = (this.receivingPoNumber || '').trim();
-      const matchedPo = this.purchaseOrders.find(po => (po.poNumber || '').toString() === poNumber);
-      const poId = matchedPo?.id ? Number(matchedPo.id) : null;
-      if (!poId) {
+      if (!poNumber) {
         this.selectedPurchaseOrder = null;
         this.snackBar.open('Purchase Order Not Found', 'Close', {
           duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
@@ -176,7 +174,7 @@ export class PurchaseComponent implements OnInit {
         return;
       }
       this.loadingService.show('Loading purchase order...');
-      this.purchaseService.getPurchaseOrderById(poId).subscribe({
+      this.purchaseService.getPurchaseOrderByNumber(poNumber).subscribe({
         next: (po) => {
           this.loadingService.hide();
           this.selectedPurchaseOrder = po || null;
@@ -221,11 +219,11 @@ export class PurchaseComponent implements OnInit {
 
           dialogRef.afterClosed().subscribe((result: PurchaseDialogData) => {
             if (!result) return;
-            const payload = this.mapToReceivingOrder(result, poId);
+            const payload = this.mapToReceivingOrder(result);
             console.log('=== Receiving Order Payload ===');
             console.log('Full Payload:', payload);
             this.loadingService.show('Creating receiving order...');
-            this.purchaseService.createReceivingOrderFromPo(poId, payload).subscribe({
+            this.purchaseService.createReceivingOrderFromPo(poNumber, payload).subscribe({
               next: (created) => {
                 const createdId = (created as any)?.id ? Number((created as any).id) : null;
                 if (createdId) {
@@ -319,14 +317,12 @@ export class PurchaseComponent implements OnInit {
     dialogRef.afterClosed().subscribe((result: PurchaseDialogData) => {
       if (!result) return;
       const payload = this.mapToPurchaseOrder(result);
-      console.log('=== Purchase Order Payload ===');
-      console.log('Full Payload:', payload);
       this.loadingService.show('Creating purchase order...');
       this.purchaseService.createPurchaseOrder(payload).subscribe({
         next: (created) => {
-          const createdId = (created as any)?.id ? Number((created as any).id) : null;
-          if (createdId) {
-            this.purchaseService.getPurchaseOrderById(createdId).subscribe({
+          const createdPoNumber = ((created as any)?.poNumber || '').toString().trim();
+          if (createdPoNumber) {
+            this.purchaseService.getPurchaseOrderByNumber(createdPoNumber).subscribe({
               next: () => {
                 this.loadingService.hide();
                 const message = 'Purchase order created successfully!';
@@ -361,10 +357,7 @@ export class PurchaseComponent implements OnInit {
         error: (err) => {
           this.loadingService.hide();
           console.error('Failed to create purchase order:', err);
-          const serverMessage = err?.error?.message || err?.error?.error || err?.message;
-          const errorMessage = err?.status === 400 && serverMessage
-            ? serverMessage
-            : (PURCHASE_CONSTANTS.MESSAGES.CREATE_ERROR || 'Failed to create purchase order. Please try again.');
+          const errorMessage = PURCHASE_CONSTANTS.MESSAGES.CREATE_ERROR || 'Failed to create purchase order. Please try again.';
           this.snackBar.open(errorMessage, 'Close', {
             duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.LONG,
             panelClass: ['error-snackbar']
@@ -456,31 +449,28 @@ export class PurchaseComponent implements OnInit {
     });
   }
 
-  private mapToPurchaseOrder(data: PurchaseDialogData): any {
-    const items = (data.items || []).map((item: any) => ({
+  private mapToPurchaseOrder(data: PurchaseDialogData): PurchaseOrder {
+    const items: PurchaseOrderItem[] = (data.items || []).map((item: any) => ({
       book: item.book || null,
       orderedQty: item.qty ?? null,
-      receivedQty: item.receivedQty ?? null,
+      receivedQty: 0,
       rate: item.rate ?? null,
-      amount: item.amount ?? (item.rate !== null && item.qty !== null ? Number(item.rate) * Number(item.qty) : 0),
-      supplierPercentageDiscount: item.discountPercent ?? data.supplierPercentageDiscount ?? null,
-      supplierDiscountApplied: Boolean(item.supplierDiscountApplied)
+      amount: item.rate !== null && item.qty !== null ? Number(item.rate) * Number(item.qty) : null
     }));
 
     return {
-      poNumber: data.poNumber || undefined,
+      poNumber: data.poNumber || '',
       poDate: formatDateForUTC(data.date),
       party: data.party || null,
-      totalAmount: data.totalAmount ?? 0,
-      discount: data.discount ?? 0,
-      taxAmount: data.taxAmount ?? 0,
-      roundOff: data.roundOff ?? 0,
-      grandTotal: data.grandTotal ?? 0,
+      totalAmount: data.totalAmount,
+      taxAmount: data.taxAmount,
+      roundOff: data.roundOff,
+      grandTotal: data.grandTotal,
       items
     };
   }
 
-  private mapToReceivingOrder(data: PurchaseDialogData, poId: number): ReceivingOrder {
+  private mapToReceivingOrder(data: PurchaseDialogData): ReceivingOrder {
     const items: ReceivingOrderItem[] = (data.items || []).map((item: any) => ({
       purchaseOrderItemId: item.purchaseOrderItemId || null,
       book: item.book || null,
@@ -492,7 +482,7 @@ export class PurchaseComponent implements OnInit {
     }));
 
     return {
-      purchaseOrderId: poId,
+      purchaseOrderId: this.selectedPurchaseOrder?.id ? Number(this.selectedPurchaseOrder.id) : null,
       receivedDate: formatDateForUTC(data.receivedDate || data.date),
       grnNumber: data.grnNumber || undefined,
       party: data.party || null,

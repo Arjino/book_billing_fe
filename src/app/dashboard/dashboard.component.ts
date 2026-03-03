@@ -515,9 +515,9 @@ export class DashboardComponent implements OnInit {
         this.loadingService.show('Creating purchase order...');
         this.purchaseService.createPurchaseOrder(poPayload).subscribe({
           next: (created) => {
-            const createdId = (created as any)?.id ? Number((created as any).id) : null;
-            if (createdId) {
-              this.purchaseService.getPurchaseOrderById(createdId).subscribe({
+            const createdPoNumber = ((created as any)?.poNumber || '').toString().trim();
+            if (createdPoNumber) {
+              this.purchaseService.getPurchaseOrderByNumber(createdPoNumber).subscribe({
                 next: () => {
                   this.loadingService.hide();
                   this.snackBar.open('Purchase order created successfully!', 'Close', {
