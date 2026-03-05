@@ -96,11 +96,13 @@
             <td mat-cell *matCellDef="let s" class="bg-transparent py-4 px-6 border-t border-emerald-500/20">
               <span
                 class="px-3 py-1 rounded-full text-xs font-semibold"
-                [ngClass]="(getStatusLabel(s) || '').toUpperCase() === 'PAID'
+                [ngClass]="['PAID', 'COMPLETED', 'RECEIVED'].includes((getStatusLabel(s) || '').toUpperCase())
                   ? 'bg-green-500/30 text-green-300'
-                  : (getStatusLabel(s) || '').toUpperCase() === 'PARTIAL'
+                  : ['PARTIAL', 'PARTIALLY_RECEIVED'].includes((getStatusLabel(s) || '').toUpperCase())
                     ? 'bg-yellow-500/30 text-yellow-300'
-                    : 'bg-red-500/30 text-red-300'">
+                    : (getStatusLabel(s) || '').toUpperCase() === 'UNPAID'
+                      ? 'bg-red-500/30 text-red-300'
+                      : 'bg-red-500/30 text-red-300'">
                 {{ (getStatusLabel(s) || '').toUpperCase() }}
               </span>
             </td>

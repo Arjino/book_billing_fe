@@ -24,6 +24,7 @@ import { PURCHASE_CONSTANTS } from '../constants/purchase.constants';
 import { PurchaseOrderPreviewComponent } from './purchase-order-preview.component';
 import { ReceivingOrderPreviewComponent } from './receiving-order-preview.component';
 import { RoPaymentPromptDialogComponent } from './ro-payment-prompt-dialog.component';
+import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
 
 type PurchaseTransaction = {
   id: number;
@@ -556,23 +557,24 @@ export class PurchaseComponent implements OnInit {
   private buildReceivingItemsFromPo(po: PurchaseOrder) {
     const items = (po.items || []).map((item) => {
       const orderedQty = item.orderedQty ?? 0;
-      const receivedQty = item.receivedQty ?? 0;
-      const remainingQty = Math.max(orderedQty - receivedQty, 0);
+      const previousReceivedQty = item.receivedQty ?? 0;
+      const remainingQty = Math.max(orderedQty - previousReceivedQty, 0);
       if (remainingQty <= 0) return null;
       const book = item.book || null;
       const rate = item.rate ?? 0;
       return {
         id: 0,
         book,
-        qty: null,
+        orderQty: orderedQty,
+        orderedQty: orderedQty,
+        recivedQty: previousReceivedQty,
         receivedQty: remainingQty,
         acceptedQty: remainingQty,
         rejectedQty: 0,
         rate,
         purchaseOrderItemId: item.id || null,
-        maxQty: remainingQty,
         bookSearch: book?.title || '',
-        filteredBooks: [book]
+        filteredBooks: book ? [book] : []
       };
     }).filter(Boolean);
 
@@ -645,6 +647,16 @@ export class PurchaseComponent implements OnInit {
     if (!grnNumber || this.purchaseMode !== 'receiving') return;
     this.dialog.open(ReceivingOrderPreviewComponent, {
       data: { grnNumber },
+      width: '900px',
+      maxWidth: '95vw',
+      panelClass: 'invoice-dialog'
+    });
+  }
+
+  openPurchaseInvoicePreview(invoiceNo?: string): void {
+    if (!invoiceNo || this.purchaseMode !== 'purchase') return;
+    this.dialog.open(InvoicePreviewComponent, {
+      data: { salesId: invoiceNo, type: 'purchase', invoiceNo },
       width: '900px',
       maxWidth: '95vw',
       panelClass: 'invoice-dialog'

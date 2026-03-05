@@ -122,7 +122,12 @@ export class PurchaseDialogComponent implements OnInit {
   onCancel(): void {
     this.dialogRef.close();
   }
-
+  remainingQty(item: any): number {
+    const orderedQty = Number(item?.orderQty ?? item?.orderedQty ?? 0);
+    const previousReceivedQty = Number(item?.recivedQty ?? 0);
+    const remaining = orderedQty - previousReceivedQty;
+    return remaining > 0 ? remaining : 0;
+  }
   onSave(): void {
     if (this.data.type === 'PURCHASE_ORDER') {
       (this.data.items || []).forEach(item => {
@@ -350,8 +355,9 @@ export class PurchaseDialogComponent implements OnInit {
 
   isQtyExceedsOrder(item: any): boolean {
     if (this.data.type !== 'RECEIVING_ORDER') return false;
-    if (item?.maxQty === undefined || item?.maxQty === null) return false;
-    return Number(item.receivedQty) > Number(item.maxQty);
+    const orderedQty = Number(item?.orderQty ?? item?.orderedQty);
+    if (isNaN(orderedQty)) return false;
+    return Number(item.receivedQty) > orderedQty;
   }
 
   hasExceededStock(item: any): boolean {
