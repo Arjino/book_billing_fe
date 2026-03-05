@@ -144,8 +144,8 @@ export class PurchaseService {
     );
   }
 
-  downloadPurchaseInvoice(id: number): Observable<Blob> {
-    return this.http.get(`${enviort.purchasesUrl}/${id}/invoice/download`, {
+  downloadPurchaseInvoice(invoiceNo: string): Observable<Blob> {
+    return this.http.get(`${enviort.purchasesUrl}/${encodeURIComponent(invoiceNo)}/invoice/download`, {
       headers: this.auth.getAuthHeaders(),
       responseType: 'blob'
     }).pipe(

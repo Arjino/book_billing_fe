@@ -239,7 +239,8 @@ export class PurchaseComponent implements OnInit {
                       const partyName = (ro as any)?.party?.name || (created as any)?.party?.name || this.selectedPurchaseOrder?.party?.name || '';
                       const invoiceNo = (ro as any)?.invoiceNo || (ro as any)?.invoiceNumber || (created as any)?.invoiceNo || (created as any)?.invoiceNumber || '';
                       const grnNumber = (ro as any)?.grnNumber || (ro as any)?.grnNo || (created as any)?.grnNumber || (created as any)?.grnNo || '';
-                      this.promptRoPayment(createdId, partyName, invoiceNo, grnNumber);
+                      const amount = (ro as any)?.grandTotal ?? (created as any)?.grandTotal ?? null;
+                      this.promptRoPayment(createdId, partyName, invoiceNo, grnNumber, amount);
                     },
                     error: () => {
                       this.loadingService.hide();
@@ -252,7 +253,8 @@ export class PurchaseComponent implements OnInit {
                       const partyName = (created as any)?.party?.name || this.selectedPurchaseOrder?.party?.name || '';
                       const invoiceNo = (created as any)?.invoiceNo || (created as any)?.invoiceNumber || '';
                       const grnNumber = (created as any)?.grnNumber || (created as any)?.grnNo || '';
-                      this.promptRoPayment(createdId, partyName, invoiceNo, grnNumber);
+                      const amount = (created as any)?.grandTotal ?? null;
+                      this.promptRoPayment(createdId, partyName, invoiceNo, grnNumber, amount);
                     }
                   });
                   return;
@@ -455,19 +457,19 @@ export class PurchaseComponent implements OnInit {
       orderedQty: item.qty ?? null,
       receivedQty: 0,
       rate: item.rate ?? null,
-      amount: item.rate !== null && item.qty !== null ? Number(item.rate) * Number(item.qty) : null
+      amount: item.rate !== null && item.qty !== null ? Number(item.rate) * Number(item.qty) : null,
+      supplierPercentageDiscount: item.discountPercent ?? data.supplierPercentageDiscount ?? null,
+      supplierDiscountApplied: Boolean(item.supplierDiscountApplied)
     }));
 
     return {
-      poNumber: data.poNumber || '',
+      poNumber: data.poNumber || undefined,
       poDate: formatDateForUTC(data.date),
       party: data.party || null,
-      totalAmount: data.totalAmount,
-      taxAmount: data.taxAmount,
-      roundOff: data.roundOff,
-      grandTotal: data.grandTotal,
+      taxAmount: data.taxAmount ?? 0,
+      roundOff: data.roundOff ?? 0,
       items
-    };
+    } as PurchaseOrder;
   }
 
   private mapToReceivingOrder(data: PurchaseDialogData): ReceivingOrder {
@@ -478,11 +480,11 @@ export class PurchaseComponent implements OnInit {
       acceptedQty: item.acceptedQty ?? null,
       rejectedQty: item.rejectedQty ?? null,
       rate: item.rate ?? null,
-      amount: null
+      amount: null,
+      discountPercent: item.discountPercent ?? null
     }));
 
     return {
-      purchaseOrderId: this.selectedPurchaseOrder?.id ? Number(this.selectedPurchaseOrder.id) : null,
       receivedDate: formatDateForUTC(data.receivedDate || data.date),
       grnNumber: data.grnNumber || undefined,
       party: data.party || null,
@@ -556,11 +558,12 @@ export class PurchaseComponent implements OnInit {
       const orderedQty = item.orderedQty ?? 0;
       const receivedQty = item.receivedQty ?? 0;
       const remainingQty = Math.max(orderedQty - receivedQty, 0);
-      if (!item.book || remainingQty <= 0) return null;
+      if (remainingQty <= 0) return null;
+      const book = item.book || null;
       const rate = item.rate ?? 0;
       return {
         id: 0,
-        book: item.book,
+        book,
         qty: null,
         receivedQty: remainingQty,
         acceptedQty: remainingQty,
@@ -568,8 +571,8 @@ export class PurchaseComponent implements OnInit {
         rate,
         purchaseOrderItemId: item.id || null,
         maxQty: remainingQty,
-        bookSearch: item.book?.title || '',
-        filteredBooks: [item.book]
+        bookSearch: book?.title || '',
+        filteredBooks: [book]
       };
     }).filter(Boolean);
 
@@ -668,14 +671,15 @@ export class PurchaseComponent implements OnInit {
     });
   }
 
-  private promptRoPayment(purchaseId: number, partyName?: string, invoiceNo?: string, grnNumber?: string): void {
+  private promptRoPayment(purchaseId: number, partyName?: string, invoiceNo?: string, grnNumber?: string, amount?: number | null): void {
     const dialogRef = this.dialog.open(RoPaymentPromptDialogComponent, {
       width: '380px',
       data: {
         purchaseId,
         invoiceNo: invoiceNo || undefined,
         grnNumber: grnNumber || undefined,
-        partyName: partyName || '-'
+        partyName: partyName || '-',
+        amount: amount ?? null
       },
       disableClose: false
     });

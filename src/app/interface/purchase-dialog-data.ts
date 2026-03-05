@@ -13,6 +13,7 @@ export interface PurchaseDialogItem {
   filteredBooks?: Book[];
   purchaseOrderItemId?: number | null;
   maxQty?: number;
+  orderedQty?: number | null;
   supplierDiscountApplied?: boolean;
   discountPercent?: number | null;
 }

@@ -713,7 +713,6 @@ export class DashboardComponent implements OnInit {
     const items = (data.items || []).map((item: any) => ({
       book: item.book || null,
       orderedQty: item.qty ?? null,
-      receivedQty: item.receivedQty ?? null,
       rate: item.rate ?? null,
       amount: item.amount ?? (item.rate !== null && item.qty !== null ? Number(item.rate) * Number(item.qty) : 0),
       supplierPercentageDiscount: item.discountPercent ?? null,
@@ -724,11 +723,8 @@ export class DashboardComponent implements OnInit {
       poNumber: data.poNumber || undefined,
       poDate: formatDateForUTC(data.date),
       party: data.party || null,
-      totalAmount: data.totalAmount ?? 0,
-      discount: data.discount ?? 0,
       taxAmount: data.taxAmount ?? 0,
       roundOff: data.roundOff ?? 0,
-      grandTotal: data.grandTotal ?? 0,
       items
     };
   }

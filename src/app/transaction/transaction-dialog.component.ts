@@ -29,6 +29,7 @@ export class TransactionDialogComponent implements OnInit {
   isFetching = false;
   isLoadingInvoices = false;
   isLoadingSaleInvoices = false;
+  readonly todayMaxDate = new Date();
   purchaseInvoices: string[] = [];
   saleInvoices: string[] = [];
   parties: Party[] = [];

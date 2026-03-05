@@ -9,6 +9,8 @@ export interface PurchaseOrderItem {
   rate: number | null;
   amount: number | null;
   discountPercent?: number | null;
+  supplierPercentageDiscount?: number | null;
+  supplierDiscountApplied?: boolean;
 }
 
 export interface PurchaseOrder {

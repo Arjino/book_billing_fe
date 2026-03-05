@@ -104,7 +104,20 @@
                 </mat-form-field>
               </div>
 
-              <div class="grid grid-cols-4 gap-2 mb-3" *ngIf="data.type === 'RECEIVING_ORDER'">
+              <div class="text-sm mb-2" *ngIf="data.type === 'RECEIVING_ORDER'">
+                <span class="text-gray-300">Book: </span>
+                <span class="font-bold">{{ item.book?.title || '-' }}</span>
+              </div>
+
+              <div class="grid grid-cols-5 gap-2 mb-3" *ngIf="data.type === 'RECEIVING_ORDER'">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Ordered Qty</mat-label>
+                  <input matInput type="number" [value]="item.orderedQty ?? item.maxQty ?? 0" readonly />
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Remaining Qty</mat-label>
+                  <input matInput type="number" [value]="item.maxQty ?? 0" readonly />
+                </mat-form-field>
                 <mat-form-field appearance="outline" class="w-full" #receivedQtyField="matFormField">
                   <mat-label>Received Qty</mat-label>
                   <input matInput
@@ -157,18 +170,10 @@
                     <span *ngIf="rejectedQtyModel.errors?.['required'] && (rejectedQtyModel.dirty && rejectedQtyModel.touched)">Required</span>
                   </mat-error>
                 </mat-form-field>
-
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Rate</mat-label>
-                  <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #roRateModel="ngModel" min="0" inputmode="decimal" />
-                  <mat-error *ngIf="roRateModel.invalid && (roRateModel.dirty && roRateModel.touched)">
-                    <span *ngIf="roRateModel.errors?.['required']">Required</span>
-                  </mat-error>
-                </mat-form-field>
               </div>
 
               <div class="flex items-center justify-between">
-                <div class="text-sm">
+                <div class="text-sm" *ngIf="data.type !== 'RECEIVING_ORDER'">
                   <span class="text-gray-300">Book: </span>
                   <span class="font-bold">{{ item.book?.title || '-' }}</span>
                 </div>

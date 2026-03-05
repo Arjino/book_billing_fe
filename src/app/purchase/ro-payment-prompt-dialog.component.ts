@@ -10,6 +10,7 @@ type RoPaymentPromptDialogData = {
   invoiceNo?: string;
   grnNumber?: string;
   partyName: string;
+  amount?: number | null;
 };
 
 @Component({

@@ -125,6 +125,9 @@
                 </button>
               </div>
               <div class="flex items-center gap-2" *ngIf="purchaseMode === 'purchase'">
+                <button mat-icon-button class="text-emerald-300" (click)="openPurchaseInvoicePreview(s.invoiceNo)" title="Preview Invoice PDF">
+                  <mat-icon>receipt_long</mat-icon>
+                </button>
                 <button
                   *ngIf="canMakePayment(s)"
                   mat-stroked-button
