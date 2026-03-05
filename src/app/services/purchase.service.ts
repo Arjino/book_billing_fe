@@ -117,8 +117,8 @@ export class PurchaseService {
     );
   }
 
-  getReceivingOrderById(id: number): Observable<ReceivingOrder> {
-    return this.http.get<ReceivingOrder>(`${enviort.receivingOrdersUrl}/${id}`, { headers: this.auth.getAuthHeaders() }).pipe(
+  getReceivingOrderByGrnNumber(grnNumber: string): Observable<ReceivingOrder> {
+    return this.http.get<ReceivingOrder>(`${enviort.receivingOrdersUrl}/${encodeURIComponent(grnNumber)}`, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading receiving order:', error);
         return throwError(() => error);

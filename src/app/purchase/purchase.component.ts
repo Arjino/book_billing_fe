@@ -226,9 +226,9 @@ export class PurchaseComponent implements OnInit {
             this.loadingService.show('Creating receiving order...');
             this.purchaseService.createReceivingOrderFromPo(poNumber, payload).subscribe({
               next: (created) => {
-                const createdId = (created as any)?.id ? Number((created as any).id) : null;
-                if (createdId) {
-                  this.purchaseService.getReceivingOrderById(createdId).subscribe({
+                const createdGrnNumber = ((created as any)?.grnNumber || (created as any)?.grnNo || (created as any)?.receivingOrder?.grnNumber || (created as any)?.receivingOrder?.grnNo || '').toString().trim();
+                if (createdGrnNumber) {
+                  this.purchaseService.getReceivingOrderByGrnNumber(createdGrnNumber).subscribe({
                     next: (ro) => {
                       this.loadingService.hide();
                       this.snackBar.open('Receiving order created successfully!', 'Close', {
@@ -239,9 +239,10 @@ export class PurchaseComponent implements OnInit {
                       this.store.refreshBooks();
                       const partyName = (ro as any)?.party?.name || (created as any)?.party?.name || this.selectedPurchaseOrder?.party?.name || '';
                       const invoiceNo = (ro as any)?.invoiceNo || (ro as any)?.invoiceNumber || (created as any)?.invoiceNo || (created as any)?.invoiceNumber || '';
-                      const grnNumber = (ro as any)?.grnNumber || (ro as any)?.grnNo || (created as any)?.grnNumber || (created as any)?.grnNo || '';
+                      const grnNumber = (ro as any)?.grnNumber || (ro as any)?.grnNo || createdGrnNumber;
                       const amount = (ro as any)?.grandTotal ?? (created as any)?.grandTotal ?? null;
-                      this.promptRoPayment(createdId, partyName, invoiceNo, grnNumber, amount);
+                      const purchaseId = Number((ro as any)?.purchaseId ?? (created as any)?.purchaseId ?? 0) || 0;
+                      this.promptRoPayment(purchaseId, partyName, invoiceNo, grnNumber, amount);
                     },
                     error: () => {
                       this.loadingService.hide();
@@ -253,9 +254,10 @@ export class PurchaseComponent implements OnInit {
                       this.store.refreshBooks();
                       const partyName = (created as any)?.party?.name || this.selectedPurchaseOrder?.party?.name || '';
                       const invoiceNo = (created as any)?.invoiceNo || (created as any)?.invoiceNumber || '';
-                      const grnNumber = (created as any)?.grnNumber || (created as any)?.grnNo || '';
+                      const grnNumber = createdGrnNumber || (created as any)?.grnNumber || (created as any)?.grnNo || '';
                       const amount = (created as any)?.grandTotal ?? null;
-                      this.promptRoPayment(createdId, partyName, invoiceNo, grnNumber, amount);
+                      const purchaseId = Number((created as any)?.purchaseId ?? 0) || 0;
+                      this.promptRoPayment(purchaseId, partyName, invoiceNo, grnNumber, amount);
                     }
                   });
                   return;
@@ -698,11 +700,35 @@ export class PurchaseComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((shouldPay: boolean) => {
       if (!shouldPay) return;
-      this.router.navigate(['/transaction'], {
-        queryParams: {
-          type: 'PURCHASE',
-          openPayment: 'true',
-          purchaseId
+      const navigateToPayment = (resolvedPurchaseId: number) => {
+        if (!resolvedPurchaseId) return;
+        this.router.navigate(['/transaction'], {
+          queryParams: {
+            type: 'PURCHASE',
+            openPayment: 'true',
+            purchaseId: resolvedPurchaseId
+          }
+        });
+      };
+
+      if (purchaseId && purchaseId > 0) {
+        navigateToPayment(purchaseId);
+        return;
+      }
+
+      const resolvedInvoiceNo = (invoiceNo || '').toString().trim();
+      if (!resolvedInvoiceNo) return;
+
+      this.loadingService.show('Opening payment...');
+      this.purchaseService.getPurchaseByInvoiceNumber(resolvedInvoiceNo).subscribe({
+        next: (purchase) => {
+          this.loadingService.hide();
+          const resolvedPurchaseId = Number((purchase as any)?.id);
+          navigateToPayment(resolvedPurchaseId || 0);
+        },
+        error: (err) => {
+          console.error('Failed to load purchase by invoice number', err);
+          this.loadingService.hide();
         }
       });
     });
