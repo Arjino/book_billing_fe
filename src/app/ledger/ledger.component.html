@@ -82,7 +82,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let r of results" class="border-t border-indigo-500/10">
-              <td class="py-3 px-3">{{ formatLedgerDateTime(r) }}</td>
+              <td class="py-3 px-3">{{ getLedgerDateTime(r) | date:'dd/MM/yyyy hh:mm a' }}</td>
               <td class="py-3 px-3">{{ r.refType }}</td>
               <td class="py-3 px-3">
                 <span>{{ r.refId || '-' }}</span>
@@ -93,10 +93,10 @@
               <td class="py-3 px-3">{{ r.remarks || '' }}</td>
               <td class="py-3 px-3">
                 <div class="flex items-center gap-2">
-                  <button mat-icon-button (click)="openInvoicePreview(r)" [disabled]="!canShowInvoice(r)" class="text-sky-300 hover:text-sky-200" title="Preview PDF">
+                  <button mat-icon-button (click)="openInvoicePreview(r)" class="text-sky-300 hover:text-sky-200" title="Preview PDF">
                     <mat-icon>picture_as_pdf</mat-icon>
                   </button>
-                  <button mat-icon-button (click)="downloadInvoice(r)" [disabled]="!canShowInvoice(r)" class="text-emerald-300 hover:text-emerald-200" title="Download PDF">
+                  <button mat-icon-button (click)="downloadInvoice(r)" class="text-emerald-300 hover:text-emerald-200" title="Download PDF">
                     <mat-icon>download</mat-icon>
                   </button>
                 </div>

@@ -17,7 +17,7 @@ import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
 import { LoadingService } from '../services/loading.service';
-import { formatTimeIST, formatDateForAPI, formatDateForUTC, formatDateLocal } from '../utils/date.utils';
+import { buildUTCDateTime, formatDateForAPI, formatDateForUTC } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
 
@@ -258,10 +258,8 @@ export class SalesComponent implements OnInit {
     return formatDateForUTC(date);
   }
 
-  formatSaleDateTime(s: Sale): string {
-    const datePart = formatDateLocal(s.date);
-    const time = formatTimeIST(s.time, s.date)?.toUpperCase();
-    return `${datePart}  ${time}`;
+  getSaleDateTime(s: Sale): Date | null {
+    return buildUTCDateTime(s.date, s.time || null);
   }
 
   goBack() {

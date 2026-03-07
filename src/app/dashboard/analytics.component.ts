@@ -111,7 +111,7 @@ export class AnalyticsComponent implements OnInit {
 
         if (Array.isArray(stats.last7DaysSales) && stats.last7DaysSales.length) {
           this.dailySalesData = stats.last7DaysSales.map((entry) => ({
-            date: formatDateLocal(new Date(entry.date)),
+            date: new Date(entry.date),
             amount: entry.amount || 0
           }));
         }
@@ -222,7 +222,7 @@ export class AnalyticsComponent implements OnInit {
     });
 
     this.dailySalesData = Array.from(dailyMap.entries()).map(([date, amount]) => ({
-      date: formatDateLocal(new Date(date)),
+      date: new Date(date),
       amount
     }));
   }

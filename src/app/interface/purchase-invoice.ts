@@ -5,6 +5,7 @@ export interface PurchaseInvoice {
   invoiceNo: string;
   party: Party | null;
   date: string;
+  time?: string;
   totalAmount: number;
   taxAmount: number;
   roundOff: number;

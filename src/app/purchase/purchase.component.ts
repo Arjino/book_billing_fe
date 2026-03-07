@@ -17,7 +17,7 @@ import { PurchaseDialogData } from '../interface/purchase-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
-import { formatTimeIST, formatDateForAPI, formatDateForUTC, formatDateLocal } from '../utils/date.utils';
+import { buildUTCDateTime, formatDateForAPI, formatDateForUTC } from '../utils/date.utils';
 import { ReceivingOrder, ReceivingOrderItem } from '../interface/receiving-order';
 import { PurchaseOrder, PurchaseOrderItem } from '../interface/purchase-order';
 import { PURCHASE_CONSTANTS } from '../constants/purchase.constants';
@@ -68,6 +68,10 @@ export class PurchaseComponent implements OnInit {
   ) {}
 
   ngOnInit() {
+    const today = new Date();
+    this.startDate = formatDateForAPI(today);
+    this.endDate = formatDateForAPI(today);
+
     this.route.queryParams.subscribe(params => {
       const type = (params['type'] || 'purchase-order').toLowerCase();
       this.purchaseMode = type === 'purchase'
@@ -80,12 +84,6 @@ export class PurchaseComponent implements OnInit {
       }
       this.loadPurchases();
     });
-
-    const today = new Date();
-    this.startDate = formatDateForAPI(today);
-    this.endDate = formatDateForAPI(today);
-
-    this.loadPurchases();
   }
 
   loadPurchases() {
@@ -414,12 +412,10 @@ export class PurchaseComponent implements OnInit {
     return formatDateForUTC(date);
   }
 
-  formatPurchaseDateTime(s: PurchaseTransaction | ReceivingOrder | PurchaseOrder): string {
+  getPurchaseDateTime(s: PurchaseTransaction | ReceivingOrder | PurchaseOrder): Date | null {
     const dateValue = (s as ReceivingOrder).receivedDate || (s as PurchaseOrder).poDate || (s as PurchaseTransaction).date;
     const timeValue = (s as PurchaseTransaction).time;
-    const datePart = dateValue ? formatDateLocal(dateValue) : '';
-    const time = timeValue ? formatTimeIST(timeValue, dateValue)?.toUpperCase() : '';
-    return time ? `${datePart}  ${time}` : datePart;
+    return buildUTCDateTime(dateValue || null, timeValue || null);
   }
 
   getStatusLabel(s: PurchaseTransaction | ReceivingOrder | PurchaseOrder): string {

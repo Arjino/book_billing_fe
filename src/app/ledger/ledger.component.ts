@@ -14,12 +14,14 @@ import { RouterModule } from '@angular/router';
 import { DataStoreService } from '../services/data-store.service';
 import { LedgerService } from '../services/ledger.service';
 import { InvoicesService } from '../services/invoices.service';
-import { parseLocalDate, formatTimeIST, formatDateForAPI, formatDateForUTC, formatDateLocal } from '../utils/date.utils';
+import { buildUTCDateTime, parseLocalDate, formatDateForAPI, formatDateForUTC } from '../utils/date.utils';
 import { LoadingService } from '../services/loading.service';
 import { take } from 'rxjs/operators';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
+import { PaymentReceiptPreviewComponent } from '../transaction/payment-receipt-preview.component';
+import { TransactionsService } from '../services/transactions.service';
 
 @Component({
   selector: 'app-ledger',
@@ -49,7 +51,8 @@ export class LedgerComponent implements OnInit {
     private location: Location,
     private loadingService: LoadingService,
     private dialog: MatDialog,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private transactionsService: TransactionsService
   ) {}
 
   ngOnInit(): void {
@@ -246,16 +249,8 @@ export class LedgerComponent implements OnInit {
     });
   }
 
-  formatLedgerDateTime(entry: any): string {
-    const datePart = entry?.date ? formatDateLocal(entry.date) : '';
-    const time = formatTimeIST(entry?.time, entry?.date)?.toUpperCase();
-    return `${datePart}  ${time}`;
-  }
-
-  canShowInvoice(entry: any): boolean {
-    if (!entry?.refId) return false;
-    const refType = (entry?.refType || '').toString().toLowerCase();
-    return refType.includes('sale') || refType.includes('purchase');
+  getLedgerDateTime(entry: any): Date | null {
+    return buildUTCDateTime(entry?.date, entry?.time || null);
   }
 
   getInvoiceType(entry: any): 'sale' | 'purchase' {
@@ -263,11 +258,35 @@ export class LedgerComponent implements OnInit {
     return refType.includes('purchase') ? 'purchase' : 'sale';
   }
 
+  private getPaymentReferenceNumber(entry: any): string | null {
+    const referenceNumber = entry?.referenceNumber ?? entry?.refId;
+    if (referenceNumber === null || referenceNumber === undefined || referenceNumber === '') {
+      return null;
+    }
+    return String(referenceNumber);
+  }
+
   openInvoicePreview(entry: any): void {
-    if (!this.canShowInvoice(entry)) {
-      this.snackBar.open('No invoice available for this entry', 'Close', { duration: 3000 });
+    const refType = (entry?.refType || '').toString().toLowerCase();
+    if (refType.includes('payment')) {
+
+      const referenceNumber = this.getPaymentReferenceNumber(entry);
+      if (!referenceNumber) {
+        this.snackBar.open('Invalid payment reference for preview', 'Close', { duration: 4000 });
+        return;
+      }
+      // Reuse transaction receipt dialog for payment entries.
+      this.dialog.open(PaymentReceiptPreviewComponent, {
+        data: { referenceNumber },
+        width: '800px',
+        height: '90vh',
+        maxHeight: '95vh',
+        maxWidth: '95vw',
+        panelClass: 'receipt-dialog'
+      });
       return;
     }
+
     const type = this.getInvoiceType(entry);
     this.dialog.open(InvoicePreviewComponent, {
       data: { salesId: entry?.refId, type },
@@ -278,10 +297,33 @@ export class LedgerComponent implements OnInit {
   }
 
   downloadInvoice(entry: any): void {
-    if (!this.canShowInvoice(entry)) {
-      this.snackBar.open('No invoice available for this entry', 'Close', { duration: 3000 });
+    const refType = (entry?.refType || '').toString().toLowerCase();
+    if (refType.includes('payment')) {
+      const referenceNumber = this.getPaymentReferenceNumber(entry);
+      if (!referenceNumber) {
+        this.snackBar.open('Invalid payment reference for download', 'Close', { duration: 4000 });
+        return;
+      }
+
+      this.loadingService.show('Downloading receipt...');
+      this.transactionsService.downloadPaymentReceipt(referenceNumber).subscribe({
+        next: (blob: Blob) => {
+          const link = document.createElement('a');
+          const objectUrl = URL.createObjectURL(blob);
+          link.href = objectUrl;
+          link.download = `Payment_Receipt_${referenceNumber}.pdf`;
+          link.click();
+          URL.revokeObjectURL(objectUrl);
+          this.loadingService.hide();
+        },
+        error: () => {
+          this.loadingService.hide();
+          this.snackBar.open('Failed to download payment receipt', 'Close', { duration: 4000 });
+        }
+      });
       return;
     }
+
     const type = this.getInvoiceType(entry);
     this.loadingService.show('Downloading invoice...');
     const download$ = type === 'purchase'

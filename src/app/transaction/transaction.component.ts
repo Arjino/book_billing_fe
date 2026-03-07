@@ -20,7 +20,7 @@ import { TransactionsService } from '../services/transactions.service';
 import { LoadingService } from '../services/loading.service';
 import { Party } from '../interface/party';
 import { Transaction } from '../interface/Transaction';
-import { formatDateLocal, getTodayLocal, parseLocalDate, formatTimeIST, formatDateForUTC } from '../utils/date.utils';
+import { buildUTCDateTime, parseLocalDate, formatDateForUTC } from '../utils/date.utils';
 import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
 
 
@@ -150,7 +150,7 @@ export class TransactionComponent implements OnInit {
       data: {
         id: 0,
         party: null,
-        paymentDate: getTodayLocal(),
+        paymentDate: formatDateForUTC(new Date()),
         paidAmount: 0,
         paymentMode: 'Cash',
         remarks: '',
@@ -251,15 +251,21 @@ export class TransactionComponent implements OnInit {
     return formatDateForUTC(date);
   }
 
-  formatPaymentDateTime(t: Transaction): string {
-    const datePart = formatDateLocal(t.paymentDate);
-    const time = formatTimeIST(t.paymentTime, t.paymentDate)?.toUpperCase();
-    return `${datePart}  ${time}`;
+  getPaymentDateTime(t: Transaction): Date | null {
+    return buildUTCDateTime(t.paymentDate, t.paymentTime || null);
   }
 
-  viewPaymentReceipt(paymentId: number): void {
+  viewPaymentReceipt(referenceNumber?: string): void {
+    if (!referenceNumber) {
+      this.snackBar.open('Reference number not found for receipt preview.', 'Close', {
+        duration: 4000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
     this.dialog.open(PaymentReceiptPreviewComponent, {
-      data: { paymentId },
+      data: { referenceNumber },
       width: '800px',
       height: '90vh',
       maxHeight: '95vh',
@@ -268,15 +274,23 @@ export class TransactionComponent implements OnInit {
     });
   }
 
-  downloadPaymentReceipt(paymentId: number): void {
+  downloadPaymentReceipt(referenceNumber?: string): void {
+    if (!referenceNumber) {
+      this.snackBar.open('Reference number not found for receipt download.', 'Close', {
+        duration: 4000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
     this.loadingService.show('Downloading receipt...');
-    this.transactionsService.downloadPaymentReceipt(paymentId).subscribe({
+    this.transactionsService.downloadPaymentReceipt(referenceNumber).subscribe({
       next: (blob: Blob) => {
         this.loadingService.hide();
         const link = document.createElement('a');
         const url = window.URL.createObjectURL(blob);
         link.href = url;
-        link.download = `Payment_Receipt_${paymentId}.pdf`;
+        link.download = `Payment_Receipt_${referenceNumber}.pdf`;
         link.click();
         window.URL.revokeObjectURL(url);
         this.snackBar.open('Receipt downloaded successfully!', 'Close', { 

@@ -193,18 +193,6 @@ export class FeedbackComponent implements OnInit {
     });
   }
 
-  formatDateTime(dateStr: string | undefined): string {
-    if (!dateStr) return '—';
-    const date = new Date(dateStr);
-    return date.toLocaleString('en-IN', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }
-
   goBack() {
     this.router.navigate(['/dashboard']);
   }

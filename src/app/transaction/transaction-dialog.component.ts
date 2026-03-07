@@ -10,6 +10,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Observable } from 'rxjs';
 import { Transaction } from '../interface/Transaction';
 import { SalesService } from '../services/sales.service';
 import { PurchaseService } from '../services/purchase.service';
@@ -35,6 +36,15 @@ export class TransactionDialogComponent implements OnInit {
   parties: Party[] = [];
   supplierParties: Party[] = [];
   isPartyLocked = false;
+
+  private readonly invoiceDetailShape = {} as {
+    id?: number;
+    invoiceNo?: string;
+    party?: Party | null;
+    grandTotal?: number;
+    totalAmount?: number;
+    dueAmount?: number;
+  };
 
   constructor(
     public dialogRef: MatDialogRef<TransactionDialogComponent>,
@@ -111,7 +121,7 @@ export class TransactionDialogComponent implements OnInit {
         this.isLoadingInvoices = false;
         this.purchaseInvoices = invoices || [];
       },
-      error: (error) => {
+      error: (error: any) => {
         this.loadingService.hide();
         this.isLoadingInvoices = false;
         console.error('Failed to load purchase invoices:', error);
@@ -133,7 +143,7 @@ export class TransactionDialogComponent implements OnInit {
         this.isLoadingSaleInvoices = false;
         this.saleInvoices = invoices || [];
       },
-      error: (error) => {
+      error: (error: any) => {
         this.loadingService.hide();
         this.isLoadingSaleInvoices = false;
         console.error('Failed to load sale invoices:', error);
@@ -153,9 +163,9 @@ export class TransactionDialogComponent implements OnInit {
     this.isFetching = true;
     this.loadingService.show('Fetching details...');
 
-    const request$ = this.data?.transactionType === 'PURCHASE'
+    const request$: Observable<typeof this.invoiceDetailShape> = (this.data?.transactionType === 'PURCHASE'
       ? this.purchaseService.getPurchaseByInvoiceNumber(invoiceNo)
-      : this.salesService.getSaleByInvoiceNumber(invoiceNo);
+      : this.salesService.getSaleByInvoiceNumber(invoiceNo)) as Observable<typeof this.invoiceDetailShape>;
 
     request$.subscribe({
       next: (result: any) => {
@@ -177,7 +187,7 @@ export class TransactionDialogComponent implements OnInit {
           this.data.purchaseId = undefined;
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         this.loadingService.hide();
         this.isFetching = false;
         console.error('Failed to fetch transaction details:', error);
@@ -216,7 +226,7 @@ export class TransactionDialogComponent implements OnInit {
           this.purchaseInvoices = [this.data.invoiceNo, ...this.purchaseInvoices];
         }
       },
-      error: (error) => {
+      error: (error: any) => {
         this.loadingService.hide();
         this.isFetching = false;
         console.error('Failed to load purchase details by ID:', error);

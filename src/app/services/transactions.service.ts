@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Transaction } from '../interface/Transaction';
 import { enviort } from '../../environments/environment';
+import { normalizeUTCDatePayload } from '../utils/date.utils';
 
 @Injectable({ providedIn: 'root' })
 export class TransactionsService {
@@ -32,7 +33,8 @@ export class TransactionsService {
   }
 
   createTransaction(transaction: Transaction): Observable<Transaction> {
-    return this.http.post<Transaction>(enviort.paymentUrl, transaction, { headers: this.auth.getAuthHeaders() }).pipe(
+    const payload = normalizeUTCDatePayload(transaction as Record<string, any>, ['paymentDate']) as Transaction;
+    return this.http.post<Transaction>(enviort.paymentUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating transaction:', error);
         return throwError(() => error);
@@ -40,8 +42,9 @@ export class TransactionsService {
     );
   }
 
-  downloadPaymentReceipt(paymentId: number): Observable<Blob> {
-    const receiptUrl = `${enviort.paymentUrl}/${paymentId}/receipt`;
+  downloadPaymentReceipt(referenceNumber: string | number): Observable<Blob> {
+    const encodedReference = encodeURIComponent(String(referenceNumber));
+    const receiptUrl = `${enviort.paymentUrl}/receipt/${encodedReference}`;
     return this.http.get(receiptUrl, {
       headers: this.auth.getAuthHeaders(),
       responseType: 'blob'
@@ -53,8 +56,9 @@ export class TransactionsService {
     );
   }
 
-  getPaymentReceipt(paymentId: number): Observable<any> {
-    const receiptUrl = `${enviort.paymentUrl}/${paymentId}/receipt`;
+  getPaymentReceipt(referenceNumber: string | number): Observable<any> {
+    const encodedReference = encodeURIComponent(String(referenceNumber));
+    const receiptUrl = `${enviort.paymentUrl}/receipt/${encodedReference}`;
     return this.http.get(receiptUrl, { 
       headers: this.auth.getAuthHeaders() 
     }).pipe(

@@ -37,7 +37,7 @@ import { AnalyticsComponent } from './analytics.component';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
 import { PurchaseOrder, PurchaseOrderItem } from '../interface/purchase-order';
-import { getTodayLocal, formatDateForAPI, formatDateForUTC } from '../utils/date.utils';
+import { formatDateForAPI, formatDateForUTC } from '../utils/date.utils';
 import { BOOKING_CONSTANTS } from '../constants/booking.constants';
 import { PARTIES_CONSTANTS } from '../constants/parties.constants';
 import { DASHBOARD_CONSTANTS } from '../constants/dashboard.constants';
@@ -584,7 +584,7 @@ export class DashboardComponent implements OnInit {
       data: {
         id: 0,
         party: null,
-        paymentDate: getTodayLocal(),
+        paymentDate: formatDateForUTC(new Date()),
         paidAmount: 0,
         paymentMode: 'Cash',
         remarks: '',

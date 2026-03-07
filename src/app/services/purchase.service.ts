@@ -3,17 +3,18 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { Sale } from '../interface/Sale';
+import { PurchaseInvoice } from '../interface/purchase-invoice';
 import { ReceivingOrder } from '../interface/receiving-order';
 import { PurchaseOrder } from '../interface/purchase-order';
 import { enviort } from '../../environments/environment';
+import { normalizeUTCDatePayload } from '../utils/date.utils';
 
 @Injectable({ providedIn: 'root' })
 export class PurchaseService {
   constructor(private http: HttpClient, private auth: AuthService) {}
 
-  getPurchasesByDate(): Observable<Sale[]> {
-    return this.http.get<Sale[]>(enviort.purchasesByDateUrl, { headers: this.auth.getAuthHeaders() }).pipe(
+  getPurchasesByDate(): Observable<PurchaseInvoice[]> {
+    return this.http.get<PurchaseInvoice[]>(enviort.purchasesByDateUrl, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading purchases by date:', error);
         return throwError(() => error);
@@ -21,9 +22,9 @@ export class PurchaseService {
     );
   }
 
-  getPurchasesByDateRange(startDate: string, endDate: string): Observable<Sale[]> {
+  getPurchasesByDateRange(startDate: string, endDate: string): Observable<PurchaseInvoice[]> {
     const url = `${enviort.purchasesByDateUrl}?startDate=${startDate}&endDate=${endDate}`;
-    return this.http.get<Sale[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
+    return this.http.get<PurchaseInvoice[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading purchases by date range:', error);
         return throwError(() => error);
@@ -31,9 +32,9 @@ export class PurchaseService {
     );
   }
 
-  getPurchasesByParty(partyId: number): Observable<Sale[]> {
+  getPurchasesByParty(partyId: number): Observable<PurchaseInvoice[]> {
     const url = `${enviort.purchasesUrl}/by-party/${partyId}`;
-    return this.http.get<Sale[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
+    return this.http.get<PurchaseInvoice[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading purchases by party:', error);
         return throwError(() => error);
@@ -41,8 +42,8 @@ export class PurchaseService {
     );
   }
 
-  getPurchaseById(id: number): Observable<Sale> {
-    return this.http.get<Sale>(`${enviort.purchasesUrl}/${id}`, { headers: this.auth.getAuthHeaders() }).pipe(
+  getPurchaseById(id: number): Observable<PurchaseInvoice> {
+    return this.http.get<PurchaseInvoice>(`${enviort.purchasesUrl}/${id}`, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading purchase:', error);
         return throwError(() => error);
@@ -50,9 +51,9 @@ export class PurchaseService {
     );
   }
 
-  getPurchaseByInvoiceNumber(invoiceNo: string): Observable<Sale> {
+  getPurchaseByInvoiceNumber(invoiceNo: string): Observable<PurchaseInvoice> {
     const url = `${enviort.purchasesUrl}/invoice/${encodeURIComponent(invoiceNo)}`;
-    return this.http.get<Sale>(url, { headers: this.auth.getAuthHeaders() }).pipe(
+    return this.http.get<PurchaseInvoice>(url, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading purchase by invoice number:', error);
         return throwError(() => error);
@@ -72,8 +73,9 @@ export class PurchaseService {
     );
   }
 
-  createPurchase(purchase: Sale): Observable<Sale> {
-    return this.http.post<Sale>(enviort.purchasesUrl, purchase, { headers: this.auth.getAuthHeaders() }).pipe(
+  createPurchase(purchase: PurchaseInvoice): Observable<PurchaseInvoice> {
+    const payload = normalizeUTCDatePayload(purchase, ['date']);
+    return this.http.post<PurchaseInvoice>(enviort.purchasesUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating purchase:', error);
         return throwError(() => error);
@@ -182,7 +184,8 @@ export class PurchaseService {
 
   createPurchasePayment(purchaseId: number, payload: { paymentDate: string; paidAmount: number; paymentMode: string; remarks?: string }): Observable<any> {
     const url = `${enviort.purchasesUrl}/${purchaseId}/payments`;
-    return this.http.post(url, payload, { headers: this.auth.getAuthHeaders() }).pipe(
+    const normalizedPayload = normalizeUTCDatePayload(payload as Record<string, any>, ['paymentDate']);
+    return this.http.post(url, normalizedPayload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating purchase payment:', error);
         return throwError(() => error);

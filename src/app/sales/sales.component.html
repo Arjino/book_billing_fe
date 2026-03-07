@@ -70,7 +70,7 @@
           </ng-container>
           <ng-container matColumnDef="dateTime">
             <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Date Time</th>
-            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{formatSaleDateTime(s)}}</td>
+            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{ getSaleDateTime(s) | date:'dd/MM/yyyy hh:mm a' }}</td>
           </ng-container>
           <ng-container matColumnDef="grandTotal">
             <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Grand Total (₹)</th>
