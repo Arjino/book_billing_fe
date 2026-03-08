@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
@@ -23,8 +23,13 @@ export class PurchaseService {
   }
 
   getPurchasesByDateRange(startDateTime: string, endDateTime: string): Observable<PurchaseInvoice[]> {
-    const url = `${enviort.purchasesByDateUrl}?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}`;
-    return this.http.get<PurchaseInvoice[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
+    const params = new HttpParams()
+      .set('startDateTime', startDateTime)
+      .set('endDateTime', endDateTime);
+    return this.http.get<PurchaseInvoice[]>(enviort.purchasesByDateUrl, {
+      headers: this.auth.getAuthHeaders(),
+      params
+    }).pipe(
       catchError((error) => {
         console.error('Error loading purchases by date range:', error);
         return throwError(() => error);
