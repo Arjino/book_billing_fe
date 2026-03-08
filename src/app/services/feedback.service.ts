@@ -20,17 +20,17 @@ export class FeedbackService {
 
   /**
    * Get all feedback or filter by date range
-   * @param startDate Optional start date (YYYY-MM-DD)
-   * @param endDate Optional end date (YYYY-MM-DD)
+   * @param startDateTime Optional start date time (dd-MM-yyyy HH:mm)
+   * @param endDateTime Optional end date time (dd-MM-yyyy HH:mm)
    */
-  getFeedback(startDate?: string, endDate?: string): Observable<Feedback[]> {
+  getFeedback(startDateTime?: string, endDateTime?: string): Observable<Feedback[]> {
     let params = new HttpParams();
     
-    if (startDate) {
-      params = params.set('startdate', startDate);
+    if (startDateTime) {
+      params = params.set('startDateTime', startDateTime);
     }
-    if (endDate) {
-      params = params.set('endDate', endDate);
+    if (endDateTime) {
+      params = params.set('endDateTime', endDateTime);
     }
 
     return this.http.get<FeedbackResponse>(enviort.feedbackUrl, { 

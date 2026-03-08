@@ -36,13 +36,19 @@
                 matInput
                 type="number"
                 [ngModel]="entry?.percent"
-                (ngModelChange)="entry && (entry.percent = $event)"
+                (ngModelChange)="entry && (entry.percent = $event); discountModel.control.markAsTouched()"
                 [ngModelOptions]="{ standalone: true }"
+                name="discount_{{ i }}"
+                #discountModel="ngModel"
                 min="0"
                 max="100"
                 step="0.01"
                 [disabled]="!entry"
               />
+              <mat-error *ngIf="discountModel.invalid && (discountModel.dirty || discountModel.touched)">
+                <span *ngIf="discountModel.errors?.['min']">Minimum is 0.</span>
+                <span *ngIf="discountModel.errors?.['max']">Maximum is 100.</span>
+              </mat-error>
             </mat-form-field>
           </ng-container>
 
@@ -67,7 +73,7 @@
 
   <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
     <button mat-button (click)="cancel()">Cancel</button>
-    <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid">
+    <button mat-raised-button color="primary" (click)="save()" [disabled]="form.invalid || hasInvalidDiscounts()">
       Save
     </button>
   </div>

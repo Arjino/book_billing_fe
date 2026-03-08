@@ -198,6 +198,14 @@ export class SupplierBookMappingDialogComponent implements OnInit {
   }
 
   save(): void {
+    if (this.hasInvalidDiscounts()) {
+      this.snackBar.open('Discount must be between 0 and 100.', 'Close', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -316,5 +324,15 @@ export class SupplierBookMappingDialogComponent implements OnInit {
         });
       }
     }));
+  }
+
+  hasInvalidDiscounts(): boolean {
+    return Object.values(this.discountEntries).some(entry => {
+      const value = entry?.percent;
+      if (value === null || value === undefined) return false;
+      const num = Number(value);
+      if (isNaN(num)) return true;
+      return num < 0 || num > 100;
+    });
   }
 }
