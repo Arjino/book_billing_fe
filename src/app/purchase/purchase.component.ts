@@ -395,12 +395,12 @@ export class PurchaseComponent implements OnInit {
     }
     this.showStartDateError = false;
 
-    const start = this.toApiDateTime(this.startDate, this.startHour, this.startMinute);
-    const end = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
+    const startDateTime = this.toApiDateTime(this.startDate, this.startHour, this.startMinute);
+    const endDateTime = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
 
     if (this.purchaseMode === 'purchase') {
       this.loadingService.show('Fetching purchases...');
-      this.purchaseService.getPurchasesByDateRange(start, end).subscribe({
+      this.purchaseService.getPurchasesByDateRange(startDateTime, endDateTime).subscribe({
         next: (data) => {
           this.purchases = data || [];
           this.loadingService.hide();
@@ -414,12 +414,12 @@ export class PurchaseComponent implements OnInit {
     }
 
     if (this.purchaseMode === 'receiving') {
-      const filtered = this.filterReceivingOrdersByDateRange(start, end);
+      const filtered = this.filterReceivingOrdersByDateRange(startDateTime, endDateTime);
       this.purchases = filtered;
       return;
     }
 
-    const filtered = this.filterPurchaseOrdersByDateRange(start, end);
+    const filtered = this.filterPurchaseOrdersByDateRange(startDateTime, endDateTime);
     this.purchases = filtered;
   }
 

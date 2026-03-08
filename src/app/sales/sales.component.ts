@@ -249,11 +249,11 @@ export class SalesComponent implements OnInit {
     }
     this.showStartDateError = false;
 
-    const start = this.toApiDateTime(this.startDate, this.startHour, this.startMinute);
-    const end = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
+    const startDateTime = this.toApiDateTime(this.startDate, this.startHour, this.startMinute);
+    const endDateTime = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
 
     this.loadingService.show('Fetching sales...');
-    this.salesService.getSalesByDateRange(start, end).subscribe({
+    this.salesService.getSalesByDateRange(startDateTime, endDateTime).subscribe({
       next: (data) => {
         this.sales = data;
         this.loadingService.hide();

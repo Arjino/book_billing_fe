@@ -228,10 +228,12 @@ export class TransactionComponent implements OnInit {
     // Build query params with ISO-8601 UTC datetime format
     let params: any = {};
     if (this.startDate) {
-      params.startDateTime = toISODateTimeUTC(this.startDate, this.startHour, this.startMinute);
+      const startDateTime = toISODateTimeUTC(this.startDate, this.startHour, this.startMinute);
+      params.startDateTime = startDateTime;
     }
     if (this.endDate) {
-      params.endDateTime = toISODateTimeUTC(this.endDate, this.endHour, this.endMinute);
+      const endDateTime = toISODateTimeUTC(this.endDate, this.endHour, this.endMinute);
+      params.endDateTime = endDateTime;
     }
     params.type = this.selectedTransactionType;
     this.loadingService.show('Fetching transactions...');

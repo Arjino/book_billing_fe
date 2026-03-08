@@ -20,8 +20,8 @@ export class FeedbackService {
 
   /**
    * Get all feedback or filter by date range
-   * @param startDateTime Optional start date time (dd-MM-yyyy HH:mm)
-   * @param endDateTime Optional end date time (dd-MM-yyyy HH:mm)
+    * @param startDateTime Optional start date time (ISO-8601 UTC)
+    * @param endDateTime Optional end date time (ISO-8601 UTC)
    */
   getFeedback(startDateTime?: string, endDateTime?: string): Observable<Feedback[]> {
     let params = new HttpParams();

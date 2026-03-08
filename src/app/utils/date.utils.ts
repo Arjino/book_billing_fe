@@ -325,8 +325,9 @@ export function toISOUTCString(date: Date | null): string {
 }
 
 /**
- * Combines date and time (hour, minute) into a UTC Date object and returns ISO string
- * Used for backend API filter parameters (startDateTime, endDateTime)
+ * Combines date and time (hour, minute) as local time and returns UTC ISO string.
+ * Used for backend API filter parameters (startDateTime, endDateTime).
+ * Example (IST): 2026-03-09 00:00 local -> 2026-03-08T18:30:00.000Z
  * @param date - Date object or null
  * @param hour - Hour string (00-23), defaults to '00'
  * @param minute - Minute string (00-59), defaults to '00'
@@ -334,7 +335,7 @@ export function toISOUTCString(date: Date | null): string {
  */
 export function toISODateTimeUTC(date: Date | null, hour: string = '00', minute: string = '00'): string {
   if (!date) return '';
-  const utcDate = new Date(Date.UTC(
+  const localDateTime = new Date(
     date.getFullYear(),
     date.getMonth(),
     date.getDate(),
@@ -342,6 +343,6 @@ export function toISODateTimeUTC(date: Date | null, hour: string = '00', minute:
     parseInt(minute, 10) || 0,
     0,
     0
-  ));
-  return utcDate.toISOString();
+  );
+  return localDateTime.toISOString();
 }

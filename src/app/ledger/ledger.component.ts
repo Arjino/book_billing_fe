@@ -137,11 +137,13 @@ export class LedgerComponent implements OnInit {
     const params: any = { partyId: this.partyId };
     
     if (this.startDate) {
-      params.startDateTime = this.toApiDateTime(this.startDate, this.startHour, this.startMinute);
+      const startDateTime = this.toApiDateTime(this.startDate, this.startHour, this.startMinute);
+      params.startDateTime = startDateTime;
     }
     
     if (this.endDate) {
-      params.endDateTime = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
+      const endDateTime = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
+      params.endDateTime = endDateTime;
     }
     
     if (this.transactionType && this.transactionType !== 'All') {
@@ -190,11 +192,13 @@ export class LedgerComponent implements OnInit {
     queryParams.append('partyId', this.partyId.toString());
     
     if (this.startDate) {
-      queryParams.append('startDateTime', this.toApiDateTime(this.startDate, this.startHour, this.startMinute));
+      const startDateTime = this.toApiDateTime(this.startDate, this.startHour, this.startMinute);
+      queryParams.append('startDateTime', startDateTime);
     }
     
     if (this.endDate) {
-      queryParams.append('endDateTime', this.toApiDateTime(this.endDate, this.endHour, this.endMinute));
+      const endDateTime = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
+      queryParams.append('endDateTime', endDateTime);
     }
     
     // Only add type if it's not 'All'

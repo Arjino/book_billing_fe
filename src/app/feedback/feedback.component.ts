@@ -18,7 +18,7 @@ import { FeedbackDialogComponent } from './feedback-dialog.component';
 import { FeedbackService } from '../services/feedback.service';
 import { LoadingService } from '../services/loading.service';
 import { Feedback } from '../interface/feedback';
-import { parseLocalDate } from '../utils/date.utils';
+import { parseLocalDate, toISODateTimeUTC } from '../utils/date.utils';
 import { FEEDBACK_CONSTANTS } from '../constants/feedback.constants';
 
 @Component({
@@ -256,23 +256,10 @@ export class FeedbackComponent implements OnInit {
     return base;
   }
 
-  private toUtcISOString(date: Date | null, hour: string, minute: string): string {
-    if (!date) return '';
-    const combined = this.combineDateTime(date, hour, minute);
-    if (!combined) return '';
-    return combined.toISOString();
-  }
-
   private toApiDateTime(date: Date | null, hour: string, minute: string): string {
     if (!date) return '';
-    const combined = this.combineDateTime(date, hour, minute);
-    if (!combined) return '';
-    const dd = String(combined.getDate()).padStart(2, '0');
-    const mm = String(combined.getMonth() + 1).padStart(2, '0');
-    const yyyy = combined.getFullYear();
-    const hh = String(combined.getHours()).padStart(2, '0');
-    const min = String(combined.getMinutes()).padStart(2, '0');
-    return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+    // Use backend-mandated ISO-8601 UTC instant format for filters.
+    return toISODateTimeUTC(date, hour, minute);
   }
 
 
