@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -14,7 +14,7 @@ import { RouterModule } from '@angular/router';
 import { DataStoreService } from '../services/data-store.service';
 import { LedgerService } from '../services/ledger.service';
 import { InvoicesService } from '../services/invoices.service';
-import { buildUTCDateTime, parseLocalDate, formatDateForAPI, formatDateForUTC } from '../utils/date.utils';
+import { buildUTCDateTime, parseLocalDate, formatDateForAPI,formatDateForUTC, toISODateTimeUTC } from '../utils/date.utils';
 import { LoadingService } from '../services/loading.service';
 import { take } from 'rxjs/operators';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
@@ -22,21 +22,33 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
 import { PaymentReceiptPreviewComponent } from '../transaction/payment-receipt-preview.component';
 import { TransactionsService } from '../services/transactions.service';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-ledger',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatDatepickerModule, MatNativeDateModule, RouterModule, MatDialogModule, MatSnackBarModule],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatDatepickerModule, MatNativeDateModule, RouterModule, MatDialogModule, MatSnackBarModule, MatMenuModule, MatTooltipModule],
   templateUrl: './ledger.component.html',
   styleUrls: ['./ledger.component.css']
 })
 export class LedgerComponent implements OnInit {
+  @ViewChild('startTrigger') startMenuTrigger?: MatMenuTrigger;
+  @ViewChild('endTrigger') endMenuTrigger?: MatMenuTrigger;
   partyId: any = null;
   parties: any[] = [];
 
   // Filters
-  startDate: string = '';
-  endDate: string = '';
+  startDate: Date | null = null;
+  endDate: Date | null = null;
+  startHour: string = '00';
+  startMinute: string = '00';
+  endHour: string = '23';
+  endMinute: string = '59';
+  hours: string[] = [];
+  minutes: string[] = [];
+  maxDate = new Date();
+  minEndDate: Date | null = null;
   transactionType: string = 'All';
 
   results: any[] = [];
@@ -56,9 +68,15 @@ export class LedgerComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    const today = formatDateForAPI(new Date());
+    const today = new Date();
     this.startDate = today;
     this.endDate = today;
+    this.startHour = '00';
+    this.startMinute = '00';
+    this.endHour = '23';
+    this.endMinute = '59';
+    this.hours = this.buildHourOptions();
+    this.minutes = this.buildMinuteOptions();
 
     this.loadingService.show('Loading parties...');
     this.store.getParties().pipe(take(1)).subscribe(d => {
@@ -89,14 +107,8 @@ export class LedgerComponent implements OnInit {
   fetchLedgerForParty(partyId: any) {
     if (!partyId) return;
     
-    // Fetch entries based on current filter dates (defaulted to today)
-    const start = this.startDate ? formatDateForUTC(this.startDate) : formatDateForUTC(new Date());
-    const end = this.endDate ? formatDateForUTC(this.endDate) : formatDateForUTC(new Date());
-    const params: any = { 
-      partyId: partyId,
-      startDate: start,
-      endDate: end
-    };
+    // Load all ledger entries without date filter initially
+    const params: any = { partyId: partyId };
     
     this.loadingService.show('Loading ledger...');
     this.ledgerService.getLedgerForPartyByDateRange(partyId, params).subscribe(data => {
@@ -121,15 +133,15 @@ export class LedgerComponent implements OnInit {
       return;
     }
 
-    // Prepare filter parameters - only include dates if they are set
+    // Prepare filter parameters
     const params: any = { partyId: this.partyId };
     
     if (this.startDate) {
-      params.startDate = formatDateForUTC(this.startDate);
+      params.startDateTime = this.toApiDateTime(this.startDate, this.startHour, this.startMinute);
     }
     
     if (this.endDate) {
-      params.endDate = formatDateForUTC(this.endDate);
+      params.endDateTime = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
     }
     
     if (this.transactionType && this.transactionType !== 'All') {
@@ -152,8 +164,13 @@ export class LedgerComponent implements OnInit {
 
   resetFilters() {
     // Reset filter values but keep party selected
-    this.startDate = '';
-    this.endDate = '';
+    const today = new Date();
+    this.startDate = today;
+    this.endDate = today;
+    this.startHour = '00';
+    this.startMinute = '00';
+    this.endHour = '23';
+    this.endMinute = '59';
     this.transactionType = 'All';
     
     // Fetch all records for the selected party using normal ledger API
@@ -168,18 +185,16 @@ export class LedgerComponent implements OnInit {
       return;
     }
 
-    // Build query params based on currently applied filters (matching what's displayed on screen)
+    // Build query params based on currently applied filters
     const queryParams = new URLSearchParams();
     queryParams.append('partyId', this.partyId.toString());
     
-    // Only add startDate if it's actually set by user
     if (this.startDate) {
-      queryParams.append('startDate', formatDateForUTC(this.startDate));
+      queryParams.append('startDateTime', this.toApiDateTime(this.startDate, this.startHour, this.startMinute));
     }
     
-    // Only add endDate if it's actually set by user
     if (this.endDate) {
-      queryParams.append('endDate', formatDateForUTC(this.endDate));
+      queryParams.append('endDateTime', this.toApiDateTime(this.endDate, this.endHour, this.endMinute));
     }
     
     // Only add type if it's not 'All'
@@ -349,5 +364,58 @@ export class LedgerComponent implements OnInit {
 
   goBack(): void {
     this.location.back();
+  }
+
+  onStartDateSelected(date: Date) {
+    this.startDate = date;
+    if (date) {
+      this.minEndDate = new Date(date);
+    }
+    this.startMenuTrigger?.closeMenu();
+  }
+
+  onEndDateSelected(date: Date) {
+    this.endDate = date;
+    this.endMenuTrigger?.closeMenu();
+  }
+
+  getStartDisplay(): string {
+    return this.formatDisplay(this.startDate, this.startHour, this.startMinute);
+  }
+
+  getEndDisplay(): string {
+    return this.formatDisplay(this.endDate, this.endHour, this.endMinute);
+  }
+
+  private formatDisplay(date: Date | null, hour: string, minute: string): string {
+    if (!date) return '';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy} ${hour}:${minute}`;
+  }
+
+  private combineDateTime(date: Date | string | null, hour: string, minute: string): Date | null {
+    if (!date) return null;
+    const base = date instanceof Date ? new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0) : new Date(date);
+    if (isNaN(base.getTime())) return null;
+    const h = Number(hour);
+    const m = Number(minute);
+    base.setHours(isNaN(h) ? 0 : h, isNaN(m) ? 0 : m, 0, 0);
+    return base;
+  }
+
+  private toApiDateTime(date: Date | null, hour: string, minute: string): string {
+    if (!date) return '';
+    // Convert to ISO-8601 UTC format for backend API (YYYY-MM-DDTHH:mm:ss.sssZ)
+    return toISODateTimeUTC(date, hour, minute);
+  }
+
+  private buildHourOptions(): string[] {
+    return Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  }
+
+  private buildMinuteOptions(): string[] {
+    return Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
   }
 }

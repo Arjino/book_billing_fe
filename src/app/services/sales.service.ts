@@ -20,8 +20,8 @@ export class SalesService {
     );
   }
 
-  getSalesByDateRange(startDate: string, endDate: string): Observable<Sale[]> {
-    const url = `${enviort.salesByDateRangeUrl}?startDate=${startDate}&endDate=${endDate}`;
+  getSalesByDateRange(startDateTime: string, endDateTime: string): Observable<Sale[]> {
+    const url = `${enviort.salesByDateRangeUrl}?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}`;
     return this.http.get<Sale[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading sales by date range:', error);

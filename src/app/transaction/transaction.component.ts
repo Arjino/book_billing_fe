@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,6 +13,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { TransactionDialogComponent } from './transaction-dialog.component';
 import { PaymentReceiptPreviewComponent } from './payment-receipt-preview.component';
 import { PurchaseService } from '../services/purchase.service';
@@ -20,7 +21,7 @@ import { TransactionsService } from '../services/transactions.service';
 import { LoadingService } from '../services/loading.service';
 import { Party } from '../interface/party';
 import { Transaction } from '../interface/Transaction';
-import { buildUTCDateTime, parseLocalDate, formatDateForUTC } from '../utils/date.utils';
+import { buildUTCDateTime, parseLocalDate, formatDateForUTC, toISODateTimeUTC } from '../utils/date.utils';
 import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
 
 
@@ -29,12 +30,20 @@ import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
   templateUrl: './transaction.component.html',
   styleUrls: ['./transaction.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon, MatDatepickerModule, MatNativeDateModule, MatTooltipModule, MatSnackBarModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon, MatDatepickerModule, MatNativeDateModule, MatTooltipModule, MatSnackBarModule, MatMenuModule]
 })
 export class TransactionComponent implements OnInit {
+    @ViewChild('startTrigger') startMenuTrigger?: MatMenuTrigger;
+    @ViewChild('endTrigger') endMenuTrigger?: MatMenuTrigger;
   transactions: Transaction[] = [];
-  startDate: string | Date = '';
-  endDate: string | Date = '';
+  startDate: Date | null = null;
+  endDate: Date | null = null;
+  startHour: string = '00';
+  startMinute: string = '00';
+  endHour: string = '23';
+  endMinute: string = '59';
+  hours: string[] = [];
+  minutes: string[] = [];
   filteredTransactions: Transaction[] = [];
   displayedColumns = ['id', 'party', 'paymentDateTime', 'amount', 'paymentMethod', 'referenceNo', 'notes', 'actions'];
   maxDate = new Date(); // Today as maximum date
@@ -56,6 +65,12 @@ export class TransactionComponent implements OnInit {
     const today = new Date();
     this.startDate = today;
     this.endDate = today;
+      this.startHour = '00';
+      this.startMinute = '00';
+      this.endHour = '23';
+      this.endMinute = '59';
+      this.hours = this.buildHourOptions();
+      this.minutes = this.buildMinuteOptions();
     this.minEndDate = today;
 
     this.route.queryParams.subscribe(params => {
@@ -84,7 +99,7 @@ export class TransactionComponent implements OnInit {
     this.transactionsService.getTransactionsByDateRange(params).subscribe(
       data => {
         this.transactions = data || [];
-        this.applyDateFilter();
+        this.filteredTransactions = this.transactions;
         this.loadingService.hide();
       },
       error => {
@@ -97,44 +112,26 @@ export class TransactionComponent implements OnInit {
   applyDateFilter() {
     // Update minimum end date when start date changes
     if (this.startDate) {
-      this.minEndDate = parseLocalDate(this.startDate);
+      this.minEndDate = new Date(this.startDate);
     } else {
       this.minEndDate = null;
     }
-    
-    const getDateOnly = (value: string | Date | null | undefined): Date | null => {
-      if (!value) return null;
-
-      if (value instanceof Date) {
-        return new Date(value.getFullYear(), value.getMonth(), value.getDate());
-      }
-
-      const datePart = value.includes('T') ? value.split('T')[0] : value;
-      const parsed = parseLocalDate(datePart);
-      if (!isNaN(parsed.getTime())) {
-        return new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
-      }
-
-      const fallback = new Date(value);
-      if (isNaN(fallback.getTime())) return null;
-      return new Date(fallback.getFullYear(), fallback.getMonth(), fallback.getDate());
-    };
 
     let filtered = this.transactions.slice();
     if (this.startDate) {
-      const s = getDateOnly(this.startDate);
+      const s = this.combineDateTime(this.startDate, this.startHour, this.startMinute) || parseLocalDate(this.startDate);
       filtered = filtered.filter(t => {
         if (!t.paymentDate) return false;
-        const tDate = getDateOnly(t.paymentDate);
-        return !!s && !!tDate && tDate >= s;
+        const tDate = buildUTCDateTime(t.paymentDate, t.paymentTime || null);
+        return !!tDate && tDate >= s;
       });
     }
     if (this.endDate) {
-      const e = getDateOnly(this.endDate);
+      const e = this.combineDateTime(this.endDate, this.endHour, this.endMinute) || parseLocalDate(this.endDate);
       filtered = filtered.filter(t => {
         if (!t.paymentDate) return false;
-        const tDate = getDateOnly(t.paymentDate);
-        return !!e && !!tDate && tDate <= e;
+        const tDate = buildUTCDateTime(t.paymentDate, t.paymentTime || null);
+        return !!tDate && tDate <= e;
       });
     }
     const type = this.selectedTransactionType?.toUpperCase();
@@ -228,16 +225,20 @@ export class TransactionComponent implements OnInit {
     this.router.navigate(['/dashboard']);
   }
   filterTransactions() {
-    // Build query params for startDate and endDate
+    // Build query params with ISO-8601 UTC datetime format
     let params: any = {};
-    if (this.startDate) params.startDate = formatDateForUTC(this.startDate);
-    if (this.endDate) params.endDate = formatDateForUTC(this.endDate);
+    if (this.startDate) {
+      params.startDateTime = toISODateTimeUTC(this.startDate, this.startHour, this.startMinute);
+    }
+    if (this.endDate) {
+      params.endDateTime = toISODateTimeUTC(this.endDate, this.endHour, this.endMinute);
+    }
     params.type = this.selectedTransactionType;
     this.loadingService.show('Fetching transactions...');
     this.transactionsService.getTransactionsByDateRange(params).subscribe(
       data => {
         this.transactions = data || [];
-        this.applyDateFilter();
+        this.filteredTransactions = this.transactions;
         this.loadingService.hide();
       },
       error => {
@@ -307,5 +308,51 @@ export class TransactionComponent implements OnInit {
         });
       }
     });
+  }
+
+  onStartDateSelected(date: Date) {
+    this.startDate = date;
+    this.applyDateFilter();
+    this.startMenuTrigger?.closeMenu();
+  }
+
+  onEndDateSelected(date: Date) {
+    this.endDate = date;
+    this.applyDateFilter();
+    this.endMenuTrigger?.closeMenu();
+  }
+
+  getStartDisplay(): string {
+    return this.formatDisplay(this.startDate, this.startHour, this.startMinute);
+  }
+
+  getEndDisplay(): string {
+    return this.formatDisplay(this.endDate, this.endHour, this.endMinute);
+  }
+
+  private formatDisplay(date: Date | null, hour: string, minute: string): string {
+    if (!date) return '';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy} ${hour}:${minute}`;
+  }
+
+  private combineDateTime(date: Date | string | null, hour: string, minute: string): Date | null {
+    if (!date) return null;
+    const base = date instanceof Date ? new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0) : parseLocalDate(date);
+    if (isNaN(base.getTime())) return null;
+    const h = Number(hour);
+    const m = Number(minute);
+    base.setHours(isNaN(h) ? 0 : h, isNaN(m) ? 0 : m, 0, 0);
+    return base;
+  }
+
+  private buildHourOptions(): string[] {
+    return Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  }
+
+  private buildMinuteOptions(): string[] {
+    return Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
   }
 }

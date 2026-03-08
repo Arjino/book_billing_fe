@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,12 +12,14 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { PurchaseDialogComponent } from './purchase-dialog.component';
 import { PurchaseDialogData } from '../interface/purchase-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
-import { buildUTCDateTime, formatDateForAPI, formatDateForUTC } from '../utils/date.utils';
+import { buildUTCDateTime, formatDateForAPI, formatDateForUTC, toISODateTimeUTC } from '../utils/date.utils';
 import { ReceivingOrder, ReceivingOrderItem } from '../interface/receiving-order';
 import { PurchaseOrder, PurchaseOrderItem } from '../interface/purchase-order';
 import { PURCHASE_CONSTANTS } from '../constants/purchase.constants';
@@ -40,17 +42,27 @@ type PurchaseTransaction = {
   templateUrl: './purchase.component.html',
   styleUrls: ['./purchase.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, FormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule, MatIconModule, MatSnackBarModule, MatAutocompleteModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, FormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule, MatIconModule, MatSnackBarModule, MatAutocompleteModule, MatMenuModule, MatTooltipModule]
 })
 export class PurchaseComponent implements OnInit {
+  @ViewChild('startTrigger') startMenuTrigger?: MatMenuTrigger;
+  @ViewChild('endTrigger') endMenuTrigger?: MatMenuTrigger;
   purchases: Array<PurchaseTransaction | ReceivingOrder | PurchaseOrder> = [];
   purchaseOrders: PurchaseOrder[] = [];
   receivingOrders: ReceivingOrder[] = [];
   selectedPurchaseOrder: PurchaseOrder | null = null;
   poLoading = false;
   poError = '';
-  startDate: string = '';
-  endDate: string = '';
+  startDate: Date | null = null;
+  endDate: Date | null = null;
+  startHour: string = '00';
+  startMinute: string = '00';
+  endHour: string = '23';
+  endMinute: string = '59';
+  hours: string[] = [];
+  minutes: string[] = [];
+  maxDate = new Date();
+  minEndDate: Date | null = null;
   showStartDateError: boolean = false;
   purchaseMode: 'purchase' | 'purchase-order' | 'receiving' = 'purchase-order';
   receivingPoNumber: string | null = null;
@@ -69,8 +81,14 @@ export class PurchaseComponent implements OnInit {
 
   ngOnInit() {
     const today = new Date();
-    this.startDate = formatDateForAPI(today);
-    this.endDate = formatDateForAPI(today);
+    this.startDate = today;
+    this.endDate = today;
+    this.startHour = '00';
+    this.startMinute = '00';
+    this.endHour = '23';
+    this.endMinute = '59';
+    this.hours = this.buildHourOptions();
+    this.minutes = this.buildMinuteOptions();
 
     this.route.queryParams.subscribe(params => {
       const type = (params['type'] || 'purchase-order').toLowerCase();
@@ -377,8 +395,8 @@ export class PurchaseComponent implements OnInit {
     }
     this.showStartDateError = false;
 
-    const start = this.formatDate(this.startDate);
-    const end = this.formatDate(this.endDate);
+    const start = this.toApiDateTime(this.startDate, this.startHour, this.startMinute);
+    const end = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
 
     if (this.purchaseMode === 'purchase') {
       this.loadingService.show('Fetching purchases...');
@@ -728,5 +746,58 @@ export class PurchaseComponent implements OnInit {
         }
       });
     });
+  }
+
+  onStartDateSelected(date: Date) {
+    this.startDate = date;
+    if (date) {
+      this.minEndDate = new Date(date);
+    }
+    this.startMenuTrigger?.closeMenu();
+  }
+
+  onEndDateSelected(date: Date) {
+    this.endDate = date;
+    this.endMenuTrigger?.closeMenu();
+  }
+
+  getStartDisplay(): string {
+    return this.formatDisplay(this.startDate, this.startHour, this.startMinute);
+  }
+
+  getEndDisplay(): string {
+    return this.formatDisplay(this.endDate, this.endHour, this.endMinute);
+  }
+
+  private formatDisplay(date: Date | null, hour: string, minute: string): string {
+    if (!date) return '';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy} ${hour}:${minute}`;
+  }
+
+  private combineDateTime(date: Date | string | null, hour: string, minute: string): Date | null {
+    if (!date) return null;
+    const base = date instanceof Date ? new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0) : new Date(date);
+    if (isNaN(base.getTime())) return null;
+    const h = Number(hour);
+    const m = Number(minute);
+    base.setHours(isNaN(h) ? 0 : h, isNaN(m) ? 0 : m, 0, 0);
+    return base;
+  }
+
+  private toApiDateTime(date: Date | null, hour: string, minute: string): string {
+    if (!date) return '';
+    // Convert to ISO-8601 UTC format for backend API (YYYY-MM-DDTHH:mm:ss.sssZ)
+    return toISODateTimeUTC(date, hour, minute);
+  }
+
+  private buildHourOptions(): string[] {
+    return Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  }
+
+  private buildMinuteOptions(): string[] {
+    return Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
   }
 }

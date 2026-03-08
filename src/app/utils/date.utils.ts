@@ -312,3 +312,36 @@ function parseTimeParts(time?: string | null): { hour: number; minute: number; s
     second: rawParts[2] ?? 0
   };
 }
+
+/**
+ * Converts a Date object to ISO-8601 UTC instant string for backend API calls
+ * Example: 2026-03-09T00:00:00.000Z
+ * @param date - Date object or null
+ * @returns ISO-8601 UTC instant string or empty string
+ */
+export function toISOUTCString(date: Date | null): string {
+  if (!date) return '';
+  return date.toISOString();
+}
+
+/**
+ * Combines date and time (hour, minute) into a UTC Date object and returns ISO string
+ * Used for backend API filter parameters (startDateTime, endDateTime)
+ * @param date - Date object or null
+ * @param hour - Hour string (00-23), defaults to '00'
+ * @param minute - Minute string (00-59), defaults to '00'
+ * @returns ISO-8601 UTC instant string (YYYY-MM-DDTHH:mm:ss.sssZ)
+ */
+export function toISODateTimeUTC(date: Date | null, hour: string = '00', minute: string = '00'): string {
+  if (!date) return '';
+  const utcDate = new Date(Date.UTC(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    parseInt(hour, 10) || 0,
+    parseInt(minute, 10) || 0,
+    0,
+    0
+  ));
+  return utcDate.toISOString();
+}

@@ -22,8 +22,8 @@ export class PurchaseService {
     );
   }
 
-  getPurchasesByDateRange(startDate: string, endDate: string): Observable<PurchaseInvoice[]> {
-    const url = `${enviort.purchasesByDateUrl}?startDate=${startDate}&endDate=${endDate}`;
+  getPurchasesByDateRange(startDateTime: string, endDateTime: string): Observable<PurchaseInvoice[]> {
+    const url = `${enviort.purchasesByDateUrl}?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}`;
     return this.http.get<PurchaseInvoice[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading purchases by date range:', error);
