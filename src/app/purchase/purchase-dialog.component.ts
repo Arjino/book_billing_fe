@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { DataStoreService } from '../services/data-store.service';
 import { AuthService } from '../services/auth.service';
@@ -18,7 +19,7 @@ import { LoadingService } from '../services/loading.service';
 import { Book } from '../interface/book';
 import { Party } from '../interface/party';
 import { PurchaseDialogData } from '../interface/purchase-dialog-data';
-import { formatDateForAPI } from '../utils/date.utils';
+import { formatDateForAPI, toISOUTCString } from '../utils/date.utils';
 import { baseUrl } from '../../environments/environment';
 
 @Component({
@@ -38,12 +39,28 @@ import { baseUrl } from '../../environments/environment';
     MatIconModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    MatMenuModule,
     MatSnackBarModule
   ]
 })
 export class PurchaseDialogComponent implements OnInit {
+  @ViewChild('purchaseTrigger') purchaseMenuTrigger?: MatMenuTrigger;
+  @ViewChild('receivedTrigger') receivedMenuTrigger?: MatMenuTrigger;
+
   books: Book[] = [];
   parties: Party[] = [];
+  purchaseDateTime = '';
+  receivedDateTime = '';
+  maxDateTimeLocal = '';
+  purchaseDate: Date = new Date();
+  receivedDate: Date = new Date();
+  maxDate = new Date();
+  hours: string[] = [];
+  minutes: string[] = [];
+  purchaseHour: string = String(new Date().getHours()).padStart(2, '0');
+  purchaseMinute: string = String(new Date().getMinutes()).padStart(2, '0');
+  receivedHour: string = String(new Date().getHours()).padStart(2, '0');
+  receivedMinute: string = String(new Date().getMinutes()).padStart(2, '0');
   allowedBooks: Book[] = [];
   private allowedBookIds = new Set<number>();
   private discountAppliedMap = new Map<number, boolean>();
@@ -73,22 +90,19 @@ export class PurchaseDialogComponent implements OnInit {
   }
 
   ngOnInit() {
+    const now = new Date();
+    this.maxDateTimeLocal = this.toDateTimeLocalValue(now);
+    this.hours = this.buildHourOptions();
+    this.minutes = this.buildMinuteOptions();
+
     if (this.data.type === 'RECEIVING_ORDER') {
-      if (!this.data.receivedDate) {
-        const today = new Date();
-        this.data.receivedDate = formatDateForAPI(today);
-      } else if (typeof this.data.receivedDate !== 'string') {
-        const d = new Date(this.data.receivedDate);
-        this.data.receivedDate = formatDateForAPI(d);
-      }
+      const receivedValue = this.data.receivedDate || now;
+      this.receivedDateTime = this.toDateTimeLocalValue(receivedValue);
+      this.syncReceivedPartsFromDateTime();
     } else {
-      if (!this.data.date) {
-        const today = new Date();
-        this.data.date = formatDateForAPI(today);
-      } else if (typeof this.data.date !== 'string') {
-        const d = new Date(this.data.date);
-        this.data.date = formatDateForAPI(d);
-      }
+      const purchaseValue = this.data.date || now;
+      this.purchaseDateTime = this.toDateTimeLocalValue(purchaseValue);
+      this.syncPurchasePartsFromDateTime();
     }
 
     this.store.getBooks().subscribe(data => {
@@ -145,15 +159,130 @@ export class PurchaseDialogComponent implements OnInit {
       }
     }
     if (this.data.type === 'RECEIVING_ORDER') {
-      if (this.data.receivedDate && typeof this.data.receivedDate === 'string') {
-        const d = new Date(this.data.receivedDate);
-        this.data.receivedDate = formatDateForAPI(d);
+      if (this.receivedDateTime) {
+        const d = new Date(this.receivedDateTime);
+        this.data.receivedDate = isNaN(d.getTime()) ? new Date() : d;
       }
-    } else if (this.data.date && typeof this.data.date === 'string') {
-      const d = new Date(this.data.date);
-      this.data.date = formatDateForAPI(d);
+    } else if (this.purchaseDateTime) {
+      const d = new Date(this.purchaseDateTime);
+      this.data.date = isNaN(d.getTime()) ? new Date() : d;
     }
     this.dialogRef.close(this.data);
+  }
+
+  getPurchaseDisplay(): string {
+    return this.formatDisplay(this.purchaseDate, this.purchaseHour, this.purchaseMinute);
+  }
+
+  getReceivedDisplay(): string {
+    return this.formatDisplay(this.receivedDate, this.receivedHour, this.receivedMinute);
+  }
+
+  onPurchaseDateSelected(date: Date): void {
+    this.purchaseDate = date;
+    this.syncPurchaseDateTime();
+  }
+
+  onReceivedDateSelected(date: Date): void {
+    this.receivedDate = date;
+    this.syncReceivedDateTime();
+  }
+
+  setPurchaseHour(hour: string): void {
+    this.purchaseHour = hour;
+    this.syncPurchaseDateTime();
+  }
+
+  setPurchaseMinute(minute: string): void {
+    this.purchaseMinute = minute;
+    this.syncPurchaseDateTime();
+  }
+
+  setReceivedHour(hour: string): void {
+    this.receivedHour = hour;
+    this.syncReceivedDateTime();
+  }
+
+  setReceivedMinute(minute: string): void {
+    this.receivedMinute = minute;
+    this.syncReceivedDateTime();
+  }
+
+  private toDateTimeLocalValue(value: string | Date | null | undefined): string {
+    const parsed = this.parseToDate(value);
+    const date = parsed || new Date();
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  }
+
+  private parseToDate(value: string | Date | null | undefined): Date | null {
+    if (!value) return null;
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value;
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split('-').map(Number);
+      return new Date(year, month - 1, day, 0, 0, 0, 0);
+    }
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      const [day, month, year] = value.split('/').map(Number);
+      return new Date(year, month - 1, day, 0, 0, 0, 0);
+    }
+
+    const parsed = new Date(value);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+
+    return null;
+  }
+
+  private formatDisplay(date: Date | null, hour: string, minute: string): string {
+    if (!date) return '';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy} ${hour}:${minute}`;
+  }
+
+  private syncPurchasePartsFromDateTime(): void {
+    const parsed = this.parseToDate(this.purchaseDateTime) || new Date();
+    this.purchaseDate = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 0, 0, 0, 0);
+    this.purchaseHour = String(parsed.getHours()).padStart(2, '0');
+    this.purchaseMinute = String(parsed.getMinutes()).padStart(2, '0');
+    this.syncPurchaseDateTime();
+  }
+
+  private syncReceivedPartsFromDateTime(): void {
+    const parsed = this.parseToDate(this.receivedDateTime) || new Date();
+    this.receivedDate = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 0, 0, 0, 0);
+    this.receivedHour = String(parsed.getHours()).padStart(2, '0');
+    this.receivedMinute = String(parsed.getMinutes()).padStart(2, '0');
+    this.syncReceivedDateTime();
+  }
+
+  private syncPurchaseDateTime(): void {
+    const dateTime = new Date(this.purchaseDate.getFullYear(), this.purchaseDate.getMonth(), this.purchaseDate.getDate(), Number(this.purchaseHour), Number(this.purchaseMinute), 0, 0);
+    this.purchaseDateTime = this.toDateTimeLocalValue(dateTime);
+  }
+
+  private syncReceivedDateTime(): void {
+    const dateTime = new Date(this.receivedDate.getFullYear(), this.receivedDate.getMonth(), this.receivedDate.getDate(), Number(this.receivedHour), Number(this.receivedMinute), 0, 0);
+    this.receivedDateTime = this.toDateTimeLocalValue(dateTime);
+  }
+
+  private buildHourOptions(): string[] {
+    return Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  }
+
+  private buildMinuteOptions(): string[] {
+    return Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
   }
 
   addItem(): void {

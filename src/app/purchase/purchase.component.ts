@@ -19,7 +19,7 @@ import { PurchaseDialogData } from '../interface/purchase-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
-import { buildUTCDateTime, formatDateForAPI, formatDateForUTC, toISODateTimeUTC } from '../utils/date.utils';
+import { buildUTCDateTime, formatDateForAPI, formatDateForUTC, toISODateTimeUTC, toISOUTCString } from '../utils/date.utils';
 import { ReceivingOrder, ReceivingOrderItem } from '../interface/receiving-order';
 import { PurchaseOrder, PurchaseOrderItem } from '../interface/purchase-order';
 import { PURCHASE_CONSTANTS } from '../constants/purchase.constants';
@@ -211,8 +211,8 @@ export class PurchaseComponent implements OnInit {
               poNumber: this.selectedPurchaseOrder?.poNumber || '',
               grnNumber: '',
               party: this.selectedPurchaseOrder.party || null,
-              date: formatDateForAPI(new Date()),
-              receivedDate: formatDateForAPI(new Date()),
+              date: new Date(),
+              receivedDate: new Date(),
               totalAmount: 0,
               discount: 0,
               taxAmount: 0,
@@ -316,7 +316,7 @@ export class PurchaseComponent implements OnInit {
         id: 0,
         poNumber: '',
         party: null,
-        date: formatDateForAPI(new Date()),
+        date: new Date(),
         totalAmount: 0,
         discount: 0,
         taxAmount: 0,
@@ -493,7 +493,7 @@ export class PurchaseComponent implements OnInit {
     });
   }
 
-  private mapToPurchaseOrder(data: PurchaseDialogData): PurchaseOrder {
+  private mapToPurchaseOrder(data: PurchaseDialogData): any {
     const items: PurchaseOrderItem[] = (data.items || []).map((item: any) => ({
       book: item.book || null,
       orderedQty: item.qty ?? null,
@@ -506,15 +506,15 @@ export class PurchaseComponent implements OnInit {
 
     return {
       poNumber: data.poNumber || undefined,
-      poDate: formatDateForUTC(data.date),
+      createdAt: this.toApiCreateDateTime(data.date),
       party: data.party || null,
       taxAmount: data.taxAmount ?? 0,
       roundOff: data.roundOff ?? 0,
       items
-    } as PurchaseOrder;
+    };
   }
 
-  private mapToReceivingOrder(data: PurchaseDialogData): ReceivingOrder {
+  private mapToReceivingOrder(data: PurchaseDialogData): any {
     const items: ReceivingOrderItem[] = (data.items || []).map((item: any) => ({
       purchaseOrderItemId: item.purchaseOrderItemId || null,
       book: item.book || null,
@@ -527,7 +527,7 @@ export class PurchaseComponent implements OnInit {
     }));
 
     return {
-      receivedDate: formatDateForUTC(data.receivedDate || data.date),
+      createdAt: this.toApiCreateDateTime(data.receivedDate || data.date),
       grnNumber: data.grnNumber || undefined,
       party: data.party || null,
       totalAmount: 0,
@@ -816,6 +816,26 @@ export class PurchaseComponent implements OnInit {
     if (!date) return '';
     // Convert to ISO-8601 UTC format for backend API (YYYY-MM-DDTHH:mm:ss.sssZ)
     return toISODateTimeUTC(date, hour, minute);
+  }
+
+  private toApiCreateDateTime(dateValue: string | Date): string {
+    let localDate: Date;
+
+    if (dateValue instanceof Date) {
+      localDate = dateValue;
+    } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
+      const [y, m, d] = dateValue.split('-').map(Number);
+      localDate = new Date(y, m - 1, d, 0, 0, 0, 0);
+    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateValue)) {
+      const [d, m, y] = dateValue.split('/').map(Number);
+      localDate = new Date(y, m - 1, d, 0, 0, 0, 0);
+    } else {
+      const parsed = new Date(dateValue);
+      localDate = !isNaN(parsed.getTime()) ? parsed : new Date();
+    }
+
+    // Convert to proper UTC time using toISOString()
+    return localDate.toISOString();
   }
 
   private buildHourOptions(): string[] {

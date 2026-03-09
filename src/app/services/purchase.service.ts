@@ -122,7 +122,18 @@ export class PurchaseService {
   }
 
   createPurchaseOrder(payload: PurchaseOrder): Observable<PurchaseOrder> {
-    return this.http.post<PurchaseOrder>(enviort.purchaseOrdersUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
+    const body: any = { ...(payload as any) };
+    if (!body.createdAt && body.poDate) {
+      const parsed = new Date(body.poDate);
+      if (!isNaN(parsed.getTime())) {
+        body.createdAt = parsed.toISOString();
+      } else {
+        body.createdAt = body.poDate;
+      }
+    }
+    delete body.poDate;
+
+    return this.http.post<PurchaseOrder>(enviort.purchaseOrdersUrl, body, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating purchase order:', error);
         return throwError(() => error);
@@ -164,7 +175,18 @@ export class PurchaseService {
   }
 
   createReceivingOrderFromPo(poNumber: string, payload: ReceivingOrder): Observable<ReceivingOrder> {
-    return this.http.post<ReceivingOrder>(`${enviort.receivingOrdersUrl}/from-po/${encodeURIComponent(poNumber)}`, payload, { headers: this.auth.getAuthHeaders() }).pipe(
+    const body: any = { ...(payload as any) };
+    if (!body.createdAt && body.receivedDate) {
+      const parsed = new Date(body.receivedDate);
+      if (!isNaN(parsed.getTime())) {
+        body.createdAt = parsed.toISOString();
+      } else {
+        body.createdAt = body.receivedDate;
+      }
+    }
+    delete body.receivedDate;
+
+    return this.http.post<ReceivingOrder>(`${enviort.receivingOrdersUrl}/from-po/${encodeURIComponent(poNumber)}`, body, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating receiving order:', error);
         return throwError(() => error);

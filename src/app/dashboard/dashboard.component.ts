@@ -477,13 +477,12 @@ export class DashboardComponent implements OnInit {
     }
     const transactionType = mode === 'purchase-order' ? 'PURCHASE_ORDER' : 'RECEIVING_ORDER';
 
-
     const dialogRef = this.dialog.open(PurchaseDialogComponent, {
       width: '600px',
       data: {
         invoiceNo: '',
         party: null,
-        date: formatDateForAPI(new Date()),
+        date: new Date(),
         items: [{
           sale: null,
           book: null,
@@ -507,7 +506,6 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-      result.date = formatDateForUTC(result.date);
       const { paymentStatus, ...payload } = result as any;
 
       if (transactionType === 'PURCHASE_ORDER') {
@@ -719,9 +717,13 @@ export class DashboardComponent implements OnInit {
       supplierDiscountApplied: Boolean(item.supplierDiscountApplied)
     }));
 
+    // Convert to proper UTC time using toISOString()
+    const localDate = data.date instanceof Date ? data.date : new Date(data.date);
+    const createdAt = localDate.toISOString();
+
     return {
       poNumber: data.poNumber || undefined,
-      poDate: formatDateForUTC(data.date),
+      createdAt,
       party: data.party || null,
       taxAmount: data.taxAmount ?? 0,
       roundOff: data.roundOff ?? 0,
