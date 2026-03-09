@@ -147,7 +147,7 @@ export class TransactionComponent implements OnInit {
       data: {
         id: 0,
         party: null,
-        paymentDate: formatDateForUTC(new Date()),
+        paymentDate: new Date(),
         paidAmount: 0,
         paymentMode: 'Cash',
         remarks: '',
@@ -179,7 +179,7 @@ export class TransactionComponent implements OnInit {
         }
 
         const payload = {
-          paymentDate: formatDateForUTC(result.paymentDate),
+          createdAt: typeof result.paymentDate === 'string' ? result.paymentDate : new Date(result.paymentDate as any).toISOString(),
           paidAmount: result.paidAmount,
           paymentMode: result.paymentMode,
           remarks: result.remarks
@@ -255,7 +255,16 @@ export class TransactionComponent implements OnInit {
   }
 
   getPaymentDateTime(t: Transaction): Date | null {
-    return buildUTCDateTime(t.paymentDate, t.paymentTime || null);
+    // Try createdAt first (new format)
+    if (t.createdAt) {
+      const date = new Date(t.createdAt);
+      return isNaN(date.getTime()) ? null : date;
+    }
+    // Fallback to paymentDate + paymentTime (old format)
+    if (t.paymentDate) {
+      return buildUTCDateTime(t.paymentDate, t.paymentTime || null);
+    }
+    return null;
   }
 
   viewPaymentReceipt(referenceNumber?: string): void {

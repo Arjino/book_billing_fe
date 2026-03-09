@@ -239,10 +239,15 @@ export class PurchaseService {
     );
   }
 
-  createPurchasePayment(purchaseId: number, payload: { paymentDate: string; paidAmount: number; paymentMode: string; remarks?: string }): Observable<any> {
+  createPurchasePayment(purchaseId: number, payload: { createdAt: string; paidAmount: number; paymentMode: string; remarks?: string }): Observable<any> {
     const url = `${enviort.purchasesUrl}/${purchaseId}/payments`;
-    const normalizedPayload = normalizeUTCDatePayload(payload as Record<string, any>, ['paymentDate']);
-    return this.http.post(url, normalizedPayload, { headers: this.auth.getAuthHeaders() }).pipe(
+    const body = { ...payload };
+    // Backward compatibility: if paymentDate exists, convert to createdAt
+    if ((body as any).paymentDate && !body.createdAt) {
+      body.createdAt = (body as any).paymentDate;
+      delete (body as any).paymentDate;
+    }
+    return this.http.post(url, body, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating purchase payment:', error);
         return throwError(() => error);

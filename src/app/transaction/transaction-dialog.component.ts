@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, ViewChild } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -9,6 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
 import { Transaction } from '../interface/Transaction';
@@ -23,9 +24,11 @@ import { Party } from '../interface/party';
   templateUrl: './transaction-dialog.component.html',
   styleUrls: ['./transaction-dialog.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatIconModule, MatDatepickerModule, MatNativeDateModule, MatSnackBarModule]
+  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatIconModule, MatDatepickerModule, MatNativeDateModule, MatMenuModule, MatSnackBarModule]
 })
 export class TransactionDialogComponent implements OnInit {
+  @ViewChild('paymentTrigger') paymentMenuTrigger?: MatMenuTrigger;
+
   paymentMethods = ['Cash', 'Cheque', 'Bank Transfer', 'Card', 'UPI', 'Other'];
   isFetching = false;
   isLoadingInvoices = false;
@@ -36,6 +39,14 @@ export class TransactionDialogComponent implements OnInit {
   parties: Party[] = [];
   supplierParties: Party[] = [];
   isPartyLocked = false;
+  
+  paymentDateTime = '';
+  paymentDate: Date = new Date();
+  maxDate = new Date();
+  hours: string[] = [];
+  minutes: string[] = [];
+  paymentHour: string = String(new Date().getHours()).padStart(2, '0');
+  paymentMinute: string = String(new Date().getMinutes()).padStart(2, '0');
 
   private readonly invoiceDetailShape = {} as {
     id?: number;
@@ -57,6 +68,14 @@ export class TransactionDialogComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    const now = new Date();
+    this.hours = this.buildHourOptions();
+    this.minutes = this.buildMinuteOptions();
+    
+    const paymentValue = this.data.paymentDate || now;
+    this.paymentDateTime = this.toDateTimeLocalValue(paymentValue);
+    this.syncPaymentPartsFromDateTime();
+
     this.isPartyLocked = !!this.data?.purchaseId;
     this.store.getParties().subscribe((parties) => {
       this.parties = parties || [];
@@ -239,6 +258,93 @@ export class TransactionDialogComponent implements OnInit {
   }
 
   onSave(): void {
+    if (this.paymentDateTime) {
+      const d = new Date(this.paymentDateTime);
+      this.data.paymentDate = isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+    }
     this.dialogRef.close(this.data);
+  }
+
+  getPaymentDisplay(): string {
+    return this.formatDisplay(this.paymentDate, this.paymentHour, this.paymentMinute);
+  }
+
+  onPaymentDateSelected(date: Date): void {
+    this.paymentDate = date;
+    this.syncPaymentDateTime();
+  }
+
+  setPaymentHour(hour: string): void {
+    this.paymentHour = hour;
+    this.syncPaymentDateTime();
+  }
+
+  setPaymentMinute(minute: string): void {
+    this.paymentMinute = minute;
+    this.syncPaymentDateTime();
+  }
+
+  private toDateTimeLocalValue(value: string | Date | null | undefined): string {
+    const parsed = this.parseToDate(value);
+    const date = parsed || new Date();
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    const hh = String(date.getHours()).padStart(2, '0');
+    const min = String(date.getMinutes()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}T${hh}:${min}`;
+  }
+
+  private parseToDate(value: string | Date | null | undefined): Date | null {
+    if (!value) return null;
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value;
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split('-').map(Number);
+      return new Date(year, month - 1, day, 0, 0, 0, 0);
+    }
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      const [day, month, year] = value.split('/').map(Number);
+      return new Date(year, month - 1, day, 0, 0, 0, 0);
+    }
+
+    const parsed = new Date(value);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+
+    return null;
+  }
+
+  private formatDisplay(date: Date | null, hour: string, minute: string): string {
+    if (!date) return '';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy} ${hour}:${minute}`;
+  }
+
+  private syncPaymentPartsFromDateTime(): void {
+    const parsed = this.parseToDate(this.paymentDateTime) || new Date();
+    this.paymentDate = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate(), 0, 0, 0, 0);
+    this.paymentHour = String(parsed.getHours()).padStart(2, '0');
+    this.paymentMinute = String(parsed.getMinutes()).padStart(2, '0');
+    this.syncPaymentDateTime();
+  }
+
+  private syncPaymentDateTime(): void {
+    const dateTime = new Date(this.paymentDate.getFullYear(), this.paymentDate.getMonth(), this.paymentDate.getDate(), Number(this.paymentHour), Number(this.paymentMinute), 0, 0);
+    this.paymentDateTime = this.toDateTimeLocalValue(dateTime);
+  }
+
+  private buildHourOptions(): string[] {
+    return Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  }
+
+  private buildMinuteOptions(): string[] {
+    return Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
   }
 }

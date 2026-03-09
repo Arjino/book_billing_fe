@@ -66,14 +66,40 @@
         </mat-form-field>
 
         <mat-form-field appearance="outline" class="w-full text-white">
-          <mat-label >Transaction Date</mat-label>
-          <input matInput [matDatepicker]="transactionDatePicker" class="text-white" [(ngModel)]="data.paymentDate" name="paymentDate" required #paymentDateModel="ngModel" [max]="todayMaxDate" />
-          <mat-datepicker-toggle matSuffix [for]="transactionDatePicker"></mat-datepicker-toggle>
-          <mat-datepicker #transactionDatePicker></mat-datepicker>
+          <mat-label>Transaction Date</mat-label>
+          <input matInput readonly class="text-white cursor-pointer" [value]="getPaymentDisplay()" [matMenuTriggerFor]="paymentMenu" #paymentTrigger="matMenuTrigger" />
+          <input type="hidden" [(ngModel)]="paymentDateTime" name="paymentDateTime" required #paymentDateModel="ngModel" />
+          <button matSuffix mat-icon-button type="button" (click)="paymentMenuTrigger?.openMenu()">
+            <mat-icon class="text-blue-400">calendar_today</mat-icon>
+          </button>
           <mat-error *ngIf="paymentDateModel.invalid && (paymentDateModel.dirty || paymentDateModel.touched)">
             <span *ngIf="paymentDateModel.errors?.['required']">Transaction date is required.</span>
           </mat-error>
         </mat-form-field>
+
+        <mat-menu #paymentMenu="matMenu" class="date-time-menu">
+          <div class="date-time-menu-content" (click)="$event.stopPropagation()">
+            <mat-calendar [(selected)]="paymentDate" [maxDate]="maxDate" (selectedChange)="onPaymentDateSelected($event)"></mat-calendar>
+            <div class="time-controls">
+              <div class="time-controls-header">
+                <div class="time-label">Hours</div>
+                <div class="time-label">Minutes</div>
+              </div>
+              <div class="time-controls-body">
+                <div class="time-column">
+                  <div class="time-list">
+                    <button type="button" *ngFor="let h of hours" class="time-item" [class.time-item--active]="h === paymentHour" (click)="setPaymentHour(h)">{{ h }}</button>
+                  </div>
+                </div>
+                <div class="time-column">
+                  <div class="time-list">
+                    <button type="button" *ngFor="let m of minutes" class="time-item" [class.time-item--active]="m === paymentMinute" (click)="setPaymentMinute(m)">{{ m }}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-menu>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Last Amount</mat-label>

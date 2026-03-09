@@ -582,7 +582,7 @@ export class DashboardComponent implements OnInit {
       data: {
         id: 0,
         party: null,
-        paymentDate: formatDateForUTC(new Date()),
+        paymentDate: new Date(),
         paidAmount: 0,
         paymentMode: 'Cash',
         remarks: '',
@@ -613,7 +613,7 @@ export class DashboardComponent implements OnInit {
         }
 
         const payload = {
-          paymentDate: formatDateForUTC(result.paymentDate),
+          createdAt: typeof result.paymentDate === 'string' ? result.paymentDate : new Date(result.paymentDate as any).toISOString(),
           paidAmount: result.paidAmount,
           paymentMode: result.paymentMode,
           remarks: result.remarks
