@@ -414,13 +414,38 @@ export class PurchaseComponent implements OnInit {
     }
 
     if (this.purchaseMode === 'receiving') {
-      const filtered = this.filterReceivingOrdersByDateRange(startDateTime, endDateTime);
-      this.purchases = filtered;
+      this.loadingService.show('Fetching receiving orders...');
+      this.purchaseService.getReceivingOrdersByDateRange(startDateTime, endDateTime).subscribe({
+        next: (data) => {
+          this.receivingOrders = data || [];
+          this.purchases = [...this.receivingOrders];
+          this.loadingService.hide();
+        },
+        error: (err) => {
+          console.error('Failed to fetch receiving orders by date range:', err);
+          this.loadingService.hide();
+        }
+      });
       return;
     }
 
-    const filtered = this.filterPurchaseOrdersByDateRange(startDateTime, endDateTime);
-    this.purchases = filtered;
+    this.loadingService.show('Fetching purchase orders...');
+    this.purchaseService.getPurchaseOrdersByDateRange(startDateTime, endDateTime).subscribe({
+      next: (data) => {
+        this.purchaseOrders = data || [];
+        this.purchases = [...this.purchaseOrders];
+        this.purchaseOrderNumberOptions = this.purchaseOrders
+          .filter(po => (po.status || '').toString().toUpperCase() !== 'COMPLETED')
+          .map(po => (po.poNumber || '').toString())
+          .filter(number => number);
+        this.filteredPurchaseOrderNumbers = [...this.purchaseOrderNumberOptions].sort();
+        this.loadingService.hide();
+      },
+      error: (err) => {
+        console.error('Failed to fetch purchase orders by date range:', err);
+        this.loadingService.hide();
+      }
+    });
   }
 
   private formatDate(date: string | Date): string {

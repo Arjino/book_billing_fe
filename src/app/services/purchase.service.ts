@@ -97,6 +97,21 @@ export class PurchaseService {
     );
   }
 
+  getPurchaseOrdersByDateRange(startDateTime: string, endDateTime: string): Observable<PurchaseOrder[]> {
+    const params = new HttpParams()
+      .set('startDateTime', startDateTime)
+      .set('endDateTime', endDateTime);
+    return this.http.get<PurchaseOrder[]>(enviort.purchaseOrdersUrl, {
+      headers: this.auth.getAuthHeaders(),
+      params
+    }).pipe(
+      catchError((error) => {
+        console.error('Error loading purchase orders by date range:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   getPurchaseOrderByNumber(poNumber: string): Observable<PurchaseOrder> {
     return this.http.get<PurchaseOrder>(`${enviort.purchaseOrdersUrl}/${encodeURIComponent(poNumber)}`, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
@@ -119,6 +134,21 @@ export class PurchaseService {
     return this.http.get<ReceivingOrder[]>(enviort.receivingOrdersUrl, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading receiving orders:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getReceivingOrdersByDateRange(startDateTime: string, endDateTime: string): Observable<ReceivingOrder[]> {
+    const params = new HttpParams()
+      .set('startDateTime', startDateTime)
+      .set('endDateTime', endDateTime);
+    return this.http.get<ReceivingOrder[]>(enviort.receivingOrdersUrl, {
+      headers: this.auth.getAuthHeaders(),
+      params
+    }).pipe(
+      catchError((error) => {
+        console.error('Error loading receiving orders by date range:', error);
         return throwError(() => error);
       })
     );
