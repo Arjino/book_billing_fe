@@ -456,6 +456,13 @@ export class PurchaseComponent implements OnInit {
   }
 
   getPurchaseDateTime(s: PurchaseTransaction | ReceivingOrder | PurchaseOrder): Date | null {
+    // First check for createdAt which contains both date and time in ISO format
+    const createdAt = (s as any).createdAt;
+    if (createdAt) {
+      return new Date(createdAt);
+    }
+    
+    // Fallback to existing logic for older data
     const dateValue = (s as ReceivingOrder).receivedDate || (s as PurchaseOrder).poDate || (s as PurchaseTransaction).date;
     const timeValue = (s as PurchaseTransaction).time;
     return buildUTCDateTime(dateValue || null, timeValue || null);

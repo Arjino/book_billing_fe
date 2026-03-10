@@ -269,6 +269,13 @@ export class LedgerComponent implements OnInit {
   }
 
   getLedgerDateTime(entry: any): Date | null {
+    // First check for createdAt which contains both date and time in ISO format
+    const createdAt = entry?.createdAt;
+    if (createdAt) {
+      return new Date(createdAt);
+    }
+    
+    // Fallback to existing logic for older data
     return buildUTCDateTime(entry?.date, entry?.time || null);
   }
 
