@@ -5,8 +5,7 @@ export interface Sale {
   id: number;
   invoiceNo: string;
   party: Party;
-  date: string;
-  time?: string;
+  createdAt?: string;  // New: UTC datetime string
   totalAmount: number;
   discount: number;
   taxAmount: number;

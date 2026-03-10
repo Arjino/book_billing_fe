@@ -206,7 +206,7 @@ export class SalesBulkImportDialogComponent implements OnInit {
           id: 0,
           invoiceNo,
           party: party!,
-          date: normalizedDate!,
+          createdAt: normalizedDate!,
           totalAmount: 0,
           discount: 0,
           taxAmount: 0,

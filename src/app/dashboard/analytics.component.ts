@@ -130,7 +130,7 @@ export class AnalyticsComponent implements OnInit {
     // Calculate today's sales
     const today = getTodayLocal();
     const todaysSales = sales.filter(s => {
-      const saleDate = formatDateLocal(s.date);
+      const saleDate = formatDateLocal(s.createdAt);
       return saleDate === today;
     });
     this.dailySales = todaysSales.length;
@@ -215,7 +215,7 @@ export class AnalyticsComponent implements OnInit {
 
     // Add sales data
     sales.forEach(sale => {
-      const saleDate = formatDateForAPI(new Date(sale.date));
+      const saleDate = formatDateForAPI(sale.createdAt);
       if (dailyMap.has(saleDate)) {
         dailyMap.set(saleDate, (dailyMap.get(saleDate) || 0) + (sale.totalAmount || 0));
       }

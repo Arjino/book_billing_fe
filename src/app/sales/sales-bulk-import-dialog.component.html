@@ -116,7 +116,7 @@
             <tr *ngFor="let sale of extractedSales" class="hover:bg-emerald-500/5 transition-colors">
               <td class="px-4 py-3 text-emerald-300">{{ sale.invoiceNo }}</td>
               <td class="px-4 py-3 text-emerald-300">{{ sale?.party?.name }}</td>
-              <td class="px-4 py-3 text-emerald-300">{{ sale.date | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="px-4 py-3 text-emerald-300">{{ sale.createdAt| date:'dd/MM/yyyy hh:mm a' }}</td>
               <td class="px-4 py-3 text-emerald-300">{{ sale?.items?.length || 0 }}</td>
               <td class="px-4 py-3 text-emerald-300 text-right">{{ sale.grandTotal }}</td>
             </tr>

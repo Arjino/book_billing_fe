@@ -5,7 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Sale } from '../interface/Sale';
 import { enviort } from '../../environments/environment';
-import { normalizeUTCDatePayload } from '../utils/date.utils';
+import { normalizeUTCDatePayload, toUTCDateTimePlus00 } from '../utils/date.utils';
 
 @Injectable({ providedIn: 'root' })
 export class SalesService {
@@ -31,9 +31,13 @@ export class SalesService {
   }
 
   createSale(sale: Sale | Sale[]): Observable<any> {
-    const payload = (Array.isArray(sale) ? sale : [sale]).map((item) =>
-      normalizeUTCDatePayload(item, ['date'])
-    );
+    const payload = (Array.isArray(sale) ? sale : [sale]).map((item) => {
+      const normalized = { ...item } as any;
+      if (normalized.createdAt) {
+        normalized.createdAt = toUTCDateTimePlus00(normalized.createdAt);
+      }
+      return normalized;
+    });
     return this.http.post<any>(enviort.salesUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating sale:', error);

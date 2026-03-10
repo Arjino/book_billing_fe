@@ -346,3 +346,23 @@ export function toISODateTimeUTC(date: Date | null, hour: string = '00', minute:
   );
   return localDateTime.toISOString();
 }
+
+/**
+ * Formats an instant as UTC date-time string required by backend.
+ * Output format: YYYY-MM-DD HH:mm:ss+00
+ */
+export function toUTCDateTimePlus00(value: Date | string | null | undefined): string {
+  if (!value) return '';
+
+  const parsed = value instanceof Date ? value : new Date(value);
+  if (isNaN(parsed.getTime())) return '';
+
+  const yyyy = String(parsed.getUTCFullYear()).padStart(4, '0');
+  const mm = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(parsed.getUTCDate()).padStart(2, '0');
+  const hh = String(parsed.getUTCHours()).padStart(2, '0');
+  const min = String(parsed.getUTCMinutes()).padStart(2, '0');
+  const ss = String(parsed.getUTCSeconds()).padStart(2, '0');
+
+  return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}Z`;
+}

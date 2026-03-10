@@ -19,7 +19,7 @@ import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
 import { LoadingService } from '../services/loading.service';
-import { buildUTCDateTime, formatDateForAPI, formatDateForUTC, toISODateTimeUTC } from '../utils/date.utils';
+import { toISODateTimeUTC } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
 
@@ -84,7 +84,7 @@ export class SalesComponent implements OnInit {
         id: 0,
         invoiceNo: '',
         party: null,
-        date: formatDateForAPI(new Date()),
+        createdAt: new Date(),
         totalAmount: 0,
         discount: 0,
         taxAmount: 0,
@@ -109,13 +109,24 @@ export class SalesComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-      result.date = formatDateForUTC(result.date);
-      const { paymentStatus, ...payload } = result as any;
+      
+      // Convert createdAt to UTC ISO string before sending API payload.
+      const createdAtValue = result.createdAt;
+      const createdAt = createdAtValue instanceof Date
+        ? createdAtValue.toISOString()
+        : createdAtValue
+          ? new Date(createdAtValue).toISOString()
+          : new Date().toISOString();
+
+      const { paymentStatus, createdAt: _discardCreatedAt, ...payload } = result as any;
+      // Add createdAt field to payload
+      payload.createdAt = createdAt;
+      
       // If this is a Return In, call the sale returns endpoint with mapped payload
       if (payload.type === 'RETURN_IN') {
         const returnPayload: any = {
           partyId: payload.party && payload.party.id ? payload.party.id : payload.party,
-          returnDate: formatDateForUTC(payload.date),
+          returnDate: createdAt,
           items: (payload.items || []).map((it: any) => ({
             // Prefer sku when it looks numeric, else fallback to id
             bookId: it.book?.sku || it.book?.id || null,
@@ -266,15 +277,15 @@ export class SalesComponent implements OnInit {
     });
   }
 
-  private formatDate(date: string | Date): string {
-    if (typeof date === 'string') {
-      return formatDateForUTC(date);
+  getSaleDateTime(s: Sale): Date {
+    // First check for createdAt which contains both date and time in ISO format
+    const createdAt = (s as any).createdAt;
+    if (!createdAt) {
+      return new Date(); // fallback to current date if createdAt is missing
     }
-    return formatDateForUTC(date);
-  }
-
-  getSaleDateTime(s: Sale): Date | null {
-    return buildUTCDateTime(s.date, s.time || null);
+    
+    // Fallback to existing logic for older data
+  return new Date(createdAt);
   }
 
   goBack() {

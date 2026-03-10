@@ -308,7 +308,7 @@ export class DashboardComponent implements OnInit {
         id: 0,
         invoiceNo: '',
         party: null,
-        date: formatDateForAPI(new Date()),
+        createdAt: new Date(),
         items: [{
           id: 0,
           sale: null,
@@ -333,12 +333,18 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-      result.date = formatDateForUTC(result.date);
-      const { paymentStatus, ...payload } = result as any;
+      const createdAtValue = result.createdAt;
+      const createdAt = createdAtValue instanceof Date
+        ? createdAtValue.toISOString()
+        : createdAtValue
+          ? new Date(createdAtValue as string).toISOString()
+          : new Date().toISOString();
+      const { paymentStatus, createdAt: _discardCreatedAt, ...payload } = result as any;
+      payload.createdAt = createdAt;
       if (payload.type === 'RETURN_IN') {
         const returnPayload: any = {
           partyId: payload.party && payload.party.id ? payload.party.id : payload.party,
-          returnDate: formatDateForUTC(payload.date),
+          returnDate: formatDateForUTC(payload.createdAt),
           items: (payload.items || []).map((it: any) => ({
             bookId:  it.book.sku ,
             qty: it.qty,

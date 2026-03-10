@@ -2,7 +2,7 @@ export interface SalesDialogData {
   id: number;
   invoiceNo: string;
   party: any;
-  date: string;
+  createdAt?: Date | string;  // Accept both Date and string for flexibility
   totalAmount: number;
   discount: number;
   taxAmount: number;
