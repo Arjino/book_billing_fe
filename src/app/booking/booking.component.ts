@@ -108,6 +108,10 @@ export class BookingComponent implements OnInit {
     this.applySorting();
   }
 
+  openSupplierBookMapping() {
+    this.router.navigate(['/supplier-book-mapping']);
+  }
+
   sortBy(column: string) {
     if (this.sortColumn === column) {
       // Toggle sort direction: asc -> desc -> none

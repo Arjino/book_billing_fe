@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,13 +11,15 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { SalesDialogComponent } from './sales-dialog.component';
 import { SalesBulkImportDialogComponent } from './sales-bulk-import-dialog.component';
 import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
 import { LoadingService } from '../services/loading.service';
-import { formatTimeIST, formatDateForAPI, formatDateForUTC, formatDateLocal } from '../utils/date.utils';
+import { toISODateTimeUTC } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
 
@@ -26,12 +28,22 @@ import { SALES_CONSTANTS } from '../constants/sales.constants';
   templateUrl: './sales.component.html',
   styleUrls: ['./sales.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, FormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule, MatIconModule, MatSnackBarModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, FormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule, MatIconModule, MatSnackBarModule, MatMenuModule, MatTooltipModule]
 })
 export class SalesComponent implements OnInit {
+  @ViewChild('startTrigger') startMenuTrigger?: MatMenuTrigger;
+  @ViewChild('endTrigger') endMenuTrigger?: MatMenuTrigger;
   sales: Sale[] = [];
-  startDate: string = '';
-  endDate: string = '';
+  startDate: Date | null = null;
+  endDate: Date | null = null;
+  startHour: string = '00';
+  startMinute: string = '00';
+  endHour: string = '23';
+  endMinute: string = '59';
+  hours: string[] = [];
+  minutes: string[] = [];
+  maxDate = new Date();
+  minEndDate: Date | null = null;
   showStartDateError: boolean = false;
 
   constructor(
@@ -44,11 +56,15 @@ export class SalesComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    // Set start and end date to today by default
     const today = new Date();
-    this.startDate = formatDateForAPI(today);
-    this.endDate = formatDateForAPI(today);
-    
+    this.startDate = today;
+    this.endDate = today;
+    this.startHour = '00';
+    this.startMinute = '00';
+    this.endHour = '23';
+    this.endMinute = '59';
+    this.hours = this.buildHourOptions();
+    this.minutes = this.buildMinuteOptions();
     this.loadSales();
   }
 
@@ -68,7 +84,7 @@ export class SalesComponent implements OnInit {
         id: 0,
         invoiceNo: '',
         party: null,
-        date: formatDateForAPI(new Date()),
+        createdAt: new Date(),
         totalAmount: 0,
         discount: 0,
         taxAmount: 0,
@@ -93,16 +109,25 @@ export class SalesComponent implements OnInit {
     });
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-      if (result.paymentStatus === 'PAID') {
-        result.paidAmount = result.grandTotal;
-      }
-      result.date = formatDateForUTC(result.date);
+      
+      // Convert createdAt to UTC ISO string before sending API payload.
+      const createdAtValue = result.createdAt;
+      const createdAt = createdAtValue instanceof Date
+        ? createdAtValue.toISOString()
+        : createdAtValue
+          ? new Date(createdAtValue).toISOString()
+          : new Date().toISOString();
+
+      const { paymentStatus, createdAt: _discardCreatedAt, ...payload } = result as any;
+      // Add createdAt field to payload
+      payload.createdAt = createdAt;
+      
       // If this is a Return In, call the sale returns endpoint with mapped payload
-      if (result.type === 'RETURN_IN') {
-        const payload: any = {
-          partyId: result.party && result.party.id ? result.party.id : result.party,
-          returnDate: formatDateForUTC(result.date),
-          items: (result.items || []).map((it: any) => ({
+      if (payload.type === 'RETURN_IN') {
+        const returnPayload: any = {
+          partyId: payload.party && payload.party.id ? payload.party.id : payload.party,
+          returnDate: createdAt,
+          items: (payload.items || []).map((it: any) => ({
             // Prefer sku when it looks numeric, else fallback to id
             bookId: it.book?.sku || it.book?.id || null,
             qty: it.qty,
@@ -113,7 +138,7 @@ export class SalesComponent implements OnInit {
         };
 
         this.loadingService.show('Processing return...');
-        this.salesService.createSaleReturn(payload).subscribe({
+        this.salesService.createSaleReturn(returnPayload).subscribe({
           next: () => {
             this.loadingService.hide();
             this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_SUCCESS || 'Return created successfully!', 'Close', { 
@@ -137,8 +162,34 @@ export class SalesComponent implements OnInit {
       }
 
       this.loadingService.show('Creating sale...');
-      this.store.createSale([result]).subscribe({
+      this.store.createSale([payload]).subscribe({
         next: () => {
+          const invoiceNo = (payload as any)?.invoiceNo ? String((payload as any).invoiceNo) : '';
+          const reload$ = invoiceNo ? this.salesService.getSaleByInvoiceNumber(invoiceNo) : null;
+          if (reload$) {
+            reload$.subscribe({
+              next: () => {
+                this.loadingService.hide();
+                this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
+                  duration: 3000,
+                  panelClass: ['success-snackbar']
+                });
+                this.loadSales();
+                // refresh cached books so stock updates after a sale
+                this.store.refreshBooks();
+              },
+              error: () => {
+                this.loadingService.hide();
+                this.snackBar.open('Sale saved, but failed to reload invoice details.', 'Close', {
+                  duration: 4000,
+                  panelClass: ['error-snackbar']
+                });
+                this.loadSales();
+                this.store.refreshBooks();
+              }
+            });
+            return;
+          }
           this.loadingService.hide();
           this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
             duration: 3000,
@@ -172,8 +223,12 @@ export class SalesComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: Sale[] | undefined) => {
       if (result && result.length > 0) {
+        const sanitized = result.map((sale: any) => {
+          const { paymentStatus, ...rest } = sale;
+          return rest;
+        });
         this.loadingService.show(`Importing ${result.length} sale(s)...`);
-        this.salesService.createSale(result).subscribe({
+        this.salesService.createSale(sanitized).subscribe({
           next: (response) => {
             this.loadingService.hide();
             const successMessage = response?.message || `Successfully imported ${result.length} sale(s)`;
@@ -199,41 +254,38 @@ export class SalesComponent implements OnInit {
   }
 
   getSalesByDateRange() {
-    // Require start date; show inline error instead of alert dialog
     if (!this.startDate) {
       this.showStartDateError = true;
       return;
     }
     this.showStartDateError = false;
 
-    const start = this.formatDate(this.startDate);
-    const end = this.formatDate(this.endDate);
+    const startDateTime = this.toApiDateTime(this.startDate, this.startHour, this.startMinute);
+    const endDateTime = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
 
     this.loadingService.show('Fetching sales...');
-    this.salesService.getSalesByDateRange(start, end).subscribe({
+    this.salesService.getSalesByDateRange(startDateTime, endDateTime).subscribe({
       next: (data) => {
         this.sales = data;
         this.loadingService.hide();
       },
       error: (err) => {
         console.error('Failed to fetch sales by date range:', err);
-        alert(SALES_CONSTANTS.MESSAGES.DATE_RANGE_ERROR);
+        this.snackBar.open(SALES_CONSTANTS.MESSAGES.DATE_RANGE_ERROR, 'Close', { duration: 5000 });
         this.loadingService.hide();
       }
     });
   }
 
-  private formatDate(date: string | Date): string {
-    if (typeof date === 'string') {
-      return formatDateForUTC(date);
+  getSaleDateTime(s: Sale): Date {
+    // First check for createdAt which contains both date and time in ISO format
+    const createdAt = (s as any).createdAt;
+    if (!createdAt) {
+      return new Date(); // fallback to current date if createdAt is missing
     }
-    return formatDateForUTC(date);
-  }
-
-  formatSaleDateTime(s: Sale): string {
-    const datePart = formatDateLocal(s.date);
-    const time = formatTimeIST(s.time, s.date)?.toUpperCase();
-    return `${datePart}  ${time}`;
+    
+    // Fallback to existing logic for older data
+  return new Date(createdAt);
   }
 
   goBack() {
@@ -254,5 +306,58 @@ export class SalesComponent implements OnInit {
 
   getEmptyMessage(): string {
     return 'No sales found. Create your first sales entry.';
+  }
+
+  onStartDateSelected(date: Date) {
+    this.startDate = date;
+    if (date) {
+      this.minEndDate = new Date(date);
+    }
+    this.startMenuTrigger?.closeMenu();
+  }
+
+  onEndDateSelected(date: Date) {
+    this.endDate = date;
+    this.endMenuTrigger?.closeMenu();
+  }
+
+  getStartDisplay(): string {
+    return this.formatDisplay(this.startDate, this.startHour, this.startMinute);
+  }
+
+  getEndDisplay(): string {
+    return this.formatDisplay(this.endDate, this.endHour, this.endMinute);
+  }
+
+  private formatDisplay(date: Date | null, hour: string, minute: string): string {
+    if (!date) return '';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy} ${hour}:${minute}`;
+  }
+
+  private combineDateTime(date: Date | string | null, hour: string, minute: string): Date | null {
+    if (!date) return null;
+    const base = date instanceof Date ? new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0) : new Date(date);
+    if (isNaN(base.getTime())) return null;
+    const h = Number(hour);
+    const m = Number(minute);
+    base.setHours(isNaN(h) ? 0 : h, isNaN(m) ? 0 : m, 0, 0);
+    return base;
+  }
+
+  private toApiDateTime(date: Date | null, hour: string, minute: string): string {
+    if (!date) return '';
+    // Convert to ISO-8601 UTC format for backend API (YYYY-MM-DDTHH:mm:ss.sssZ)
+    return toISODateTimeUTC(date, hour, minute);
+  }
+
+  private buildHourOptions(): string[] {
+    return Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  }
+
+  private buildMinuteOptions(): string[] {
+    return Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
   }
 }

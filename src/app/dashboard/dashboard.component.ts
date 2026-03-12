@@ -12,6 +12,7 @@ import { AuthService } from '../services/auth.service';
 import { DataStoreService } from '../services/data-store.service';
 import { DashboardService } from '../services/dashboard.service';
 import { PurchaseService } from '../services/purchase.service';
+import { SalesService } from '../services/sales.service';
 import { LoadingService } from '../services/loading.service';
 import { FeedbackService } from '../services/feedback.service';
 import { BookDialogComponent } from '../booking/book-dialog.component';
@@ -36,7 +37,7 @@ import { AnalyticsComponent } from './analytics.component';
 import { Transaction } from '../interface/Transaction';
 import { Party } from '../interface/party';
 import { PurchaseOrder, PurchaseOrderItem } from '../interface/purchase-order';
-import { getTodayLocal, formatDateForAPI, formatDateForUTC } from '../utils/date.utils';
+import { formatDateForAPI, formatDateForUTC } from '../utils/date.utils';
 import { BOOKING_CONSTANTS } from '../constants/booking.constants';
 import { PARTIES_CONSTANTS } from '../constants/parties.constants';
 import { DASHBOARD_CONSTANTS } from '../constants/dashboard.constants';
@@ -159,6 +160,7 @@ export class DashboardComponent implements OnInit {
     private store: DataStoreService,
     private dashboardService: DashboardService,
     private purchaseService: PurchaseService,
+    private salesService: SalesService,
     private loadingService: LoadingService,
     private feedbackService: FeedbackService,
     private snackBar: MatSnackBar
@@ -306,7 +308,7 @@ export class DashboardComponent implements OnInit {
         id: 0,
         invoiceNo: '',
         party: null,
-        date: formatDateForAPI(new Date()),
+        createdAt: new Date(),
         items: [{
           id: 0,
           sale: null,
@@ -331,15 +333,19 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-      if (result.paymentStatus === 'PAID') {
-        result.paidAmount = result.grandTotal;
-      }
-      result.date = formatDateForUTC(result.date);
-      if (result.type === 'RETURN_IN') {
-        const payload: any = {
-          partyId: result.party && result.party.id ? result.party.id : result.party,
-          returnDate: formatDateForUTC(result.date),
-          items: (result.items || []).map((it: any) => ({
+      const createdAtValue = result.createdAt;
+      const createdAt = createdAtValue instanceof Date
+        ? createdAtValue.toISOString()
+        : createdAtValue
+          ? new Date(createdAtValue as string).toISOString()
+          : new Date().toISOString();
+      const { paymentStatus, createdAt: _discardCreatedAt, ...payload } = result as any;
+      payload.createdAt = createdAt;
+      if (payload.type === 'RETURN_IN') {
+        const returnPayload: any = {
+          partyId: payload.party && payload.party.id ? payload.party.id : payload.party,
+          returnDate: formatDateForUTC(payload.createdAt),
+          items: (payload.items || []).map((it: any) => ({
             bookId:  it.book.sku ,
             qty: it.qty,
             rate: it.rate,
@@ -348,7 +354,7 @@ export class DashboardComponent implements OnInit {
         };
 
         this.loadingService.show('Processing return...');
-        this.store.createSaleReturn(payload).subscribe({
+        this.store.createSaleReturn(returnPayload).subscribe({
           next: () => {
             this.loadingService.hide();
             this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_SUCCESS || 'Return created successfully!', 'Close', { 
@@ -370,10 +376,34 @@ export class DashboardComponent implements OnInit {
         return;
       }
 
-      if (result.type === 'PURCHASE') {
+      if (payload.type === 'PURCHASE') {
         this.loadingService.show('Creating purchase...');
-        this.store.createPurchase(result).subscribe({
+        this.store.createPurchase(payload).subscribe({
           next: () => {
+            const invoiceNo = (payload as any)?.invoiceNo ? String((payload as any).invoiceNo) : '';
+            const reload$ = invoiceNo ? this.purchaseService.getPurchaseByInvoiceNumber(invoiceNo) : null;
+            if (reload$) {
+              reload$.subscribe({
+                next: () => {
+                  this.loadingService.hide();
+                  this.snackBar.open(PURCHASE_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', { 
+                    duration: 3000,
+                    panelClass: ['success-snackbar']
+                  });
+                  // refresh books cache so UI sees updated stock after purchase
+                  this.store.refreshBooks();
+                },
+                error: () => {
+                  this.loadingService.hide();
+                  this.snackBar.open('Purchase saved, but failed to reload invoice details.', 'Close', {
+                    duration: 4000,
+                    panelClass: ['error-snackbar']
+                  });
+                  this.store.refreshBooks();
+                }
+              });
+              return;
+            }
             this.loadingService.hide();
             this.snackBar.open(PURCHASE_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', { 
               duration: 3000,
@@ -396,8 +426,32 @@ export class DashboardComponent implements OnInit {
       }
 
       this.loadingService.show('Creating sale...');
-      this.store.createSale([result]).subscribe({
+      this.store.createSale([payload]).subscribe({
         next: () => {
+          const invoiceNo = (payload as any)?.invoiceNo ? String((payload as any).invoiceNo) : '';
+          const reload$ = invoiceNo ? this.salesService.getSaleByInvoiceNumber(invoiceNo) : null;
+          if (reload$) {
+            reload$.subscribe({
+              next: () => {
+                this.loadingService.hide();
+                this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
+                  duration: 3000,
+                  panelClass: ['success-snackbar']
+                });
+                // refresh books cache so UI sees updated stock after sale
+                this.store.refreshBooks();
+              },
+              error: () => {
+                this.loadingService.hide();
+                this.snackBar.open('Sale saved, but failed to reload invoice details.', 'Close', {
+                  duration: 4000,
+                  panelClass: ['error-snackbar']
+                });
+                this.store.refreshBooks();
+              }
+            });
+            return;
+          }
           this.loadingService.hide();
           this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
             duration: 3000,
@@ -429,13 +483,12 @@ export class DashboardComponent implements OnInit {
     }
     const transactionType = mode === 'purchase-order' ? 'PURCHASE_ORDER' : 'RECEIVING_ORDER';
 
-
     const dialogRef = this.dialog.open(PurchaseDialogComponent, {
       width: '600px',
       data: {
         invoiceNo: '',
         party: null,
-        date: formatDateForAPI(new Date()),
+        date: new Date(),
         items: [{
           sale: null,
           book: null,
@@ -459,16 +512,35 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
       if (!result) return;
-      if (result.paymentStatus === 'PAID') {
-        result.paidAmount = result.grandTotal;
-      }
-      result.date = formatDateForUTC(result.date);
+      const { paymentStatus, ...payload } = result as any;
 
       if (transactionType === 'PURCHASE_ORDER') {
-        const payload = this.mapToPurchaseOrder(result);
+        const poPayload = this.mapToPurchaseOrder(result as any);
         this.loadingService.show('Creating purchase order...');
-        this.purchaseService.createPurchaseOrder(payload).subscribe({
-          next: () => {
+        this.purchaseService.createPurchaseOrder(poPayload).subscribe({
+          next: (created) => {
+            const createdPoNumber = ((created as any)?.poNumber || '').toString().trim();
+            if (createdPoNumber) {
+              this.purchaseService.getPurchaseOrderByNumber(createdPoNumber).subscribe({
+                next: () => {
+                  this.loadingService.hide();
+                  this.snackBar.open('Purchase order created successfully!', 'Close', {
+                    duration: 3000,
+                    panelClass: ['success-snackbar']
+                  });
+                  this.store.refreshBooks();
+                },
+                error: () => {
+                  this.loadingService.hide();
+                  this.snackBar.open('Purchase order saved, but failed to reload details.', 'Close', {
+                    duration: 4000,
+                    panelClass: ['error-snackbar']
+                  });
+                  this.store.refreshBooks();
+                }
+              });
+              return;
+            }
             this.loadingService.hide();
             this.snackBar.open('Purchase order created successfully!', 'Close', {
               duration: 3000,
@@ -489,7 +561,7 @@ export class DashboardComponent implements OnInit {
       }
 
       this.loadingService.show('Creating purchase...');
-      this.store.createPurchase(result).subscribe({
+      this.store.createPurchase(payload).subscribe({
         next: () => {
           this.loadingService.hide();
           this.snackBar.open(PURCHASE_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Purchase created successfully!', 'Close', {
@@ -516,7 +588,7 @@ export class DashboardComponent implements OnInit {
       data: {
         id: 0,
         party: null,
-        paymentDate: getTodayLocal(),
+        paymentDate: new Date(),
         paidAmount: 0,
         paymentMode: 'Cash',
         remarks: '',
@@ -529,20 +601,55 @@ export class DashboardComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
-        result.paymentDate = formatDateForUTC(result.paymentDate);
+        if (result.transactionType !== 'PURCHASE') {
+          this.snackBar.open('Only purchase payments are supported.', 'Close', {
+            duration: 3000,
+            panelClass: ['error-snackbar']
+          });
+          return;
+        }
+
+        const purchaseId = result.purchaseId;
+        if (!purchaseId) {
+          this.snackBar.open('Purchase ID not found. Please reselect the invoice.', 'Close', {
+            duration: 4000,
+            panelClass: ['error-snackbar']
+          });
+          return;
+        }
+
+        const payload = {
+          createdAt: typeof result.paymentDate === 'string' ? result.paymentDate : new Date(result.paymentDate as any).toISOString(),
+          paidAmount: result.paidAmount,
+          paymentMode: result.paymentMode,
+          remarks: result.remarks
+        };
+
         this.loadingService.show('Adding transaction...');
-        this.store.createTransaction(result).subscribe({
+        this.purchaseService.createPurchasePayment(purchaseId, payload).subscribe({
           next: () => {
-            this.loadingService.hide();
-            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', { 
-              duration: 3000,
-              panelClass: ['success-snackbar']
+            this.purchaseService.getPurchaseById(purchaseId).subscribe({
+              next: () => {
+                this.loadingService.hide();
+                this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', {
+                  duration: 3000,
+                  panelClass: ['success-snackbar']
+                });
+              },
+              error: (error: any) => {
+                this.loadingService.hide();
+                console.error('Failed to reload purchase details:', error);
+                this.snackBar.open('Payment saved, but failed to reload invoice details.', 'Close', {
+                  duration: 4000,
+                  panelClass: ['error-snackbar']
+                });
+              }
             });
           },
           error: (error: any) => {
             this.loadingService.hide();
             console.error('Failed to add transaction:', error);
-            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', { 
+            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
               duration: 5000,
               panelClass: ['error-snackbar']
             });
@@ -606,24 +713,26 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/transaction'], { queryParams: { type } });
   }
 
-  private mapToPurchaseOrder(data: SalesDialogData): PurchaseOrder {
-    const items: PurchaseOrderItem[] = (data.items || []).map((item: any) => ({
+  private mapToPurchaseOrder(data: any): any {
+    const items = (data.items || []).map((item: any) => ({
       book: item.book || null,
       orderedQty: item.qty ?? null,
-      receivedQty: 0,
       rate: item.rate ?? null,
-      amount: item.amount ?? null
+      amount: item.amount ?? (item.rate !== null && item.qty !== null ? Number(item.rate) * Number(item.qty) : 0),
+      supplierPercentageDiscount: item.discountPercent ?? null,
+      supplierDiscountApplied: Boolean(item.supplierDiscountApplied)
     }));
 
+    // Convert to proper UTC time using toISOString()
+    const localDate = data.date instanceof Date ? data.date : new Date(data.date);
+    const createdAt = localDate.toISOString();
+
     return {
-      poNumber: data.invoiceNo || '',
-      poDate: formatDateForUTC(data.date),
+      poNumber: data.poNumber || undefined,
+      createdAt,
       party: data.party || null,
-      status: 'CREATED',
-      totalAmount: data.totalAmount,
-      taxAmount: data.taxAmount,
-      roundOff: data.roundOff,
-      grandTotal: data.grandTotal,
+      taxAmount: data.taxAmount ?? 0,
+      roundOff: data.roundOff ?? 0,
       items
     };
   }

@@ -1,0 +1,103 @@
+:host {
+  display: block;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+mat-chip-list {
+  width: 100%;
+}
+
+:host ::ng-deep .mat-mdc-form-field.edit-mode .mdc-notched-outline__leading,
+:host ::ng-deep .mat-mdc-form-field.edit-mode .mdc-notched-outline__notch,
+:host ::ng-deep .mat-mdc-form-field.edit-mode .mdc-notched-outline__trailing {
+  border-color: rgba(0, 0, 0, 0.85) !important;
+  border-width: 2px !important;
+}
+
+:host ::ng-deep table .mat-mdc-form-field {
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+:host ::ng-deep table .mat-mdc-form-field .mat-mdc-text-field-wrapper {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+:host ::ng-deep table .mat-mdc-form-field-infix {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+  min-height: auto !important;
+}
+
+:host ::ng-deep table .mat-mdc-input-element {
+  color: rgba(15, 23, 42, 0.95) !important;
+}
+
+:host ::ng-deep table .mat-mdc-input-element:not(:disabled) {
+  color: rgba(15, 23, 42, 0.95) !important;
+  -webkit-text-fill-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+:host ::ng-deep table .mat-mdc-input-element:disabled {
+  color: rgba(15, 23, 42, 0.95) !important;
+  -webkit-text-fill-color: rgba(15, 23, 42, 0.95) !important;
+}
+
+:host ::ng-deep table .mat-mdc-form-field-subscript-wrapper {
+  height: 0 !important;
+  margin: 0 !important;
+}
+
+:host ::ng-deep table .mat-mdc-cell,
+:host ::ng-deep table .mat-mdc-header-cell {
+  vertical-align: middle !important;
+}
+
+:host ::ng-deep .mat-column-title,
+:host ::ng-deep .mat-column-sku,
+:host ::ng-deep .mat-column-discountPercent {
+  width: 24% !important;
+  text-align: left;
+}
+
+:host ::ng-deep .mat-column-actions {
+  width: 28% !important;
+  white-space: nowrap;
+  text-align: left;
+}
+
+:host ::ng-deep .mat-mdc-header-cell,
+:host ::ng-deep .mat-mdc-cell {
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+  text-align: left;
+}
+
+:host ::ng-deep .mat-mdc-form-field .mdc-text-field {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+:host ::ng-deep .mat-mdc-form-field .mdc-notched-outline__leading,
+:host ::ng-deep .mat-mdc-form-field .mdc-notched-outline__notch,
+:host ::ng-deep .mat-mdc-form-field .mdc-notched-outline__trailing {
+  border-color: rgba(255, 255, 255, 0.6) !important;
+}
+
+:host ::ng-deep .mat-mdc-form-field .mat-mdc-form-field-label,
+:host ::ng-deep .mat-mdc-form-field .mdc-floating-label,
+:host ::ng-deep .mat-mdc-form-field .mat-mdc-input-element,
+:host ::ng-deep .mat-mdc-form-field .mat-mdc-select-value-text {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+:host ::ng-deep .mat-mdc-form-field .mat-mdc-input-element::placeholder {
+  color: rgba(224, 242, 254, 0.8) !important;
+}
+
+:host ::ng-deep .mat-mdc-select-arrow {
+  color: rgba(255, 255, 255, 0.9) !important;
+}

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
@@ -13,14 +13,15 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { TransactionDialogComponent } from './transaction-dialog.component';
 import { PaymentReceiptPreviewComponent } from './payment-receipt-preview.component';
-import { DataStoreService } from '../services/data-store.service';
+import { PurchaseService } from '../services/purchase.service';
 import { TransactionsService } from '../services/transactions.service';
 import { LoadingService } from '../services/loading.service';
 import { Party } from '../interface/party';
 import { Transaction } from '../interface/Transaction';
-import { formatDateLocal, getTodayLocal, parseLocalDate, formatTimeIST, formatDateForUTC } from '../utils/date.utils';
+import { buildUTCDateTime, parseLocalDate, formatDateForUTC, toISODateTimeUTC } from '../utils/date.utils';
 import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
 
 
@@ -29,23 +30,32 @@ import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
   templateUrl: './transaction.component.html',
   styleUrls: ['./transaction.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon, MatDatepickerModule, MatNativeDateModule, MatTooltipModule, MatSnackBarModule]
+  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon, MatDatepickerModule, MatNativeDateModule, MatTooltipModule, MatSnackBarModule, MatMenuModule]
 })
 export class TransactionComponent implements OnInit {
+    @ViewChild('startTrigger') startMenuTrigger?: MatMenuTrigger;
+    @ViewChild('endTrigger') endMenuTrigger?: MatMenuTrigger;
   transactions: Transaction[] = [];
-  startDate: string | Date = '';
-  endDate: string | Date = '';
+  startDate: Date | null = null;
+  endDate: Date | null = null;
+  startHour: string = '00';
+  startMinute: string = '00';
+  endHour: string = '23';
+  endMinute: string = '59';
+  hours: string[] = [];
+  minutes: string[] = [];
   filteredTransactions: Transaction[] = [];
   displayedColumns = ['id', 'party', 'paymentDateTime', 'amount', 'paymentMethod', 'referenceNo', 'notes', 'actions'];
   maxDate = new Date(); // Today as maximum date
   minEndDate: Date | null = null; // Minimum date for end date picker
   selectedTransactionType: 'SALE' | 'PURCHASE' = 'SALE';
+  private hasAutoOpenedPaymentDialog = false;
 
   constructor(
     private dialog: MatDialog,
     private router: Router,
     private route: ActivatedRoute,
-    private store: DataStoreService,
+    private purchaseService: PurchaseService,
     private transactionsService: TransactionsService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar
@@ -55,12 +65,31 @@ export class TransactionComponent implements OnInit {
     const today = new Date();
     this.startDate = today;
     this.endDate = today;
+      this.startHour = '00';
+      this.startMinute = '00';
+      this.endHour = '23';
+      this.endMinute = '59';
+      this.hours = this.buildHourOptions();
+      this.minutes = this.buildMinuteOptions();
     this.minEndDate = today;
 
     this.route.queryParams.subscribe(params => {
       const type = (params['type'] || 'SALE').toString().toUpperCase();
       this.selectedTransactionType = type === 'PURCHASE' ? 'PURCHASE' : 'SALE';
       this.loadTransactions();
+
+      const shouldOpenPaymentDialog = ['true', '1', 'yes'].includes((params['openPayment'] || '').toString().toLowerCase());
+      const purchaseId = Number(params['purchaseId'] || params['invoiceId']);
+      if (shouldOpenPaymentDialog && purchaseId > 0 && !this.hasAutoOpenedPaymentDialog) {
+        this.hasAutoOpenedPaymentDialog = true;
+        this.addTransaction(purchaseId);
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { openPayment: null, purchaseId: null, invoiceId: null },
+          queryParamsHandling: 'merge',
+          replaceUrl: true
+        });
+      }
     });
   }
 
@@ -70,7 +99,7 @@ export class TransactionComponent implements OnInit {
     this.transactionsService.getTransactionsByDateRange(params).subscribe(
       data => {
         this.transactions = data || [];
-        this.applyDateFilter();
+        this.filteredTransactions = this.transactions;
         this.loadingService.hide();
       },
       error => {
@@ -83,26 +112,26 @@ export class TransactionComponent implements OnInit {
   applyDateFilter() {
     // Update minimum end date when start date changes
     if (this.startDate) {
-      this.minEndDate = parseLocalDate(this.startDate);
+      this.minEndDate = new Date(this.startDate);
     } else {
       this.minEndDate = null;
     }
-    
+
     let filtered = this.transactions.slice();
     if (this.startDate) {
-      const s = parseLocalDate(this.startDate);
+      const s = this.combineDateTime(this.startDate, this.startHour, this.startMinute) || parseLocalDate(this.startDate);
       filtered = filtered.filter(t => {
         if (!t.paymentDate) return false;
-        const tDate = parseLocalDate(t.paymentDate);
-        return tDate >= s;
+        const tDate = buildUTCDateTime(t.paymentDate, t.paymentTime || null);
+        return !!tDate && tDate >= s;
       });
     }
     if (this.endDate) {
-      const e = parseLocalDate(this.endDate);
+      const e = this.combineDateTime(this.endDate, this.endHour, this.endMinute) || parseLocalDate(this.endDate);
       filtered = filtered.filter(t => {
         if (!t.paymentDate) return false;
-        const tDate = parseLocalDate(t.paymentDate);
-        return tDate <= e;
+        const tDate = buildUTCDateTime(t.paymentDate, t.paymentTime || null);
+        return !!tDate && tDate <= e;
       });
     }
     const type = this.selectedTransactionType?.toUpperCase();
@@ -112,40 +141,77 @@ export class TransactionComponent implements OnInit {
     this.filteredTransactions = filtered;
   }
 
-  addTransaction() {
+  addTransaction(purchaseId?: number) {
     const dialogRef = this.dialog.open(TransactionDialogComponent, {
       width: '500px',
       data: {
         id: 0,
         party: null,
-        paymentDate: getTodayLocal(),
+        paymentDate: new Date(),
         paidAmount: 0,
         paymentMode: 'Cash',
         remarks: '',
         totalAmount: 0,
         invoiceNo: '',
         dueAmount: 0,
+        purchaseId,
         transactionType: this.selectedTransactionType
       } as unknown as Transaction,
       disableClose: false
     });
     dialogRef.afterClosed().subscribe((result: Transaction) => {
       if (result) {
-        result.paymentDate = formatDateForUTC(result.paymentDate);
+        if (result.transactionType !== 'PURCHASE') {
+          this.snackBar.open('Only purchase payments are supported.', 'Close', {
+            duration: 3000,
+            panelClass: ['error-snackbar']
+          });
+          return;
+        }
+
+        const purchaseId = result.purchaseId;
+        if (!purchaseId) {
+          this.snackBar.open('Purchase ID not found. Please reselect the invoice.', 'Close', {
+            duration: 4000,
+            panelClass: ['error-snackbar']
+          });
+          return;
+        }
+
+        const payload = {
+          createdAt: typeof result.paymentDate === 'string' ? result.paymentDate : new Date(result.paymentDate as any).toISOString(),
+          paidAmount: result.paidAmount,
+          paymentMode: result.paymentMode,
+          remarks: result.remarks
+        };
+
         this.loadingService.show('Adding transaction...');
-        this.store.createTransaction(result).subscribe({
+        this.purchaseService.createPurchasePayment(purchaseId, payload).subscribe({
           next: () => {
-            this.loadingService.hide();
-            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', { 
-              duration: 3000,
-              panelClass: ['success-snackbar']
+            this.purchaseService.getPurchaseById(purchaseId).subscribe({
+              next: () => {
+                this.loadingService.hide();
+                this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', {
+                  duration: 3000,
+                  panelClass: ['success-snackbar']
+                });
+                this.loadTransactions();
+              },
+              error: (error) => {
+                this.loadingService.hide();
+                console.error('Failed to reload purchase details:', error);
+                this.snackBar.open('Payment saved, but failed to reload invoice details.', 'Close', {
+                  duration: 4000,
+                  panelClass: ['error-snackbar']
+                });
+                this.loadTransactions();
+              }
             });
-            this.loadTransactions();
           },
           error: (error) => {
             this.loadingService.hide();
             console.error('Failed to add transaction:', error);
-            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', { 
+            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
               duration: 5000,
               panelClass: ['error-snackbar']
             });
@@ -159,16 +225,22 @@ export class TransactionComponent implements OnInit {
     this.router.navigate(['/dashboard']);
   }
   filterTransactions() {
-    // Build query params for startDate and endDate
+    // Build query params with ISO-8601 UTC datetime format
     let params: any = {};
-    if (this.startDate) params.startDate = formatDateForUTC(this.startDate);
-    if (this.endDate) params.endDate = formatDateForUTC(this.endDate);
+    if (this.startDate) {
+      const startDateTime = toISODateTimeUTC(this.startDate, this.startHour, this.startMinute);
+      params.startDateTime = startDateTime;
+    }
+    if (this.endDate) {
+      const endDateTime = toISODateTimeUTC(this.endDate, this.endHour, this.endMinute);
+      params.endDateTime = endDateTime;
+    }
     params.type = this.selectedTransactionType;
     this.loadingService.show('Fetching transactions...');
     this.transactionsService.getTransactionsByDateRange(params).subscribe(
       data => {
         this.transactions = data || [];
-        this.applyDateFilter();
+        this.filteredTransactions = this.transactions;
         this.loadingService.hide();
       },
       error => {
@@ -182,15 +254,30 @@ export class TransactionComponent implements OnInit {
     return formatDateForUTC(date);
   }
 
-  formatPaymentDateTime(t: Transaction): string {
-    const datePart = formatDateLocal(t.paymentDate);
-    const time = formatTimeIST(t.paymentTime, t.paymentDate)?.toUpperCase();
-    return `${datePart}  ${time}`;
+  getPaymentDateTime(t: Transaction): Date | null {
+    // Try createdAt first (new format)
+    if (t.createdAt) {
+      const date = new Date(t.createdAt);
+      return isNaN(date.getTime()) ? null : date;
+    }
+    // Fallback to paymentDate + paymentTime (old format)
+    if (t.paymentDate) {
+      return buildUTCDateTime(t.paymentDate, t.paymentTime || null);
+    }
+    return null;
   }
 
-  viewPaymentReceipt(paymentId: number): void {
+  viewPaymentReceipt(referenceNumber?: string): void {
+    if (!referenceNumber) {
+      this.snackBar.open('Reference number not found for receipt preview.', 'Close', {
+        duration: 4000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
     this.dialog.open(PaymentReceiptPreviewComponent, {
-      data: { paymentId },
+      data: { referenceNumber },
       width: '800px',
       height: '90vh',
       maxHeight: '95vh',
@@ -199,15 +286,23 @@ export class TransactionComponent implements OnInit {
     });
   }
 
-  downloadPaymentReceipt(paymentId: number): void {
+  downloadPaymentReceipt(referenceNumber?: string): void {
+    if (!referenceNumber) {
+      this.snackBar.open('Reference number not found for receipt download.', 'Close', {
+        duration: 4000,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
     this.loadingService.show('Downloading receipt...');
-    this.transactionsService.downloadPaymentReceipt(paymentId).subscribe({
+    this.transactionsService.downloadPaymentReceipt(referenceNumber).subscribe({
       next: (blob: Blob) => {
         this.loadingService.hide();
         const link = document.createElement('a');
         const url = window.URL.createObjectURL(blob);
         link.href = url;
-        link.download = `Payment_Receipt_${paymentId}.pdf`;
+        link.download = `Payment_Receipt_${referenceNumber}.pdf`;
         link.click();
         window.URL.revokeObjectURL(url);
         this.snackBar.open('Receipt downloaded successfully!', 'Close', { 
@@ -224,5 +319,51 @@ export class TransactionComponent implements OnInit {
         });
       }
     });
+  }
+
+  onStartDateSelected(date: Date) {
+    this.startDate = date;
+    this.applyDateFilter();
+    this.startMenuTrigger?.closeMenu();
+  }
+
+  onEndDateSelected(date: Date) {
+    this.endDate = date;
+    this.applyDateFilter();
+    this.endMenuTrigger?.closeMenu();
+  }
+
+  getStartDisplay(): string {
+    return this.formatDisplay(this.startDate, this.startHour, this.startMinute);
+  }
+
+  getEndDisplay(): string {
+    return this.formatDisplay(this.endDate, this.endHour, this.endMinute);
+  }
+
+  private formatDisplay(date: Date | null, hour: string, minute: string): string {
+    if (!date) return '';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy} ${hour}:${minute}`;
+  }
+
+  private combineDateTime(date: Date | string | null, hour: string, minute: string): Date | null {
+    if (!date) return null;
+    const base = date instanceof Date ? new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0) : parseLocalDate(date);
+    if (isNaN(base.getTime())) return null;
+    const h = Number(hour);
+    const m = Number(minute);
+    base.setHours(isNaN(h) ? 0 : h, isNaN(m) ? 0 : m, 0, 0);
+    return base;
+  }
+
+  private buildHourOptions(): string[] {
+    return Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  }
+
+  private buildMinuteOptions(): string[] {
+    return Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
   }
 }

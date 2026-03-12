@@ -15,3 +15,112 @@
 :host ::ng-deep .mat-mdc-table {
   background-color: transparent !important;
 }
+
+/* Date-time menu styles */
+::ng-deep .date-time-menu .mat-mdc-menu-panel {
+  padding: 0;
+  max-width: 600px;
+  overflow: hidden;
+}
+
+::ng-deep .cdk-overlay-pane .date-time-menu {
+  max-width: 600px;
+  overflow-x: hidden;
+}
+
+.date-time-menu-content {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #f8fafc;
+  width: 480px;
+  box-sizing: border-box;
+  align-items: flex-start;
+  overflow-x: hidden;
+}
+
+::ng-deep .date-time-menu .mat-calendar {
+  width: 300px;
+  max-width: 300px;
+}
+
+.time-controls {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  width: 170px;
+}
+
+.time-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 78px;
+}
+
+.time-col-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.time-list {
+  display: grid;
+  grid-auto-rows: minmax(38px, auto);
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5f5 transparent;
+  scroll-behavior: smooth;
+}
+
+.time-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.time-list::-webkit-scrollbar-thumb {
+  background: #cbd5f5;
+  border-radius: 6px;
+}
+
+.time-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.time-item {
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #111827;
+  font-weight: 400;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.time-item--active {
+  background: #93c5fd;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.time-item:hover {
+  background: rgba(147, 197, 253, 0.35);
+}
+
+::ng-deep .date-time-menu .mat-calendar-body-selected,
+::ng-deep .date-time-menu .mat-calendar-body-cell-content.mat-calendar-body-selected {
+  background-color: #93c5fd !important;
+  color: #0f172a !important;
+}
+
+.date-time-icon mat-icon {
+  color: rgb(167, 243, 208);
+}

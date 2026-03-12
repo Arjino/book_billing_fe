@@ -21,6 +21,8 @@ export const routes: Routes = [
     ,
     { path: 'purchase', loadComponent: () => import('./purchase/purchase.component').then(m => m.PurchaseComponent), canActivate: [AuthGuard] }
     ,
+    { path: 'supplier-book-mapping', loadComponent: () => import('./supplier-book-mapping/supplier-book-mapping.component').then(m => m.SupplierBookMappingComponent), canActivate: [AuthGuard] }
+    ,
     {
       path: 'transaction', loadComponent: () => import('./transaction/transaction.component').then(m => m.TransactionComponent), canActivate: [AuthGuard]
     },

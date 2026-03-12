@@ -10,22 +10,28 @@ import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatMenuModule } from '@angular/material/menu';
 import { DataStoreService } from '../services/data-store.service';
 import { Book } from '../interface/book';
 import { Party } from '../interface/party';
 import { SalesDialogData } from '../interface/sales-dialog-data';
-import { formatDateForAPI } from '../utils/date.utils';
 
 @Component({
   selector: 'app-sales-dialog',
   templateUrl: './sales-dialog.component.html',
   styleUrls: ['./sales-dialog.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatAutocompleteModule, MatIconModule, MatDatepickerModule, MatNativeDateModule]
+  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatSelectModule, MatFormFieldModule, MatInputModule, MatAutocompleteModule, MatIconModule, MatDatepickerModule, MatNativeDateModule, MatMenuModule]
 })
 export class SalesDialogComponent implements OnInit {
   books: Book[] = [];
   parties: Party[] = [];
+  saleDate: Date = new Date();
+  maxDate = new Date();
+  hours: string[] = [];
+  minutes: string[] = [];
+  saleHour: string = String(new Date().getHours()).padStart(2, '0');
+  saleMinute: string = String(new Date().getMinutes()).padStart(2, '0');
 
   constructor(
     public dialogRef: MatDialogRef<SalesDialogComponent>,
@@ -37,14 +43,38 @@ export class SalesDialogComponent implements OnInit {
     return 'Add Sale';
   }
   ngOnInit() {
-    // Ensure date is in proper YYYY-MM-DD string format to avoid timezone issues
-    if (!this.data.date) {
-      // Set to today's date in YYYY-MM-DD format
-      const today = new Date();
-      this.data.date = formatDateForAPI(today);
-    } else if (typeof this.data.date !== 'string') {
-      const d = new Date(this.data.date);
-      this.data.date = formatDateForAPI(d);
+    this.hours = this.buildHourOptions();
+    this.minutes = this.buildMinuteOptions();
+
+    const now = new Date();
+    
+    // Initialize date and time with current local time
+    if (this.data.createdAt) {
+      const parsedDate = this.parseToDate(this.data.createdAt);
+      if (parsedDate) {
+        // Use parsed date but with current time
+        this.saleDate = new Date(
+          parsedDate.getFullYear(),
+          parsedDate.getMonth(),
+          parsedDate.getDate(),
+          now.getHours(),
+          now.getMinutes(),
+          0,
+          0
+        );
+        this.saleHour = String(now.getHours()).padStart(2, '0');
+        this.saleMinute = String(now.getMinutes()).padStart(2, '0');
+      } else {
+        // If parsing fails, use current date and time
+        this.saleDate = now;
+        this.saleHour = String(now.getHours()).padStart(2, '0');
+        this.saleMinute = String(now.getMinutes()).padStart(2, '0');
+      }
+    } else {
+      // No date provided, use current date and time
+      this.saleDate = now;
+      this.saleHour = String(now.getHours()).padStart(2, '0');
+      this.saleMinute = String(now.getMinutes()).padStart(2, '0');
     }
     
     this.store.getBooks().subscribe(data => {
@@ -83,12 +113,18 @@ export class SalesDialogComponent implements OnInit {
   
 
   onSave(): void {
-    // Ensure date is in YYYY-MM-DD format before saving
-    if (this.data.date && typeof this.data.date === 'string') {
-      // Already a string, ensure it's YYYY-MM-DD format
-      const d = new Date(this.data.date);
-      this.data.date = formatDateForAPI(d);
-    }
+    // Combine date and time into a single Date object
+    const combined = new Date(
+      this.saleDate.getFullYear(),
+      this.saleDate.getMonth(),
+      this.saleDate.getDate(),
+      parseInt(this.saleHour, 10),
+      parseInt(this.saleMinute, 10),
+      0,
+      0
+    );
+    // Keep only createdAt in dialog payload; parent will convert to UTC ISO string.
+    this.data.createdAt = combined;
     this.dialogRef.close(this.data);
   }
 
@@ -147,6 +183,63 @@ export class SalesDialogComponent implements OnInit {
 
   isQtyExceedsStock(item: any): boolean {
     return item && item.book && typeof item.book.stock === 'number' && Number(item.qty) > Number(item.book.stock);
+  }
+
+  getSaleDisplay(): string {
+    return this.formatDisplay(this.saleDate, this.saleHour, this.saleMinute);
+  }
+
+  onSaleDateSelected(date: Date): void {
+    this.saleDate = date;
+  }
+
+  setSaleHour(hour: string): void {
+    this.saleHour = hour;
+  }
+
+  setSaleMinute(minute: string): void {
+    this.saleMinute = minute;
+  }
+
+  private parseToDate(value: string | Date | null | undefined): Date | null {
+    if (!value) return null;
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value;
+    }
+
+    // For string dates, parse them and return just the date part (time will be set separately)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split('-').map(Number);
+      return new Date(year, month - 1, day, 0, 0, 0, 0);
+    }
+
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(value)) {
+      const [day, month, year] = value.split('/').map(Number);
+      return new Date(year, month - 1, day, 0, 0, 0, 0);
+    }
+
+    const parsed = new Date(value);
+    if (!isNaN(parsed.getTime())) {
+      return parsed;
+    }
+
+    return null;
+  }
+
+  private formatDisplay(date: Date | null, hour: string, minute: string): string {
+    if (!date) return '';
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}/${mm}/${yyyy} ${hour}:${minute}`;
+  }
+
+  private buildHourOptions(): string[] {
+    return Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  }
+
+  private buildMinuteOptions(): string[] {
+    return Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
   }
 
   hasExceededStock(item: any): boolean {

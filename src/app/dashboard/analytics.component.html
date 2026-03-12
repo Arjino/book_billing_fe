@@ -71,7 +71,7 @@
         </h3>
         <div class="space-y-4 h-64 flex flex-col justify-end">
           <div *ngFor="let data of dailySalesData" class="flex items-end gap-3">
-            <span class="w-12 text-xs text-blue-300">{{data.date}}</span>
+            <span class="w-24 text-xs text-blue-300">{{ data.date | date:'dd/MM/yyyy hh:mm a' }}</span>
             <div class="flex-1 flex items-end gap-2">
               <div class="bg-gradient-to-t from-blue-500 to-cyan-400 rounded-t h-full transition-all hover:from-blue-600 hover:to-cyan-500" 
                    [style.height.%]="(data.amount / (dailySalesData | orderBy: 'amount' | slice: -1)[0]?.amount || 100) * 100">

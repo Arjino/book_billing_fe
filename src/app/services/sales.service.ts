@@ -5,6 +5,7 @@ import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Sale } from '../interface/Sale';
 import { enviort } from '../../environments/environment';
+import { normalizeUTCDatePayload, toUTCDateTimePlus00 } from '../utils/date.utils';
 
 @Injectable({ providedIn: 'root' })
 export class SalesService {
@@ -19,8 +20,8 @@ export class SalesService {
     );
   }
 
-  getSalesByDateRange(startDate: string, endDate: string): Observable<Sale[]> {
-    const url = `${enviort.salesByDateRangeUrl}?startDate=${startDate}&endDate=${endDate}`;
+  getSalesByDateRange(startDateTime: string, endDateTime: string): Observable<Sale[]> {
+    const url = `${enviort.salesByDateRangeUrl}?startDateTime=${encodeURIComponent(startDateTime)}&endDateTime=${encodeURIComponent(endDateTime)}`;
     return this.http.get<Sale[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading sales by date range:', error);
@@ -30,7 +31,13 @@ export class SalesService {
   }
 
   createSale(sale: Sale | Sale[]): Observable<any> {
-    const payload = Array.isArray(sale) ? sale : [sale];
+    const payload = (Array.isArray(sale) ? sale : [sale]).map((item) => {
+      const normalized = { ...item } as any;
+      if (normalized.createdAt) {
+        normalized.createdAt = toUTCDateTimePlus00(normalized.createdAt);
+      }
+      return normalized;
+    });
     return this.http.post<any>(enviort.salesUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating sale:', error);

@@ -1,0 +1,42 @@
+<div class="payment-prompt-wrapper">
+  <div class="prompt-header">
+    <div class="icon-badge">
+      <mat-icon>payments</mat-icon>
+    </div>
+    <div>
+      <h2 class="title">Payment Confirmation</h2>
+      <p class="subtitle">Receiving order created successfully</p>
+    </div>
+  </div>
+
+  <div class="prompt-content">
+    <p class="question">Do you want to make payment now?</p>
+
+    <div class="info-card">
+      <div class="info-row">
+        <span class="label">Invoice Number</span>
+        <span class="value">{{ data.invoiceNo || '-' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">GRN Number</span>
+        <span class="value">{{ data.grnNumber || '-' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Party Name</span>
+        <span class="value">{{ data.partyName || '-' }}</span>
+      </div>
+      <div class="info-row">
+        <span class="label">Amount</span>
+        <span class="value">{{ data.amount ?? '-' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="prompt-actions">
+    <button mat-stroked-button class="cancel-btn" (click)="onCancel()">Cancel</button>
+    <button mat-raised-button color="primary" class="pay-btn" (click)="onPay()">
+      <mat-icon>arrow_forward</mat-icon>
+      Pay
+    </button>
+  </div>
+</div>

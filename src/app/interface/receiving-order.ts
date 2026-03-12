@@ -15,7 +15,7 @@ export interface ReceivingOrderItem {
 export interface ReceivingOrder {
   id?: number;
   grnNumber?: string;
-  purchaseOrderId?: number | null;
+  purchaseOrderNumber?: string;
   receivedDate: string;
   party: Party | null;
   status?: string;

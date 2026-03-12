@@ -111,7 +111,7 @@ export class AnalyticsComponent implements OnInit {
 
         if (Array.isArray(stats.last7DaysSales) && stats.last7DaysSales.length) {
           this.dailySalesData = stats.last7DaysSales.map((entry) => ({
-            date: formatDateLocal(new Date(entry.date)),
+            date: new Date(entry.date),
             amount: entry.amount || 0
           }));
         }
@@ -130,7 +130,7 @@ export class AnalyticsComponent implements OnInit {
     // Calculate today's sales
     const today = getTodayLocal();
     const todaysSales = sales.filter(s => {
-      const saleDate = formatDateLocal(s.date);
+      const saleDate = formatDateLocal(s.createdAt);
       return saleDate === today;
     });
     this.dailySales = todaysSales.length;
@@ -215,14 +215,14 @@ export class AnalyticsComponent implements OnInit {
 
     // Add sales data
     sales.forEach(sale => {
-      const saleDate = formatDateForAPI(new Date(sale.date));
+      const saleDate = formatDateForAPI(sale.createdAt);
       if (dailyMap.has(saleDate)) {
         dailyMap.set(saleDate, (dailyMap.get(saleDate) || 0) + (sale.totalAmount || 0));
       }
     });
 
     this.dailySalesData = Array.from(dailyMap.entries()).map(([date, amount]) => ({
-      date: formatDateLocal(new Date(date)),
+      date: new Date(date),
       amount
     }));
   }

@@ -10,6 +10,31 @@
   <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
     <form #transactionForm="ngForm">
       <div class="grid grid-cols-1 gap-3">
+        <mat-form-field *ngIf="data.transactionType === 'PURCHASE' && !isPartyLocked" appearance="outline" class="w-full">
+          <mat-label>Party</mat-label>
+          <mat-select
+            [(ngModel)]="data.party"
+            name="party"
+            (selectionChange)="onPartyChange()"
+            required
+            #partyModel="ngModel">
+            <mat-option *ngFor="let party of supplierParties" [value]="party">{{ party.name }}</mat-option>
+          </mat-select>
+          <mat-error *ngIf="partyModel.invalid && (partyModel.dirty || partyModel.touched)">
+            <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field *ngIf="data.transactionType === 'PURCHASE' && isPartyLocked" appearance="outline" class="w-full">
+          <mat-label>Party</mat-label>
+          <input matInput [value]="(data.party && data.party.name) ? data.party.name : ''" [disabled]="true" />
+        </mat-form-field>
+
+        <mat-form-field *ngIf="data.transactionType !== 'PURCHASE'" appearance="outline" class="w-full">
+          <mat-label>Party</mat-label>
+          <input matInput [value]="(data.party && data.party.name) ? data.party.name : ''" [disabled]="true" />
+        </mat-form-field>
+
         <mat-form-field *ngIf="data.transactionType === 'SALE'" appearance="outline" class="w-full">
           <mat-label>{{ referenceLabel }}</mat-label>
           <mat-select [(ngModel)]="data.invoiceNo" name="referenceNo" required #referenceModel="ngModel" (selectionChange)="fetchDetails()">
@@ -24,7 +49,13 @@
 
         <mat-form-field *ngIf="data.transactionType === 'PURCHASE'" appearance="outline" class="w-full">
           <mat-label>{{ referenceLabel }}</mat-label>
-          <mat-select [(ngModel)]="data.invoiceNo" name="referenceNo" required #referenceModel="ngModel" (selectionChange)="fetchDetails()">
+          <mat-select
+            [(ngModel)]="data.invoiceNo"
+            name="referenceNo"
+            [disabled]="isPartyLocked"
+            required
+            #referenceModel="ngModel"
+            (selectionChange)="fetchDetails()">
             <mat-option *ngIf="isLoadingInvoices" [value]="''" disabled>Loading...</mat-option>
             <mat-option *ngFor="let invoice of purchaseInvoices" [value]="invoice">{{ invoice }}</mat-option>
           </mat-select>
@@ -34,20 +65,41 @@
           <mat-hint *ngIf="!isLoadingInvoices && !purchaseInvoices.length">No unpaid/partial invoices found.</mat-hint>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Party</mat-label>
-          <input matInput [value]="data.party?.name || ''" [disabled]="true" />
-        </mat-form-field>
-
         <mat-form-field appearance="outline" class="w-full text-white">
-          <mat-label >Transaction Date</mat-label>
-          <input matInput [matDatepicker]="transactionDatePicker" class="text-white" [(ngModel)]="data.paymentDate" name="paymentDate" required #paymentDateModel="ngModel" />
-          <mat-datepicker-toggle matSuffix [for]="transactionDatePicker"></mat-datepicker-toggle>
-          <mat-datepicker #transactionDatePicker></mat-datepicker>
+          <mat-label>Transaction Date</mat-label>
+          <input matInput readonly class="text-white cursor-pointer" [value]="getPaymentDisplay()" [matMenuTriggerFor]="paymentMenu" #paymentTrigger="matMenuTrigger" />
+          <input type="hidden" [(ngModel)]="paymentDateTime" name="paymentDateTime" required #paymentDateModel="ngModel" />
+          <button matSuffix mat-icon-button type="button" (click)="paymentMenuTrigger?.openMenu()">
+            <mat-icon class="text-blue-400">calendar_today</mat-icon>
+          </button>
           <mat-error *ngIf="paymentDateModel.invalid && (paymentDateModel.dirty || paymentDateModel.touched)">
             <span *ngIf="paymentDateModel.errors?.['required']">Transaction date is required.</span>
           </mat-error>
         </mat-form-field>
+
+        <mat-menu #paymentMenu="matMenu" class="date-time-menu">
+          <div class="date-time-menu-content" (click)="$event.stopPropagation()">
+            <mat-calendar [(selected)]="paymentDate" [maxDate]="maxDate" (selectedChange)="onPaymentDateSelected($event)"></mat-calendar>
+            <div class="time-controls">
+              <div class="time-controls-header">
+                <div class="time-label">Hours</div>
+                <div class="time-label">Minutes</div>
+              </div>
+              <div class="time-controls-body">
+                <div class="time-column">
+                  <div class="time-list">
+                    <button type="button" *ngFor="let h of hours" class="time-item" [class.time-item--active]="h === paymentHour" (click)="setPaymentHour(h)">{{ h }}</button>
+                  </div>
+                </div>
+                <div class="time-column">
+                  <div class="time-list">
+                    <button type="button" *ngFor="let m of minutes" class="time-item" [class.time-item--active]="m === paymentMinute" (click)="setPaymentMinute(m)">{{ m }}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </mat-menu>
 
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Last Amount</mat-label>
