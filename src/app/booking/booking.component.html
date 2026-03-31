@@ -19,7 +19,7 @@
           <mat-icon>add</mat-icon>
           Add Book
         </button>
-        <button mat-raised-button color="primary" (click)="openSupplierBookMapping()" class="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600">
+        <button mat-raised-button color="primary" [disabled]="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED" (click)="openSupplierBookMapping()" class="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600">
           <mat-icon>local_shipping</mat-icon>
           Supplier Book Mapping
         </button>

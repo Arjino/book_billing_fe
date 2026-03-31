@@ -2,6 +2,27 @@
   display: block;
 }
 
+/* Table contrast overrides to ensure dark glass background shows through */
+:host ::ng-deep table.mat-table,
+:host ::ng-deep .mat-table,
+:host ::ng-deep table {
+  background: transparent !important;
+  color: rgba(255,255,255,0.92) !important;
+}
+
+:host ::ng-deep th.mat-header-cell,
+:host ::ng-deep td.mat-cell,
+:host ::ng-deep tr.mat-row {
+  background: transparent !important;
+  color: inherit !important;
+}
+
+/* Make cell text clearly visible and match header tone */
+:host ::ng-deep td.mat-cell,
+:host ::ng-deep .mat-mdc-cell {
+  color: rgba(103,232,249,1) !important;
+}
+
 mat-form-field {
   width: 100%;
 }
@@ -33,18 +54,32 @@ mat-chip-list {
   min-height: auto !important;
 }
 
+/* Table-specific outline behavior: hide outlines when not editing, show when editing */
+:host ::ng-deep table .mat-mdc-form-field:not(.edit-mode) .mdc-notched-outline__leading,
+:host ::ng-deep table .mat-mdc-form-field:not(.edit-mode) .mdc-notched-outline__notch,
+:host ::ng-deep table .mat-mdc-form-field:not(.edit-mode) .mdc-notched-outline__trailing {
+  border-color: transparent !important;
+}
+
+:host ::ng-deep table .mat-mdc-form-field.edit-mode .mdc-notched-outline__leading,
+:host ::ng-deep table .mat-mdc-form-field.edit-mode .mdc-notched-outline__notch,
+:host ::ng-deep table .mat-mdc-form-field.edit-mode .mdc-notched-outline__trailing {
+  border-color: rgba(255, 255, 255, 0.6) !important;
+  border-width: 1px !important;
+}
+
 :host ::ng-deep table .mat-mdc-input-element {
-  color: rgba(15, 23, 42, 0.95) !important;
+  color: rgba(255,255,255,0.95) !important;
 }
 
 :host ::ng-deep table .mat-mdc-input-element:not(:disabled) {
-  color: rgba(15, 23, 42, 0.95) !important;
-  -webkit-text-fill-color: rgba(15, 23, 42, 0.95) !important;
+  color: rgba(255,255,255,0.95) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.95) !important;
 }
 
 :host ::ng-deep table .mat-mdc-input-element:disabled {
-  color: rgba(15, 23, 42, 0.95) !important;
-  -webkit-text-fill-color: rgba(15, 23, 42, 0.95) !important;
+  color: rgba(255,255,255,0.7) !important;
+  -webkit-text-fill-color: rgba(255,255,255,0.7) !important;
 }
 
 :host ::ng-deep table .mat-mdc-form-field-subscript-wrapper {
@@ -79,6 +114,11 @@ mat-chip-list {
 
 :host ::ng-deep .mat-mdc-form-field .mdc-text-field {
   background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Keep form-field surfaces inside tables transparent so rows show dark glass */
+:host ::ng-deep table .mat-mdc-form-field .mdc-text-field {
+  background: transparent !important;
 }
 
 :host ::ng-deep .mat-mdc-form-field .mdc-notched-outline__leading,

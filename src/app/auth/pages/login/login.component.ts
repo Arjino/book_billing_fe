@@ -41,7 +41,7 @@ export class LoginComponent {
     private loadingService: LoadingService
   ) {
     this.loginForm = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
+      username: ['', [Validators.required, Validators.minLength(3)]],
       password: ['', [Validators.required, Validators.minLength(3)]]
     });
   }
@@ -57,9 +57,9 @@ export class LoginComponent {
     }
 
     this.loadingService.show('Signing in...');
-    const { email, password } = this.loginForm.value;
+    const { username, password } = this.loginForm.value;
 
-    this.authService.login(email, password).subscribe({
+    this.authService.login(username, password).subscribe({
       next: () => {
         this.loadingService.hide();
         this.snackBar.open(AUTH_CONSTANTS.MESSAGES.LOGIN_SUCCESS, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
