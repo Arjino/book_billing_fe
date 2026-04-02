@@ -216,7 +216,7 @@ export class PurchaseService {
   }
 
   downloadPurchaseOrderPdf(poNumber: string): Observable<Blob> {
-    return this.http.get(`${enviort.purchaseOrdersUrl}/${poNumber}/pdf`, {
+    return this.http.get(`${enviort.purchaseOrdersPdfUrl}?poNumber=${encodeURIComponent(poNumber)}`, {
       headers: this.auth.getAuthHeaders(),
       responseType: 'blob'
     }).pipe(
