@@ -38,7 +38,8 @@ export const enviort = {
   purchaseReturnsUrl: baseUrl + '/purchases/returns',
   purchaseOrdersUrl: baseUrl + '/purchase-orders',
   purchaseOrdersPdfUrl: baseUrl + '/pdf/purchase-order',
-  receivingOrdersUrl: baseUrl + '/receiving-orders'
+  receivingOrdersUrl: baseUrl + '/receiving-orders',
+  receivingOrdersPdfUrl: baseUrl + '/pdf/receiving-order'
 };
 
 export const environment = {
