@@ -34,6 +34,7 @@ export const enviort = {
 
   // Purchase URLs
   purchasesUrl: baseUrl + '/purchases',
+  purchasesPdfUrl: baseUrl + '/pdf/purchase-invoice',
   purchasesByDateUrl: baseUrl + '/purchases/by-date', // Returns today's purchases by default
   purchaseReturnsUrl: baseUrl + '/purchases/returns',
   purchaseOrdersUrl: baseUrl + '/purchase-orders',
