@@ -1,4 +1,4 @@
-export const baseUrl = 'https://book-billing.onrender.com/api';
+export const baseUrl = 'https://bookbilling-production.up.railway.app/api';
 
 export const enviort = {
   // Authentication
@@ -20,7 +20,7 @@ export const enviort = {
   paymentUrl: baseUrl + '/payment',
   ledgerUrl: baseUrl + '/ledger/party',
   ledgerFilterUrl: baseUrl + '/ledger/entries/filter',
-  ledgerReportUrl: baseUrl + '/ledger/entries/report/pdf',
+  ledgerReportUrl: baseUrl + '/pdf/ledger-report',
   statsDashboardUrl: baseUrl + '/stats/dashboard',
   saleReturnsUrl: baseUrl + '/sales/returns',
   feedbackUrl: baseUrl + '/feedback',
@@ -37,7 +37,9 @@ export const enviort = {
   purchasesByDateUrl: baseUrl + '/purchases/by-date', // Returns today's purchases by default
   purchaseReturnsUrl: baseUrl + '/purchases/returns',
   purchaseOrdersUrl: baseUrl + '/purchase-orders',
-  receivingOrdersUrl: baseUrl + '/receiving-orders'
+  // purchaseOrdersPdfUrl: baseUrl + '/pdf/purchase-order',
+  receivingOrdersUrl: baseUrl + '/receiving-orders',
+  // receivingOrdersPdfUrl: baseUrl + '/pdf/receiving-order'
 };
 
 export const environment = {
