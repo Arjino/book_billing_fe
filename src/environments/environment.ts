@@ -1,4 +1,4 @@
-export const baseUrl = 'http://localhost:8081/api';
+export const baseUrl = 'https://bookbilling-production.up.railway.app/api';
 
 export const enviort = {
   // Authentication
@@ -34,13 +34,12 @@ export const enviort = {
 
   // Purchase URLs
   purchasesUrl: baseUrl + '/purchases',
-  purchasesPdfUrl: baseUrl + '/pdf/purchase-invoice',
   purchasesByDateUrl: baseUrl + '/purchases/by-date', // Returns today's purchases by default
   purchaseReturnsUrl: baseUrl + '/purchases/returns',
   purchaseOrdersUrl: baseUrl + '/purchase-orders',
-  purchaseOrdersPdfUrl: baseUrl + '/pdf/purchase-order',
+  // purchaseOrdersPdfUrl: baseUrl + '/pdf/purchase-order',
   receivingOrdersUrl: baseUrl + '/receiving-orders',
-  receivingOrdersPdfUrl: baseUrl + '/pdf/receiving-order'
+  // receivingOrdersPdfUrl: baseUrl + '/pdf/receiving-order'
 };
 
 export const environment = {

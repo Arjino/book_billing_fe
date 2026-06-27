@@ -204,7 +204,7 @@ export class PurchaseService {
   }
 
   downloadPurchaseInvoice(invoiceNo: string): Observable<Blob> {
-    return this.http.get(`${enviort.purchasesPdfUrl}?invoiceNo=${encodeURIComponent(invoiceNo)}`, {
+    return this.http.get(`${enviort.purchasesUrl}/${encodeURIComponent(invoiceNo)}/invoice/download`, {
       headers: this.auth.getAuthHeaders(),
       responseType: 'blob'
     }).pipe(
@@ -216,7 +216,7 @@ export class PurchaseService {
   }
 
   downloadPurchaseOrderPdf(poNumber: string): Observable<Blob> {
-    return this.http.get(`${enviort.purchaseOrdersPdfUrl}?poNumber=${encodeURIComponent(poNumber)}`, {
+    return this.http.get(`${enviort.purchaseOrdersUrl}/${poNumber}/pdf`, {
       headers: this.auth.getAuthHeaders(),
       responseType: 'blob'
     }).pipe(
@@ -228,7 +228,7 @@ export class PurchaseService {
   }
 
   downloadReceivingOrderPdf(grnNumber: string): Observable<Blob> {
-    return this.http.get(`${enviort.receivingOrdersPdfUrl}?grnNumber=${encodeURIComponent(grnNumber)}`, {
+    return this.http.get(`${enviort.receivingOrdersUrl}/${grnNumber}/pdf`, {
       headers: this.auth.getAuthHeaders(),
       responseType: 'blob'
     }).pipe(
