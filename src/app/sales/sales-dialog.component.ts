@@ -123,6 +123,9 @@ export class SalesDialogComponent implements OnInit {
       0,
       0
     );
+    if(this.data.paymentStatus == "PAID"){
+      this.data.paidAmount = this.data.totalAmount
+    }
     // Keep only createdAt in dialog payload; parent will convert to UTC ISO string.
     this.data.createdAt = combined;
     this.dialogRef.close(this.data);

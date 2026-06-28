@@ -20,7 +20,7 @@ export const enviort = {
   paymentUrl: baseUrl + '/payment',
   ledgerUrl: baseUrl + '/ledger/party',
   ledgerFilterUrl: baseUrl + '/ledger/entries/filter',
-  ledgerReportUrl: baseUrl + '/pdf/ledger-report',
+  ledgerReportUrl: baseUrl + '/ledger/entries/report/pdf',
   statsDashboardUrl: baseUrl + '/stats/dashboard',
   saleReturnsUrl: baseUrl + '/sales/returns',
   feedbackUrl: baseUrl + '/feedback',

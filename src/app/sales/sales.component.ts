@@ -22,6 +22,7 @@ import { LoadingService } from '../services/loading.service';
 import { toISODateTimeUTC } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
+import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
 
 @Component({
   selector: 'app-sales',
@@ -162,6 +163,7 @@ export class SalesComponent implements OnInit {
       }
 
       this.loadingService.show('Creating sale...');
+      payload['paymentStatus']= paymentStatus
       this.store.createSale([payload]).subscribe({
         next: () => {
           const invoiceNo = (payload as any)?.invoiceNo ? String((payload as any).invoiceNo) : '';
@@ -359,5 +361,36 @@ export class SalesComponent implements OnInit {
 
   private buildMinuteOptions(): string[] {
     return Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+  }
+  public openSaleInvoicePreview(invoiceNo:string){
+  if (!invoiceNo) return;
+    this.dialog.open(InvoicePreviewComponent, {
+      data: { salesId: invoiceNo, type: 'sale', invoiceNo },
+      width: '900px',
+      maxWidth: '95vw',
+      panelClass: 'invoice-dialog'
+    });
+  }
+  canMakePayment(s:any){
+    return s.paymentStatus == "PARTIAL" || s.paymentStatus == "UNPAID"
+  }
+  openPaymentForSale(s:any){
+    const saleId = Number((s as any)?.id);
+    if (!saleId || isNaN(saleId)) {
+      this.snackBar.open('Sale ID not found for selected invoice.', 'Close', {
+        duration: SALES_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
+    this.router.navigate(['/transaction'], {
+      queryParams: {
+        type: 'SALE',
+        openPayment: 'true',
+        saleId,
+        invoiceId: saleId
+      }
+    });
   }
 }

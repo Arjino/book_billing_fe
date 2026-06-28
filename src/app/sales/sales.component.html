@@ -185,8 +185,25 @@
               </span>
             </td>
           </ng-container>
-          <tr mat-header-row *matHeaderRowDef="['id','party','dateTime','grandTotal','paymentStatus']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['id','party','dateTime','grandTotal','paymentStatus'];" class="hover:bg-red-500/10 transition-colors"></tr>
+          <ng-container matColumnDef="action">
+            <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Action</th>
+            <td mat-cell *matCellDef="let s" class="text-emerald-400 bg-transparent font-bold py-4 px-6 border-t border-red-500/20">
+              <button mat-icon-button class="text-emerald-300" (click)="openSaleInvoicePreview(s.invoiceNo)" title="Preview Invoice PDF">
+                  <mat-icon>receipt_long</mat-icon>
+                </button>
+                <button
+                  *ngIf="canMakePayment(s)"
+                  mat-stroked-button
+                  color="primary"
+                  (click)="openPaymentForSale(s)"
+                  title="Pay Now">
+                  <mat-icon>payments</mat-icon>
+                  Pay
+                </button>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="['id','party','dateTime','grandTotal','paymentStatus','action']"></tr>
+          <tr mat-row *matRowDef="let row; columns: ['id','party','dateTime','grandTotal','paymentStatus','action'];" class="hover:bg-red-500/10 transition-colors"></tr>
         </table>
       </div>
       <div *ngIf="!sales.length" class="p-8 text-center">

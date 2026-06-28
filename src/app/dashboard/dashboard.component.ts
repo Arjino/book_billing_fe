@@ -426,6 +426,7 @@ export class DashboardComponent implements OnInit {
       }
 
       this.loadingService.show('Creating sale...');
+      payload['paymentStatus']= paymentStatus
       this.store.createSale([payload]).subscribe({
         next: () => {
           const invoiceNo = (payload as any)?.invoiceNo ? String((payload as any).invoiceNo) : '';

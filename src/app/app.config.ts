@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, Injectable, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { MAT_DATE_LOCALE, MAT_DATE_FORMATS, DateAdapter } from '@angular/material/core';
@@ -23,6 +23,7 @@ export const CUSTOM_DATE_FORMATS = {
 };
 
 // Custom date adapter to format dates as dd/mm/yyyy
+@Injectable()
 export class CustomDateAdapter extends NativeDateAdapter {
   override format(date: Date, displayFormat: Object): string {
     if (displayFormat === 'input') {
