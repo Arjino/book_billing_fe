@@ -19,6 +19,7 @@ import { LoadingService } from '../services/loading.service';
 import { Book } from '../interface/book';
 import { BookDialogData } from '../interface/book-dialog-data';
 import { BOOKING_CONSTANTS } from '../constants/booking.constants';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-booking',
@@ -30,21 +31,21 @@ import { BOOKING_CONSTANTS } from '../constants/booking.constants';
 export class BookingComponent implements OnInit {
   books: Book[] = [];
   filteredBooks: Book[] = [];
-  
+
   filterBy: string = BOOKING_CONSTANTS.DEFAULTS.FILTER_BY;
   filterValue: string = '';
   bookStatus: string = BOOKING_CONSTANTS.DEFAULTS.STATUS; // Track current status
-  
+
   sortColumn: string = '';
   sortDirection: 'asc' | 'desc' | '' = '';
-  
+
   filterOptions = BOOKING_CONSTANTS.FILTER_OPTIONS;
   readonly BOOKING_CONSTANTS = BOOKING_CONSTANTS;
 
   constructor(
-    private dialog: MatDialog, 
+    private dialog: MatDialog,
     private router: Router,
-    private route: ActivatedRoute, 
+    private route: ActivatedRoute,
     private store: DataStoreService,
     private booksService: BooksService,
     private snackBar: MatSnackBar,
@@ -139,11 +140,11 @@ export class BookingComponent implements OnInit {
     this.filteredBooks = [...this.filteredBooks].sort((a, b) => {
       const aValue = a[this.sortColumn as keyof Book];
       const bValue = b[this.sortColumn as keyof Book];
-      
+
       // Convert to numbers for numeric columns
       const aNum = Number(aValue);
       const bNum = Number(bValue);
-      
+
       // Compare as numbers
       if (this.sortDirection === 'asc') {
         return aNum - bNum;
@@ -181,7 +182,7 @@ export class BookingComponent implements OnInit {
         this.booksService.createBook(result as any).subscribe({
           next: () => {
             this.loadingService.hide();
-            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', { 
+            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', {
               duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
               panelClass: ['success-snackbar']
             });
@@ -190,7 +191,7 @@ export class BookingComponent implements OnInit {
           error: (err) => {
             this.loadingService.hide();
             const errorMessage = err?.error?.message || err?.message || BOOKING_CONSTANTS.MESSAGES.ADD_ERROR;
-            this.snackBar.open(errorMessage, 'Close', { 
+            this.snackBar.open(errorMessage, 'Close', {
               duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
               panelClass: ['error-snackbar']
             });
@@ -200,40 +201,63 @@ export class BookingComponent implements OnInit {
     });
   }
 
-  bulkImport() {
+  async bulkImport() {
     const dialogRef = this.dialog.open(BulkImportDialogComponent, {
       width: '600px',
       maxHeight: '90vh',
       data: null
     });
 
-    dialogRef.afterClosed().subscribe((result: Book[] | undefined) => {
+    dialogRef.afterClosed().subscribe(async (result: Book[] | undefined) => {
       if (result && result.length > 0) {
         this.loadingService.show(`Importing ${result.length} book(s)...`);
-        this.booksService.createBook(result).subscribe({
-          next: (response) => {
-            this.loadingService.hide();
-            const successMessage = response?.message || `Successfully imported ${result.length} book(s)`;
-            this.snackBar.open(successMessage, 'Close', { 
+
+        try {
+          for (const result1 of result) {
+            result1.sku = await this.fetchSku();
+
+            const response: any = await firstValueFrom(
+              this.booksService.createBook([result1])
+            );
+
+            const successMessage =
+              response?.message || 'Book imported successfully';
+
+            this.snackBar.open(successMessage, 'Close', {
               duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
               panelClass: ['success-snackbar']
             });
-            this.loadBooks(true);
-          },
-          error: (err) => {
-            this.loadingService.hide();
-            const errorMessage = err?.error?.message || err?.message || `Failed to import books. Please check the file and try again.`;
-            this.snackBar.open(errorMessage, 'Close', { 
-              duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.LONG,
-              panelClass: ['error-snackbar']
-            });
-            console.error('Bulk import error:', err);
           }
-        });
+
+          
+        } catch (err: any) {
+          const errorMessage =
+            err?.error?.message ||
+            err?.message ||
+            'Failed to import books. Please check the file and try again.';
+
+          this.snackBar.open(errorMessage, 'Close', {
+            duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.LONG,
+            panelClass: ['error-snackbar']
+          });
+
+          console.error('Bulk import error:', err);
+        } finally {
+          this.loadBooks(true);
+          this.loadingService.hide();
+        }
       }
     });
   }
-
+  async fetchSku(): Promise<string> {
+    try {
+      const response = await firstValueFrom(this.booksService.generateSku());
+      return response ? String(response).trim() : '';
+    } catch (error) {
+      console.error('Error fetching SKU:', error);
+      return '';
+    }
+  }
   editBook(book: Book) {
     const dialogRef = this.dialog.open(BookDialogComponent, {
       width: BOOKING_CONSTANTS.DIALOG_WIDTH,
@@ -242,37 +266,11 @@ export class BookingComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((result: BookDialogData) => {
       if (result) {
-          this.loadingService.show('Updating book...');
-          this.store.updateBook(result.id, result as Book).subscribe({
-            next: () => {
-              this.loadingService.hide();
-              this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.UPDATE_SUCCESS, 'Close', { 
-                duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
-                panelClass: ['success-snackbar']
-              });
-              this.store?.loadBooks(true);
-              this.loadBooks();
-            },
-            error: (err) => {
-              this.loadingService.hide();
-              this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.UPDATE_ERROR, 'Close', { 
-                duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
-                panelClass: ['error-snackbar']
-              });
-            }
-        });
-      }
-    });
-  }
-
-  deleteBook(book: Book) {
-    const confirmMessage = BOOKING_CONSTANTS.MESSAGES.CONFIRM_DELETE.replace('{title}', book.title);
-    if (confirm(confirmMessage)) {
-        this.loadingService.show('Deleting book...');
-        this.store.deleteBook(book.id).subscribe({
+        this.loadingService.show('Updating book...');
+        this.store.updateBook(result.id, result as Book).subscribe({
           next: () => {
             this.loadingService.hide();
-            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.DELETE_SUCCESS, 'Close', { 
+            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.UPDATE_SUCCESS, 'Close', {
               duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
               panelClass: ['success-snackbar']
             });
@@ -281,16 +279,42 @@ export class BookingComponent implements OnInit {
           },
           error: (err) => {
             this.loadingService.hide();
-            const serverMessage = err?.error || err?.message || 'Unknown error';
-            this.snackBar.open(`${BOOKING_CONSTANTS.MESSAGES.DELETE_ERROR}: ${serverMessage}`, 'Close', { 
-              duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.LONG,
+            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.UPDATE_ERROR, 'Close', {
+              duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
               panelClass: ['error-snackbar']
             });
-            // If backend soft-hid the book (409), refresh to reflect hidden state removal from list
-            if (err?.status === 409) {
-              this.loadBooks();
-            }
           }
+        });
+      }
+    });
+  }
+
+  deleteBook(book: Book) {
+    const confirmMessage = BOOKING_CONSTANTS.MESSAGES.CONFIRM_DELETE.replace('{title}', book.title);
+    if (confirm(confirmMessage)) {
+      this.loadingService.show('Deleting book...');
+      this.store.deleteBook(book.id).subscribe({
+        next: () => {
+          this.loadingService.hide();
+          this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.DELETE_SUCCESS, 'Close', {
+            duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
+            panelClass: ['success-snackbar']
+          });
+          this.store?.loadBooks(true);
+          this.loadBooks();
+        },
+        error: (err) => {
+          this.loadingService.hide();
+          const serverMessage = err?.error || err?.message || 'Unknown error';
+          this.snackBar.open(`${BOOKING_CONSTANTS.MESSAGES.DELETE_ERROR}: ${serverMessage}`, 'Close', {
+            duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.LONG,
+            panelClass: ['error-snackbar']
+          });
+          // If backend soft-hid the book (409), refresh to reflect hidden state removal from list
+          if (err?.status === 409) {
+            this.loadBooks();
+          }
+        }
       });
     }
   }
@@ -303,7 +327,7 @@ export class BookingComponent implements OnInit {
       this.store.updateBook(book.id, updatedBook).subscribe({
         next: () => {
           this.loadingService.hide();
-          this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ENABLE_SUCCESS, 'Close', { 
+          this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ENABLE_SUCCESS, 'Close', {
             duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
             panelClass: ['success-snackbar']
           });
@@ -313,7 +337,7 @@ export class BookingComponent implements OnInit {
         error: (err) => {
           this.loadingService.hide();
           const serverMessage = err?.error || err?.message || 'Unknown error';
-          this.snackBar.open(`${BOOKING_CONSTANTS.MESSAGES.ENABLE_ERROR}: ${serverMessage}`, 'Close', { 
+          this.snackBar.open(`${BOOKING_CONSTANTS.MESSAGES.ENABLE_ERROR}: ${serverMessage}`, 'Close', {
             duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.LONG,
             panelClass: ['error-snackbar']
           });
