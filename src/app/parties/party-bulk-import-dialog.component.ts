@@ -25,7 +25,7 @@ export class PartyBulkImportDialogComponent implements OnInit {
 
   readonly ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
   readonly MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-  readonly REQUIRED_COLUMNS = ['name', 'type', 'phone', 'address', 'gstin'];
+  readonly REQUIRED_COLUMNS = ['name', 'type', 'phone', 'address'];
   readonly PARTY_TYPES = PARTIES_CONSTANTS.PARTY_TYPES.map((t) => t.value);
 
   constructor(public dialogRef: MatDialogRef<PartyBulkImportDialogComponent>) {}
@@ -141,10 +141,10 @@ export class PartyBulkImportDialogComponent implements OnInit {
         errors.push(`Row ${rowNum}: Address is required.`);
       }
 
-      const gstin = row.gstin !== undefined && row.gstin !== null ? String(row.gstin).trim() : '';
-      if (!gstin || gstin.length !== PARTIES_CONSTANTS.VALIDATION_RULES.GSTIN_MAX_LENGTH) {
-        errors.push(`Row ${rowNum}: GSTIN must be ${PARTIES_CONSTANTS.VALIDATION_RULES.GSTIN_MAX_LENGTH} characters.`);
-      }
+      // const gstin = row.gstin !== undefined && row.gstin !== null ? String(row.gstin).trim() : '';
+      // if (!gstin || gstin.length !== PARTIES_CONSTANTS.VALIDATION_RULES.GSTIN_MAX_LENGTH) {
+      //   errors.push(`Row ${rowNum}: GSTIN must be ${PARTIES_CONSTANTS.VALIDATION_RULES.GSTIN_MAX_LENGTH} characters.`);
+      // }
 
       if (errors.length > 0) {
         this.validationErrors.push(...errors);
@@ -155,7 +155,7 @@ export class PartyBulkImportDialogComponent implements OnInit {
           type: typeMatch || PARTIES_CONSTANTS.DEFAULTS.PARTY_TYPE,
           phone,
           address,
-          gstin
+          gstin: row?.gstin ? String(row?.gstin).trim() : ''
         };
         this.extractedParties.push(party);
       }
