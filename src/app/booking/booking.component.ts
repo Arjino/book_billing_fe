@@ -42,6 +42,12 @@ export class BookingComponent implements OnInit {
   filterOptions = BOOKING_CONSTANTS.FILTER_OPTIONS;
   readonly BOOKING_CONSTANTS = BOOKING_CONSTANTS;
 
+  // Pagination properties
+  currentPage: number = 0;
+  pageSize: number = 25;
+  totalRecords: number = 0;
+  totalPages: number = 0;
+
   constructor(
     private dialog: MatDialog,
     private router: Router,
@@ -62,9 +68,11 @@ export class BookingComponent implements OnInit {
   loadBooksByStatus(force: boolean = false) {
     if (this.bookStatus === BOOKING_CONSTANTS.STATUS.AVAILABLE) {
       this.loadingService.show('Loading books...');
-      this.store?.getBooks(force).subscribe(data => {
-        this.books = data || [];
-        this.filteredBooks = [...this.books];
+      const pageSize = Number(this.pageSize);
+      this.store?.getBooksPaginated(this.currentPage, pageSize, force).subscribe(data => {
+        this.filteredBooks = data?.content || [];
+        this.totalRecords = data?.totalElements || 0;
+        this.totalPages = data?.totalPages || 0;
         this.loadingService.hide();
       });
     } else if (this.bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED) {
@@ -89,24 +97,14 @@ export class BookingComponent implements OnInit {
   }
 
   applyFilter() {
-    if (!this.filterValue.trim()) {
-      this.filteredBooks = [...this.books];
-      this.applySorting();
-      return;
-    }
-
-    const searchTerm = this.filterValue.toLowerCase();
-    this.filteredBooks = this.books.filter(book => {
-      const fieldValue = (book[this.filterBy as keyof Book] || '').toString().toLowerCase();
-      return fieldValue.includes(searchTerm);
-    });
-    this.applySorting();
+    this.currentPage = 0;
+    this.loadBooksByStatus();
   }
 
   clearFilter() {
     this.filterValue = '';
-    this.filteredBooks = [...this.books];
-    this.applySorting();
+    this.currentPage = 0;
+    this.loadBooksByStatus();
   }
 
   openSupplierBookMapping() {
@@ -114,44 +112,24 @@ export class BookingComponent implements OnInit {
   }
 
   sortBy(column: string) {
+    // Sorting will be handled by backend pagination
     if (this.sortColumn === column) {
-      // Toggle sort direction: asc -> desc -> none
       if (this.sortDirection === 'asc') {
         this.sortDirection = 'desc';
       } else if (this.sortDirection === 'desc') {
         this.sortDirection = '';
         this.sortColumn = '';
-        // Reset to original filtered order
-        this.applyFilter();
-        return;
       }
     } else {
       this.sortColumn = column;
       this.sortDirection = 'asc';
     }
-    this.applySorting();
+    this.currentPage = 0;
+    this.loadBooksByStatus();
   }
 
   applySorting() {
-    if (!this.sortColumn || !this.sortDirection) {
-      return;
-    }
-
-    this.filteredBooks = [...this.filteredBooks].sort((a, b) => {
-      const aValue = a[this.sortColumn as keyof Book];
-      const bValue = b[this.sortColumn as keyof Book];
-
-      // Convert to numbers for numeric columns
-      const aNum = Number(aValue);
-      const bNum = Number(bValue);
-
-      // Compare as numbers
-      if (this.sortDirection === 'asc') {
-        return aNum - bNum;
-      } else {
-        return bNum - aNum;
-      }
-    });
+    // Sorting now handled by backend
   }
 
   goBack() {
@@ -343,6 +321,26 @@ export class BookingComponent implements OnInit {
           });
         }
       });
+    }
+  }
+
+  // Pagination methods
+  onPageSizeChange() {
+    this.currentPage = 0;
+    this.loadBooksByStatus();
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+      this.loadBooksByStatus();
+    }
+  }
+
+  previousPage() {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+      this.loadBooksByStatus();
     }
   }
 }

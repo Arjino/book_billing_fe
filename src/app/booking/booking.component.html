@@ -135,6 +135,47 @@
           <tr mat-row *matRowDef="let row; columns: ['id','title','publisher','mrp','sku','stock','actions'];" class="hover:bg-green-500/10 transition-colors"></tr>
         </table>
       </div>
+
+      <!-- Pagination Section -->
+      <div class="flex flex-col sm:flex-row items-center justify-between p-6 border-t border-green-500/30 bg-slate-900/50" *ngIf="filteredBooks.length">
+        <div class="flex items-center gap-4 mb-4 sm:mb-0">
+          <label class="text-green-300 font-semibold">Rows per page:</label>
+          <select [(ngModel)]="pageSize" (change)="onPageSizeChange()" class="px-4 py-2 bg-slate-800/50 border border-green-500/30 rounded-lg text-white focus:outline-none focus:border-green-400 transition-colors">
+            <option [ngValue]="25">25</option>
+            <option [ngValue]="50">50</option>
+            <option [ngValue]="100">100</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button 
+            mat-icon-button 
+            (click)="previousPage()" 
+            [disabled]="currentPage === 0"
+            class="text-green-300 disabled:text-green-300/30 disabled:cursor-not-allowed"
+            title="Previous Page">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+
+          <span class="text-green-300 font-semibold px-4">
+            Page {{ currentPage + 1 }} of {{ totalPages || 1 }}
+          </span>
+
+          <button 
+            mat-icon-button 
+            (click)="nextPage()" 
+            [disabled]="currentPage >= totalPages - 1 || totalPages === 0"
+            class="text-green-300 disabled:text-green-300/30 disabled:cursor-not-allowed"
+            title="Next Page">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div>
+
+        <div class="text-green-300/60 text-sm mt-4 sm:mt-0">
+          Total Records: {{ totalRecords }}
+        </div>
+      </div>
+
       <div *ngIf="!filteredBooks.length" class="p-8 text-center">
         <mat-icon class="text-6xl text-green-500/30 mb-4">inventory_2</mat-icon>
         <p class="text-green-300/60" *ngIf="filterValue">No results found for your filter.</p>

@@ -35,6 +35,12 @@ export class PartiesComponent implements OnInit {
   filterValue: string = '';
   partyStatus: string = PARTIES_CONSTANTS.DEFAULTS.STATUS; // Track current status
   
+  // Pagination properties
+  currentPage: number = 0;
+  pageSize: number = 25;
+  totalRecords: number = 0;
+  totalPages: number = 0;
+  
   filterOptions = PARTIES_CONSTANTS.FILTER_OPTIONS;
   readonly PARTIES_CONSTANTS = PARTIES_CONSTANTS;
 
@@ -58,9 +64,11 @@ export class PartiesComponent implements OnInit {
   loadPartiesByStatus() {
     if (this.partyStatus === PARTIES_CONSTANTS.STATUS.CURRENT) {
       this.loadingService.show('Loading parties...');
-      this.store.getParties().subscribe(data => {
-        this.parties = data || [];
-        this.filteredParties = [...this.parties];
+      const pageSize = Number(this.pageSize);
+      this.store.getPartiesPaginated(this.currentPage, pageSize).subscribe(data => {
+        this.filteredParties = data?.content || [];
+        this.totalRecords = data?.totalElements || 0;
+        this.totalPages = data?.totalPages || 0;
         this.loadingService.hide();
       });
     } else if (this.partyStatus === PARTIES_CONSTANTS.STATUS.OLD) {
@@ -85,21 +93,14 @@ export class PartiesComponent implements OnInit {
   }
 
   applyFilter() {
-    if (!this.filterValue.trim()) {
-      this.filteredParties = [...this.parties];
-      return;
-    }
-
-    const searchTerm = this.filterValue.toLowerCase();
-    this.filteredParties = this.parties.filter(party => {
-      const fieldValue = (party[this.filterBy as keyof Party] || '').toString().toLowerCase();
-      return fieldValue.includes(searchTerm);
-    });
+    this.currentPage = 0;
+    this.loadPartiesByStatus();
   }
 
   clearFilter() {
     this.filterValue = '';
-    this.filteredParties = [...this.parties];
+    this.currentPage = 0;
+    this.loadPartiesByStatus();
   }
 
   goBack() {
@@ -265,6 +266,26 @@ export class PartiesComponent implements OnInit {
           });
         }
       });
+    }
+  }
+
+  // Pagination methods
+  onPageSizeChange() {
+    this.currentPage = 0;
+    this.loadPartiesByStatus();
+  }
+
+  nextPage() {
+    if (this.currentPage < this.totalPages - 1) {
+      this.currentPage++;
+      this.loadPartiesByStatus();
+    }
+  }
+
+  previousPage() {
+    if (this.currentPage > 0) {
+      this.currentPage--;
+      this.loadPartiesByStatus();
     }
   }
 }

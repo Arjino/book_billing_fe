@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { catchError, tap, finalize } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Party } from '../interface/party';
@@ -35,13 +35,15 @@ export class DataStoreService {
     if (this.partiesLoaded && !force) return;
     // mark as loading immediately to prevent duplicate parallel requests
     this.partiesLoaded = true;
-    this.http.get<Party[]>(enviort.partiesUrl, { headers: this.auth.getAuthHeaders() })
+    this.http.get<any>(enviort.partiesUrl, { headers: this.auth.getAuthHeaders() })
       .pipe(catchError(() => of([])))
-      .subscribe(data => {
+      ?.subscribe(data => {
         if(!data){
           this.partiesLoaded = false;
         }
-        this.parties$.next(data || []);
+        // Extract content array from paginated response, or use data directly if it's an array
+        const parties = Array.isArray(data) ? data : (data?.content || []);
+        this.parties$.next(parties);
       });
   }
 
@@ -70,11 +72,46 @@ export class DataStoreService {
     );
   }
 
+  getPartiesPaginated(page: number = 0, size: number = 20, type?: string): Observable<any> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    
+    const paramsWithType = type ? params.set('type', type) : params;
+    
+    return this.http.get<any>(enviort.partiesUrl, { 
+      headers: this.auth.getAuthHeaders(),
+      params: paramsWithType
+    })
+      .pipe(
+        catchError((error) => {
+          console.error('Error loading paginated parties:', error);
+          return of({content: [], totalElements: 0, totalPages: 0});
+        })
+      );
+  }
+
   getBooks(force = false): Observable<Book[]> {
     if (!this.booksLoaded || force) {
       return this.loadBooks(force);
     }
     return this.books$.asObservable();
+  }
+
+  getBooksPaginated(page: number = 0, size: number = 20, force: boolean = false): Observable<any> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString());
+    return this.http.get<any>(enviort.bookingUrl, { 
+      headers: this.auth.getAuthHeaders(),
+      params: params
+    })
+      .pipe(
+        catchError((error) => {
+          console.error('Error loading paginated books:', error);
+          return of({content: [], totalElements: 0, totalPages: 0});
+        })
+      );
   }
 
   loadBooks(force = false): Observable<Book[]> {
@@ -85,7 +122,7 @@ export class DataStoreService {
       return this.books$.asObservable();
     }
     this.booksLoading = true;
-    const request$ = this.http.get<Book[]>(enviort.bookingUrl, { headers: this.auth.getAuthHeaders() })
+    const request$ = this.http.get<any>(enviort.bookingUrl, { headers: this.auth.getAuthHeaders() })
       .pipe(
         catchError(() => {
           this.booksLoaded = false;
@@ -93,7 +130,9 @@ export class DataStoreService {
         }),
         tap(data => {
           this.booksLoaded = true;
-          this.books$.next(data || []);
+          // Extract content array from paginated response, or use data directly if it's an array
+          const books = Array.isArray(data) ? data : (data?.content || []);
+          this.books$.next(books);
         }),
         finalize(() => {
           this.booksLoading = false;
