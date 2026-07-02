@@ -69,7 +69,13 @@ export class BookingComponent implements OnInit {
     if (this.bookStatus === BOOKING_CONSTANTS.STATUS.AVAILABLE) {
       this.loadingService.show('Loading books...');
       const pageSize = Number(this.pageSize);
-      this.store?.getBooksPaginated(this.currentPage, pageSize, force).subscribe(data => {
+      this.store?.getBooksPaginated(
+        this.currentPage, 
+        pageSize, 
+        force,
+        this.filterBy,
+        this.filterValue
+      ).subscribe(data => {
         this.filteredBooks = data?.content || [];
         this.totalRecords = data?.totalElements || 0;
         this.totalPages = data?.totalPages || 0;

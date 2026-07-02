@@ -98,10 +98,24 @@ export class DataStoreService {
     return this.books$.asObservable();
   }
 
-  getBooksPaginated(page: number = 0, size: number = 20, force: boolean = false): Observable<any> {
-    const params = new HttpParams()
+  getBooksPaginated(
+    page: number = 0, 
+    size: number = 20, 
+    force: boolean = false,
+    filterBy?: string,
+    filterValue?: string
+  ): Observable<any> {
+    let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
+
+    const normalizedFilterValue = (filterValue || '').trim();
+    if (filterBy && normalizedFilterValue) {
+      params = params
+        .set('filterBy', filterBy)
+        .set('filterValue', normalizedFilterValue);
+    }
+
     return this.http.get<any>(enviort.bookingUrl, { 
       headers: this.auth.getAuthHeaders(),
       params: params
