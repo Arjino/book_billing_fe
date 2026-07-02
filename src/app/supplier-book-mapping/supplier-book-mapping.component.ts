@@ -9,18 +9,15 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Party } from '../interface/party';
-import { Book } from '../interface/book';
 import { DataStoreService } from '../services/data-store.service';
 import { AuthService } from '../services/auth.service';
 import { LoadingService } from '../services/loading.service';
 import { baseUrl } from '../../environments/environment';
-import { SupplierBookMappingDialogComponent } from './supplier-book-mapping-dialog.component';
 import { formatDateForUTC } from '../utils/date.utils';
 
 @Component({
@@ -37,7 +34,6 @@ import { formatDateForUTC } from '../utils/date.utils';
     MatButtonModule,
     MatTableModule,
     MatSortModule,
-    MatDialogModule,
     MatDatepickerModule,
     MatNativeDateModule,
     MatSnackBarModule
@@ -48,13 +44,11 @@ import { formatDateForUTC } from '../utils/date.utils';
 export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
   form: FormGroup;
   suppliers: Party[] = [];
-  allBooks: Book[] = [];
-  mappedBooks: Book[] = [];
-  dataSource = new MatTableDataSource<SupplierBookRow>([]);
-  displayedColumns: string[] = ['title', 'sku', 'discountPercent', 'actions'];
+  publishers: string[] = [];
+  dataSource = new MatTableDataSource<SupplierPublisherRow>([]);
+  displayedColumns: string[] = ['publisher', 'discountPercent', 'effectiveFrom', 'effectiveTo', 'actions'];
   selectedSupplierId: number | null = null;
-  filterControl = new FormControl('');
-  private lastSupplierItems: any[] = [];
+  selectedDiscountId: number | null = null;
 
   @ViewChild(MatSort) sort!: MatSort;
 
@@ -62,49 +56,35 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
     private fb: FormBuilder,
     private store: DataStoreService,
     private http: HttpClient,
-    private dialog: MatDialog,
     private auth: AuthService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar,
     private router: Router
   ) {
     this.form = this.fb.group({
-      supplierId: [null, [Validators.required]]
+      supplierId: [null, [Validators.required]],
+      publisher: [null, [Validators.required]],
+      discountPercent: [null, [Validators.required, Validators.min(0), Validators.max(100)]],
+      effectiveFrom: [null],
+      effectiveTo: [null]
     });
   }
 
   ngOnInit(): void {
+    this.loadPublishers();
+
     this.store.getParties().subscribe(parties => {
       const all = parties || [];
       this.suppliers = all.filter(p => (p?.type || '').toString().toUpperCase() === 'SUPPLIER');
-    });
-
-    this.store.getBooks().subscribe(books => {
-      this.allBooks = books || [];
-      if (this.lastSupplierItems.length) {
-        const resolved = this.resolveBooks(this.lastSupplierItems);
-        this.mappedBooks = resolved.map(r => r.book);
-        this.dataSource.data = resolved;
-        if (this.sort) {
-          this.dataSource.sort = this.sort;
-        }
-      }
     });
 
     this.form.get('supplierId')?.valueChanges.subscribe((supplierId: number | null) => {
       this.onSupplierChange(supplierId);
     });
 
-    this.filterControl.valueChanges.subscribe(value => {
-      this.dataSource.filter = (value || '').toString().trim().toLowerCase();
+    this.form.get('publisher')?.valueChanges.subscribe((publisher: string | null) => {
+      this.onPublisherSelectionChange(publisher);
     });
-
-    this.dataSource.filterPredicate = (data, filter) => {
-      const term = filter.trim().toLowerCase();
-      const title = (data.book?.title || '').toLowerCase();
-      const sku = (data.book?.sku || '').toString().toLowerCase();
-      return title.includes(term) || sku.includes(term);
-    };
   }
 
   ngAfterViewInit(): void {
@@ -113,36 +93,38 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
 
   onSupplierChange(supplierId: number | null): void {
     this.selectedSupplierId = supplierId;
-    this.mappedBooks = [];
     this.dataSource.data = [];
+    this.selectedDiscountId = null;
+    this.form.patchValue({
+      publisher: null,
+      discountPercent: null,
+      effectiveFrom: null,
+      effectiveTo: null
+    }, { emitEvent: false });
     if (!supplierId) return;
 
-    this.loadingService.show('Loading supplier books...');
+    this.loadingService.show('Loading supplier publishers...');
     this.http
-      .get<any>(`${baseUrl}/supplier-books`, {
+      .get<any>(`${baseUrl}/supplier-publisher-discounts`, {
         headers: this.auth.getAuthHeaders(),
         params: { supplierId: String(supplierId) }
       })
       .subscribe({
         next: (response) => {
           this.loadingService.hide();
-          const items = Array.isArray(response)
+          const payload = Array.isArray(response)
             ? response
-            : response?.books || response?.supplierBooks || response?.mappings || response?.data || [];
-          this.lastSupplierItems = items || [];
-
-          const resolved = this.resolveBooks(items);
-          this.mappedBooks = resolved.map(r => r.book);
+            : response?.data || response?.result || response?.discounts || response?.items || [];
+          const resolved = this.resolvePublisherRows(payload);
           this.dataSource.data = resolved;
           if (this.sort) {
             this.dataSource.sort = this.sort;
           }
-          resolved.forEach(row => this.loadDiscount(row));
         },
         error: (error) => {
           this.loadingService.hide();
-          console.error('Failed to load supplier books:', error);
-          this.snackBar.open('Failed to load supplier books.', 'Close', {
+          console.error('Failed to load supplier publishers:', error);
+          this.snackBar.open('Failed to load supplier publishers.', 'Close', {
             duration: 4000,
             panelClass: ['error-snackbar']
           });
@@ -150,54 +132,101 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
       });
   }
 
-  private resolveBooks(items: any[]): SupplierBookRow[] {
-    if (!items || !items.length) return [];
-    return items
-      .map((item: any) => {
-        const supplierBookId = Number(item?.id ?? item?.supplierBookId ?? 0);
-        const bookId = Number(item?.book?.id ?? item?.bookId ?? item?.id ?? 0);
-        const resolvedBook = bookId ? this.allBooks.find(b => b.id === bookId) : null;
-        const book = resolvedBook
-          || (item?.book as Book | undefined)
-          || (bookId
-            ? ({
-                id: bookId,
-                title: item?.bookTitle || item?.bookName || item?.title || `Book #${bookId}`,
-                sku: item?.bookSku || item?.sku || ''
-              } as Book)
-            : null);
-        if (!book) return null;
-        return { supplierBookId: supplierBookId || null, book, isEditing: false } as SupplierBookRow;
-      })
-      .filter((b): b is SupplierBookRow => !!b);
+  private loadPublishers(): void {
+    this.http.get<any>(`${baseUrl}/books/publishers`, {
+      headers: this.auth.getAuthHeaders()
+    }).subscribe({
+      next: (response) => {
+        const payload = Array.isArray(response)
+          ? response
+          : response?.data || response?.result || response?.publishers || response?.items || [];
+        this.publishers = (Array.isArray(payload) ? payload : [payload])
+          .map((p: any) => (p || '').toString().trim())
+          .filter((p: string) => !!p)
+          .sort((a: string, b: string) => a.localeCompare(b));
+      },
+      error: (error) => {
+        console.error('Failed to load publishers:', error);
+        this.publishers = [];
+      }
+    });
   }
 
-  private loadDiscount(row: SupplierBookRow): void {
-    if (!row.supplierBookId) return;
-    this.http
-      .get<any>(`${baseUrl}/supplier-book-discounts`, {
-        headers: this.auth.getAuthHeaders(),
-        params: { supplierBookId: String(row.supplierBookId) }
-      })
-      .subscribe({
-        next: (response) => {
-          const payload = Array.isArray(response)
-            ? response
-            : response?.data || response?.result || response?.discounts || response?.items || response;
-          const data = Array.isArray(payload) ? payload[0] : payload;
-          if (!data) return;
-          row.discountId = data.id ?? null;
-          const percentValue = data.discountPercent ?? data.percentage ?? data.discount ?? null;
-          row.discountPercent = percentValue === null || percentValue === undefined ? null : Number(percentValue);
-          row.effectiveFrom = this.parseDate(data.effectiveFrom);
-          row.effectiveTo = this.parseDate(data.effectiveTo);
-          row.isEditing = false;
-          this.dataSource.data = [...this.dataSource.data];
-        },
-        error: () => {
-          // silent fail
+  private onPublisherSelectionChange(publisher: string | null): void {
+    this.selectedDiscountId = null;
+
+    if (!this.selectedSupplierId || !publisher) {
+      this.form.patchValue({
+        discountPercent: null,
+        effectiveFrom: null,
+        effectiveTo: null
+      }, { emitEvent: false });
+      return;
+    }
+
+    this.loadingService.show('Loading publisher details...');
+    this.http.get<any>(`${baseUrl}/supplier-publisher-discounts`, {
+      headers: this.auth.getAuthHeaders(),
+      params: {
+        supplierId: String(this.selectedSupplierId),
+        publisher
+      }
+    }).subscribe({
+      next: (response) => {
+        this.loadingService.hide();
+        const payload = Array.isArray(response)
+          ? response[0]
+          : response?.data || response?.result || response?.discounts?.[0] || response?.items?.[0] || response;
+
+        if (!payload || !payload.publisher) {
+          this.form.patchValue({
+            discountPercent: null,
+            effectiveFrom: null,
+            effectiveTo: null
+          }, { emitEvent: false });
+          return;
         }
-      });
+
+        this.selectedDiscountId = Number(payload?.id) || null;
+        const effectiveFrom = this.parseDate(payload?.effectiveFrom);
+        const effectiveTo = this.parseDate(payload?.effectiveTo);
+        this.form.patchValue({
+          discountPercent: payload?.discountPercent ?? payload?.percentage ?? payload?.discount ?? null,
+          effectiveFrom,
+          effectiveTo
+        }, { emitEvent: false });
+      },
+      error: () => {
+        this.loadingService.hide();
+        this.form.patchValue({
+          discountPercent: null,
+          effectiveFrom: null,
+          effectiveTo: null
+        }, { emitEvent: false });
+      }
+    });
+  }
+
+  private resolvePublisherRows(items: any[]): SupplierPublisherRow[] {
+    if (!items || !items.length) return [];
+    return (items || [])
+      .map((item: any) => {
+        const publisher = (item?.publisher || '').toString().trim();
+        if (!publisher) return null;
+        return {
+          id: Number(item?.id) || null,
+          publisher,
+          discountPercent: item?.discountPercent ?? item?.percentage ?? item?.discount ?? null,
+          effectiveFrom: this.parseDate(item?.effectiveFrom),
+          effectiveTo: this.parseDate(item?.effectiveTo),
+          isEditing: false
+        } as SupplierPublisherRow;
+      })
+      .filter((r): r is SupplierPublisherRow => !!r);
+  }
+
+  private normalizePublisher(value: any): string {
+    return (value || '').toString().trim().toLowerCase();
   }
 
   private parseDate(value: any): Date | null {
@@ -207,68 +236,17 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
     return isNaN(date.getTime()) ? null : date;
   }
 
-  unmapBook(row: SupplierBookRow): void {
-    if (!this.selectedSupplierId || !row?.book?.id) return;
-    const supplierBookId = row.supplierBookId;
-    const request$ = supplierBookId
-      ? this.http.delete(`${baseUrl}/supplier-books/${supplierBookId}`, { headers: this.auth.getAuthHeaders() })
-      : this.http.delete(`${baseUrl}/supplier-books`, {
-          headers: this.auth.getAuthHeaders(),
-          params: { supplierId: String(this.selectedSupplierId), bookId: String(row.book.id) }
-        });
-
-    this.loadingService.show('Removing mapping...');
-    request$.subscribe({
-      next: () => {
-        this.loadingService.hide();
-        this.snackBar.open('Book unmapped from supplier.', 'Close', {
-          duration: 3000,
-          panelClass: ['success-snackbar']
-        });
-        this.onSupplierChange(this.selectedSupplierId);
-      },
-      error: (error) => {
-        this.loadingService.hide();
-        console.error('Failed to unmap supplier book:', error);
-        this.snackBar.open('Failed to unmap supplier book.', 'Close', {
-          duration: 4000,
-          panelClass: ['error-snackbar']
-        });
-      }
-    });
-  }
-
-  startEdit(row: SupplierBookRow): void {
-    row.originalValues = {
-      discountPercent: row.discountPercent ?? null,
-      effectiveFrom: row.effectiveFrom ?? null,
-      effectiveTo: row.effectiveTo ?? null
-    };
-    row.isEditing = true;
-  }
-
-  cancelEdit(row: SupplierBookRow): void {
-    if (row.originalValues) {
-      row.discountPercent = row.originalValues.discountPercent;
-      row.effectiveFrom = row.originalValues.effectiveFrom;
-      row.effectiveTo = row.originalValues.effectiveTo;
-    }
-    row.isEditing = false;
-  }
-
-  toggleEditSave(row: SupplierBookRow): void {
-    if (row.isEditing) {
-      this.saveDiscount(row, () => {
-        row.isEditing = false;
+  saveSupplierPublisher(): void {
+    if (!this.selectedSupplierId) return;
+    const publisher = (this.form.get('publisher')?.value || '').toString().trim();
+    const percent = this.form.get('discountPercent')?.value;
+    if (!publisher) {
+      this.snackBar.open('Publisher is required.', 'Close', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
       });
       return;
     }
-    this.startEdit(row);
-  }
-
-  saveDiscount(row: SupplierBookRow, onSuccess?: () => void): void {
-    if (!row.supplierBookId) return;
-    const percent = row.discountPercent;
     if (percent === null || percent === undefined || isNaN(Number(percent))) {
       this.snackBar.open('Discount percentage is required.', 'Close', {
         duration: 3000,
@@ -284,29 +262,42 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
       return;
     }
 
+    const effectiveFrom = this.form.get('effectiveFrom')?.value as Date | null;
+    const effectiveTo = this.form.get('effectiveTo')?.value as Date | null;
+    if (effectiveFrom && effectiveTo && effectiveFrom > effectiveTo) {
+      this.snackBar.open('Effective To must be greater than or equal to Effective From.', 'Close', {
+        duration: 3500,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
     const payload = {
-      supplierBookId: row.supplierBookId,
+      supplierId: this.selectedSupplierId,
+      publisher,
       percentage: Number(percent),
-      effectiveFrom: row.effectiveFrom ? formatDateForUTC(row.effectiveFrom) : null,
-      effectiveTo: row.effectiveTo ? formatDateForUTC(row.effectiveTo) : null
+      effectiveFrom: effectiveFrom ? formatDateForUTC(effectiveFrom) : null,
+      effectiveTo: effectiveTo ? formatDateForUTC(effectiveTo) : null,
+      active: true
     };
 
-    const request$ = row.discountId
-      ? this.http.put<any>(`${baseUrl}/supplier-book-discounts/${row.discountId}`, payload, { headers: this.auth.getAuthHeaders() })
-      : this.http.post<any>(`${baseUrl}/supplier-book-discounts`, payload, { headers: this.auth.getAuthHeaders() });
+    const discountId = this.selectedDiscountId;
+
+    const request$ = discountId
+      ? this.http.put<any>(`${baseUrl}/supplier-publisher-discounts/${discountId}`, payload, { headers: this.auth.getAuthHeaders() })
+      : this.http.post<any>(`${baseUrl}/supplier-publisher-discounts`, payload, { headers: this.auth.getAuthHeaders() });
 
     this.loadingService.show('Saving discount...');
     request$.subscribe({
       next: (res) => {
         this.loadingService.hide();
-        if (!row.discountId && res?.id) {
-          row.discountId = res.id;
-        }
-        if (onSuccess) onSuccess();
+        const responseData = res?.data || res?.result || res;
+        this.selectedDiscountId = responseData?.id ?? discountId ?? null;
         this.snackBar.open('Discount saved.', 'Close', {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
+        this.onSupplierChange(this.selectedSupplierId);
       },
       error: (error) => {
         this.loadingService.hide();
@@ -319,22 +310,31 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
     });
   }
 
-  deleteDiscount(row: SupplierBookRow): void {
-    if (!row.discountId) {
-      row.discountPercent = null;
-      row.effectiveFrom = null;
-      row.effectiveTo = null;
+  deleteDiscount(row: SupplierPublisherRow): void {
+    if (!row?.publisher) return;
+    const discountId = row.id;
+
+    if (!discountId) {
+      this.dataSource.data = this.dataSource.data.filter(r => this.normalizePublisher(r.publisher) !== this.normalizePublisher(row.publisher));
+      this.dataSource.data = [...this.dataSource.data];
       return;
     }
     this.loadingService.show('Deleting discount...');
-    this.http.delete(`${baseUrl}/supplier-book-discounts/${row.discountId}`, { headers: this.auth.getAuthHeaders() }).subscribe({
+    this.http.delete(`${baseUrl}/supplier-publisher-discounts/${discountId}`, { headers: this.auth.getAuthHeaders() }).subscribe({
       next: () => {
         this.loadingService.hide();
-        row.discountId = null;
-        row.discountPercent = null;
-        row.effectiveFrom = null;
-        row.effectiveTo = null;
-        this.snackBar.open('Discount deleted.', 'Close', {
+        this.dataSource.data = this.dataSource.data.filter(r => r.id !== discountId);
+        this.dataSource.data = [...this.dataSource.data];
+        if (this.selectedDiscountId === discountId) {
+          this.selectedDiscountId = null;
+          this.form.patchValue({
+            publisher: null,
+            discountPercent: null,
+            effectiveFrom: null,
+            effectiveTo: null
+          }, { emitEvent: false });
+        }
+        this.snackBar.open('Publisher mapping deleted.', 'Close', {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
@@ -350,95 +350,20 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
     });
   }
 
-  deleteDiscountAndUnmap(row: SupplierBookRow): void {
-    if (!this.selectedSupplierId || !row?.book?.id) return;
-    const deleteMapping = () => {
-      const supplierBookId = row.supplierBookId;
-      const request$ = supplierBookId
-        ? this.http.delete(`${baseUrl}/supplier-books/${supplierBookId}`, { headers: this.auth.getAuthHeaders() })
-        : this.http.delete(`${baseUrl}/supplier-books`, {
-            headers: this.auth.getAuthHeaders(),
-            params: { supplierId: String(this.selectedSupplierId), bookId: String(row.book.id) }
-          });
-
-      request$.subscribe({
-        next: () => {
-          this.loadingService.hide();
-          this.snackBar.open('Mapping deleted.', 'Close', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-          this.onSupplierChange(this.selectedSupplierId);
-        },
-        error: (error: any) => {
-          this.loadingService.hide();
-          console.error('Failed to delete mapping:', error);
-          this.snackBar.open('Failed to delete mapping.', 'Close', {
-            duration: 4000,
-            panelClass: ['error-snackbar']
-          });
-        }
-      });
-    };
-
-    this.loadingService.show('Deleting mapping...');
-    if (row.discountId) {
-      this.http.delete(`${baseUrl}/supplier-book-discounts/${row.discountId}`, { headers: this.auth.getAuthHeaders() }).subscribe({
-        next: () => deleteMapping(),
-        error: (error: any) => {
-          this.loadingService.hide();
-          console.error('Failed to delete discount:', error);
-          this.snackBar.open('Failed to delete discount.', 'Close', {
-            duration: 4000,
-            panelClass: ['error-snackbar']
-          });
-        }
-      });
-    } else {
-      deleteMapping();
-    }
-  }
-  applyFilter(): void {
-    this.dataSource.filter = (this.filterControl.value || '').toString().trim().toLowerCase();
-  }
-
-  clearFilter(): void {
-    this.filterControl.setValue('');
-  }
-
   goBack(): void {
     this.router.navigate(['/booking']);
   }
 
+  // Backward-compatible handler in case the dev server still serves an older template.
   openAddBookDialog(): void {
-    if (!this.selectedSupplierId) return;
-    const existingIds = this.mappedBooks.map(b => b.id);
-    const dialogRef = this.dialog.open(SupplierBookMappingDialogComponent, {
-      width: '640px',
-      data: {
-        supplierId: this.selectedSupplierId,
-        existingBookIds: existingIds
-      }
-    });
-
-    dialogRef.afterClosed().subscribe((shouldReload: boolean) => {
-      if (!shouldReload || !this.selectedSupplierId) return;
-      this.onSupplierChange(this.selectedSupplierId);
-    });
+    this.saveSupplierPublisher();
   }
 }
 
-interface SupplierBookRow {
-  supplierBookId: number | null;
-  book: Book;
-  discountId?: number | null;
+interface SupplierPublisherRow {
+  id: number | null;
+  publisher: string;
   discountPercent?: number | null;
   effectiveFrom?: Date | null;
   effectiveTo?: Date | null;
-  isEditing?: boolean;
-  originalValues?: {
-    discountPercent: number | null;
-    effectiveFrom: Date | null;
-    effectiveTo: Date | null;
-  };
 }

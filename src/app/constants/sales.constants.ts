@@ -8,7 +8,7 @@ export const SALES_CONSTANTS = {
   DISPLAY_COLUMNS: ['ID', 'Party', 'Date', 'Total Amount', 'Discount', 'Tax Amount', 'Round Off', 'Grand Total', 'Payment Status', 'Actions'],
   
   // Dialog Configuration
-  DIALOG_WIDTH: '800px',
+  DIALOG_WIDTH: 'min(88vw, 1240px)',
   DIALOG_TITLE_ADD: 'Create New Sale',
   DIALOG_TITLE_EDIT: 'Edit Sale',
 

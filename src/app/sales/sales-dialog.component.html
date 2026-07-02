@@ -1,4 +1,4 @@
-<div class="modern-dialog w-full max-w-2xl text-white">
+<div class="modern-dialog sale-dialog-shell w-full text-white">
   <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#0EA5E9,#7C3AED);">
     <div class="flex items-center gap-3">
       <mat-icon>receipt_long</mat-icon>
@@ -11,7 +11,6 @@
     <form #saleForm="ngForm">
       <div class="grid grid-cols-1 gap-4">
         <!-- Invoice No removed per user request -->
-
         <mat-form-field appearance="outline" class="w-full">
           <mat-label>Party</mat-label>
           <mat-select [(ngModel)]="data.party" name="party" required #partyModel="ngModel">
@@ -53,80 +52,138 @@
 
         <!-- Items Section -->
         <div class="mt-2 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
-          <div class="flex items-center mb-2">
+          <div class="items-toolbar">
             <h3 class="font-bold">Items</h3>
+            <div class="items-count" *ngIf="data.items.length">{{ data.items.length }} item(s)</div>
           </div>
 
-          <!-- Items Card Layout -->
-          <div *ngIf="data.items.length" class="space-y-4">
-            <div *ngFor="let item of data.items; let i = index; let last = last; trackBy: trackByIndex" class="border p-3 rounded bg-[rgba(0,0,0,0.2)]">
-              <!-- Row 1: Book Selection -->
-              <div class="mb-3">
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Book</mat-label>
-                  <input type="text" matInput [matAutocomplete]="autoBook" [(ngModel)]="item.bookSearch" [name]="'bookSearch_' + i" (ngModelChange)="filterBooks($event, i)" placeholder="Search or select book" required #bookModel="ngModel">
-                  <mat-autocomplete #autoBook="matAutocomplete" (optionSelected)="onBookSelected($event.option.value, item)">
-                    <mat-option *ngFor="let b of item.filteredBooks || books" [value]="b">{{ b.title }}</mat-option>
-                  </mat-autocomplete>
-                  <mat-error *ngIf="bookModel.invalid && (bookModel.dirty && bookModel.touched)">
-                    <span *ngIf="bookModel.errors?.['required']">Book is required.</span>
-                  </mat-error>
-                </mat-form-field>
-              </div>
+          <div *ngIf="data.items.length" class="sale-items-table">
+            <div class="sale-items-head">
+              <div>Book</div>
+              <div>Qty</div>
+              <div>MRP</div>
+              <div>Disc %</div>
+              <div>Amount</div>
+              <div>Remove</div>
+            </div>
 
-              <!-- Row 2: Qty, Rate, Discount -->
-              <div class="grid grid-cols-3 gap-2 mb-3">
-                <mat-form-field appearance="outline" class="w-full" #qtyField="matFormField">
-                  <mat-label>Qty</mat-label>
-                  <input matInput 
-                    type="number" 
-                    [(ngModel)]="item.qty" 
-                    [name]="'qty_' + i" 
-                    required 
-                    #qtyModel="ngModel" 
-                    inputmode="numeric" 
-                    (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item); validateQty(item, qtyModel)" 
-                    min="1" 
-                    [attr.max]="item.book?.stock" 
-                    step="1" />
-                  <mat-error>
-                    <span *ngIf="qtyModel.errors?.['required'] && (qtyModel.dirty && qtyModel.touched)">Required</span>
-                    <span *ngIf="qtyModel.errors?.['min'] && (qtyModel.dirty && qtyModel.touched)">Min 1</span>
-                    <span *ngIf="!qtyModel.errors?.['required'] && !qtyModel.errors?.['min'] && qtyModel.touched && hasExceededStock(item)">Exceeds stock ({{ item.book?.stock }})</span>
-                  </mat-error>
-                </mat-form-field>
+            <div class="sale-items-body">
+              <div *ngFor="let item of data.items; let i = index; trackBy: trackByIndex" class="sale-item-row">
+                <div class="sale-cell sale-cell-book" data-label="Book">
+                  <input type="hidden" [name]="'book_' + i" [ngModel]="item.book?.id" required #bookModel="ngModel" />
+                  <div class="book-dropdown-inline">
+                    <div class="book-input-shell">
+                      <input
+                        type="text"
+                        class="book-input"
+                        [name]="'bookSearch_' + i"
+                        [ngModel]="item._bookDropdown?.search"
+                        (ngModelChange)="onBookSearchInput($event, i)"
+                        (focus)="openBookDropdown(i)"
+                        (click)="openBookDropdown(i)"
+                        (keydown)="onBookInputKeydown($event, i)"
+                        placeholder="Search by title, SKU, or publisher"
+                        autocomplete="off"
+                        spellcheck="false"
+                      />
+                      <button type="button" class="toggle-button" (click)="item._bookDropdown?.open ? closeBookDropdown(i) : openBookDropdown(i)" aria-label="Toggle books list">
+                        <span class="toggle-caret" [class.toggle-caret--open]="item._bookDropdown?.open">▾</span>
+                      </button>
+                    </div>
 
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>MRP</mat-label>
-                  <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" readonly />
-                  <mat-error *ngIf="rateModel.invalid && (rateModel.dirty && rateModel.touched)">
-                    <span *ngIf="rateModel.errors?.['required']">Required</span>
-                  </mat-error>
-                </mat-form-field>
+                    <div class="book-panel" *ngIf="item._bookDropdown?.open">
+                      <div class="book-options" [attr.id]="'book-options-' + i">
+                        <button
+                          type="button"
+                          class="book-option"
+                          [class.book-option--active]="idx === item._bookDropdown?.activeIndex"
+                          [class.book-option--selected]="item.book?.id === b.id"
+                          [class.book-option--muted]="isBookOptionMuted(b)"
+                          [attr.data-option-index]="idx"
+                          *ngFor="let b of item._bookDropdown?.options || []; let idx = index; trackBy: trackByBookId"
+                          (click)="onBookOptionClicked(b, item, i)"
+                        >
+                          <div class="book-option-title" [innerHTML]="highlightBookMatch(b.title, i)"></div>
+                          <div class="book-option-meta">
+                            <span [innerHTML]="highlightBookMatch(b.sku, i)"></span>
+                            <span class="meta-dot">•</span>
+                            <span [innerHTML]="highlightBookMatch(b.publisher, i)"></span>
+                            <span class="meta-dot">•</span>
+                            <span>MRP {{ b.mrp | number:'1.2-2' }}</span>
+                          </div>
+                        </button>
 
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Discount %</mat-label>
-                  <input matInput type="number" [(ngModel)]="item.discount" [name]="'discount_' + i" min="0" max="100" (ngModelChange)="calculateAmount(item)" />
-                </mat-form-field>
-              </div>
+                        <div class="book-empty" *ngIf="!item._bookDropdown?.loading && !(item._bookDropdown?.options?.length)">
+                          No books found
+                        </div>
 
-              <!-- Row 3: Amount and Remove -->
-              <div class="flex items-center justify-between">
-                <div class="text-sm">
-                  <span class="text-gray-300">Amount: </span>
-                  <span class="font-bold">{{ item.amount | number:'1.2-2' }}</span>
+                        <div class="book-loading" *ngIf="item._bookDropdown?.loading">
+                          <span class="spinner" aria-hidden="true"></span>
+                          Loading books...
+                        </div>
+
+                        <div class="book-sentinel" [attr.id]="'book-sentinel-' + i" [class.book-sentinel--hidden]="item._bookDropdown?.last || item._bookDropdown?.loading"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-xs text-red-400 mt-1" *ngIf="bookModel.invalid && (bookModel.dirty || bookModel.touched)">Required</div>
                 </div>
-                <button type="button" (click)="removeItem(i)" class="px-3 py-1 bg-red-600 text-white rounded text-sm">Remove</button>
-              </div>
-              <!-- Add Item button after the last item -->
-              <div *ngIf="last" class="flex justify-end mt-2">
-                <button type="button" (click)="addItem()" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Item</button>
+
+                <div class="sale-cell" data-label="Qty">
+                  <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
+                    <mat-label class="text-xs">Qty</mat-label>
+                    <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" required #qtyModel="ngModel" inputmode="numeric" (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item); validateQty(item, qtyModel)" min="1" [attr.max]="item.book?.stock" step="1" class="text-sm text-center" />
+                    <mat-error *ngIf="qtyModel.invalid && (qtyModel.dirty && qtyModel.touched)" class="text-xs">
+                      <span *ngIf="qtyModel.errors?.['required']">Req</span>
+                      <span *ngIf="qtyModel.errors?.['exceededStock']">Qty exceeds stock</span>
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="sale-cell" data-label="MRP">
+                  <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
+                    <mat-label class="text-xs">MRP</mat-label>
+                    <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" readonly class="text-sm text-center" />
+                    <mat-error *ngIf="rateModel.invalid && (rateModel.dirty && rateModel.touched)" class="text-xs">
+                      <span *ngIf="rateModel.errors?.['required']">Req</span>
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+
+                <div class="sale-cell" data-label="Disc %">
+                  <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
+                    <mat-label class="text-xs">Disc %</mat-label>
+                    <input matInput type="number" [(ngModel)]="item.discount" [name]="'discount_' + i" min="0" max="100" (ngModelChange)="calculateAmount(item)" class="text-sm text-center" />
+                  </mat-form-field>
+                </div>
+
+                <div class="sale-cell sale-cell-amount" data-label="Amount">
+                  <div class="amount-value">{{ item.amount | number:'1.2-2' }}</div>
+                </div>
+
+                <div class="sale-cell sale-cell-remove" data-label="Remove">
+                  <button type="button" (click)="removeItem(i)" class="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded transition-colors" title="Remove item">
+                    <mat-icon class="text-lg">delete</mat-icon>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          <!-- If no items, show Add Item button below header -->
-          <div *ngIf="!data.items.length" class="flex justify-end mt-2">
-            <button type="button" (click)="addItem()" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Item</button>
+
+          <!-- Add Item Button -->
+          <div *ngIf="data.items.length" class="flex justify-end mt-3">
+            <button type="button" (click)="addItem()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm flex items-center gap-2 transition-colors">
+              <mat-icon class="text-sm">add</mat-icon>
+              Add Item
+            </button>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!data.items.length" class="flex justify-center py-8">
+            <button type="button" (click)="addItem()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm flex items-center gap-2 transition-colors">
+              <mat-icon class="text-sm">add</mat-icon>
+              Add First Item
+            </button>
           </div>
         </div>
 
@@ -175,7 +232,7 @@
     </form>
   </div>
 
-    <div mat-dialog-actions class="flex flex-col md:flex-row md:justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+    <div mat-dialog-actions class="dialog-footer flex flex-col md:flex-row md:justify-end gap-2 p-3 rounded-b-lg">
     <button mat-button class="w-full md:w-auto" (click)="onCancel()" aria-label="Back">
       <mat-icon class="inline md:hidden mr-2">arrow_back</mat-icon>
       <span class="hidden md:inline">Cancel</span>

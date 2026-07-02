@@ -96,64 +96,92 @@
         </mat-menu>
 
         <div class="mt-2 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
-          <div class="flex items-center mb-2">
+          <div class="flex items-center mb-3">
             <h3 class="font-bold">Items</h3>
           </div>
 
-          <div *ngIf="data.items.length" class="space-y-4">
-            <div *ngFor="let item of data.items; let i = index; let last = last; trackBy: trackByIndex" class="border p-3 rounded bg-[rgba(0,0,0,0.2)]" [ngClass]="{ 'border-emerald-500/60 bg-[rgba(16,185,129,0.12)]': item.supplierDiscountApplied }">
-              <div class="mb-3" *ngIf="data.type !== 'RECEIVING_ORDER'">
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Book</mat-label>
-                  <input type="text" matInput [matAutocomplete]="autoBook" [(ngModel)]="item.bookSearch" [name]="'bookSearch_' + i" (ngModelChange)="filterBooks($event, i)" placeholder="Search or select book" required #bookModel="ngModel">
+          <!-- Table Header for Purchase Order -->
+          <div *ngIf="data.items.length && data.type !== 'RECEIVING_ORDER'" class="mb-2 px-3 py-2 bg-[rgba(0,0,0,0.3)] rounded text-xs font-semibold flex gap-2 items-center">
+            <div class="flex-1 min-w-[200px]">Book</div>
+            <div class="w-20 text-center">Qty</div>
+            <div class="w-24 text-center">MRP</div>
+            <div class="w-24 text-center">Discount (%)</div>
+            <div class="w-16 text-center">Remove</div>
+          </div>
+
+          <!-- Purchase Order Items (Horizontal Layout) -->
+          <div *ngIf="data.items.length && data.type !== 'RECEIVING_ORDER'" class="space-y-2 max-h-80 overflow-y-auto">
+            <div *ngFor="let item of data.items; let i = index; let last = last; trackBy: trackByIndex" class="flex gap-2 items-end px-3 py-2 rounded bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.15)] transition-colors" [ngClass]="{ 'border-emerald-500/60 bg-[rgba(16,185,129,0.12)]': item.supplierDiscountApplied }">
+              <!-- Book Autocomplete -->
+              <div class="flex-1 min-w-[200px]">
+                <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
+                  <mat-label class="text-xs">Book</mat-label>
+                  <input type="text" matInput [matAutocomplete]="autoBook" [(ngModel)]="item.bookSearch" [name]="'bookSearch_' + i" (ngModelChange)="filterBooks($event, i)" placeholder="Search..." required #bookModel="ngModel" class="text-sm">
                   <mat-autocomplete #autoBook="matAutocomplete" (optionSelected)="onBookSelected($event.option.value, item)">
                     <mat-option *ngFor="let b of item.filteredBooks || books" [value]="b">{{ b.title }}</mat-option>
                   </mat-autocomplete>
-                  <mat-error *ngIf="bookModel.invalid && (bookModel.dirty && bookModel.touched)">
-                    <span *ngIf="bookModel.errors?.['required']">Book is required.</span>
+                  <mat-error *ngIf="bookModel.invalid && (bookModel.dirty && bookModel.touched)" class="text-xs">
+                    <span *ngIf="bookModel.errors?.['required']">Required</span>
                   </mat-error>
                 </mat-form-field>
               </div>
 
-              <div class="grid grid-cols-3 gap-2 mb-3" *ngIf="data.type !== 'RECEIVING_ORDER'">
-                <mat-form-field appearance="outline" class="w-full" #qtyField="matFormField">
-                  <mat-label>Qty</mat-label>
-                  <input matInput
-                    type="number"
-                    [(ngModel)]="item.qty"
-                    [name]="'qty_' + i"
-                    required
-                    #qtyModel="ngModel"
-                    inputmode="numeric"
-                    (ngModelChange)="qtyModel.control.markAsTouched(); validateQty(item, qtyModel)"
-                    min="1"
-                    step="1" />
-                  <mat-error>
-                    <span *ngIf="qtyModel.errors?.['required'] && (qtyModel.dirty && qtyModel.touched)">Required</span>
-                    <span *ngIf="qtyModel.errors?.['min'] && (qtyModel.dirty && qtyModel.touched)">Min 1</span>
+              <!-- Quantity -->
+              <div class="w-20">
+                <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
+                  <mat-label class="text-xs">Qty</mat-label>
+                  <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" required #qtyModel="ngModel" inputmode="numeric" (ngModelChange)="qtyModel.control.markAsTouched(); validateQty(item, qtyModel)" min="1" step="1" class="text-sm text-center" />
+                  <mat-error *ngIf="qtyModel.invalid && (qtyModel.dirty && qtyModel.touched)" class="text-xs">
+                    <span *ngIf="qtyModel.errors?.['required']">Req</span>
                   </mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>MRP</mat-label>
-                  <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" readonly />
-                  <mat-error *ngIf="rateModel.invalid && (rateModel.dirty && rateModel.touched)">
-                    <span *ngIf="rateModel.errors?.['required']">Required</span>
-                  </mat-error>
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="w-full">
-                  <mat-label>Discount (%)</mat-label>
-                  <input matInput [value]="item.discountPercent ?? ''" readonly />
                 </mat-form-field>
               </div>
 
-              <div class="text-sm mb-2" *ngIf="data.type === 'RECEIVING_ORDER'">
+              <!-- MRP -->
+              <div class="w-24">
+                <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
+                  <mat-label class="text-xs">MRP</mat-label>
+                  <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" readonly class="text-sm text-center" />
+                  <mat-error *ngIf="rateModel.invalid && (rateModel.dirty && rateModel.touched)" class="text-xs">
+                    <span *ngIf="rateModel.errors?.['required']">Req</span>
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <!-- Discount Percent -->
+              <div class="w-24">
+                <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
+                  <mat-label class="text-xs">Disc %</mat-label>
+                  <input matInput type="text" [value]="item.discountPercent ?? ''" readonly class="text-sm text-center" />
+                </mat-form-field>
+              </div>
+
+              <!-- Remove Button -->
+              <div class="w-16 flex justify-center">
+                <button type="button" (click)="removeItem(i)" class="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded transition-colors" title="Remove item">
+                  <mat-icon class="text-lg">delete</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add Item Button for Purchase Order -->
+          <div *ngIf="data.type !== 'RECEIVING_ORDER'" class="flex justify-end mt-3">
+            <button type="button" (click)="addItem()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm flex items-center gap-2 transition-colors">
+              <mat-icon class="text-sm">add</mat-icon>
+              Add Item
+            </button>
+          </div>
+
+          <!-- Receiving Order Items (Keep Original Grid Layout) -->
+          <div *ngIf="data.items.length && data.type === 'RECEIVING_ORDER'" class="space-y-3">
+            <div *ngFor="let item of data.items; let i = index; let last = last; trackBy: trackByIndex" class="border p-3 rounded bg-[rgba(0,0,0,0.2)]">
+              <div class="text-sm mb-2">
                 <span class="text-gray-300">Book: </span>
                 <span class="font-bold">{{ item.book?.title || '-' }}</span>
               </div>
 
-              <div class="grid grid-cols-5 gap-2 mb-3" *ngIf="data.type === 'RECEIVING_ORDER'">
+              <div class="grid grid-cols-5 gap-2 mb-3">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Ordered Qty</mat-label>
                   <input matInput type="number" [value]="item?.orderedQty ?? 0" readonly />
@@ -215,21 +243,15 @@
                   </mat-error>
                 </mat-form-field>
               </div>
-
-              <div class="flex items-center justify-between">
-                <div class="text-sm" *ngIf="data.type !== 'RECEIVING_ORDER'">
-                  <span class="text-gray-300">Book: </span>
-                  <span class="font-bold">{{ item.book?.title || '-' }}</span>
-                </div>
-                <button type="button" (click)="removeItem(i)" class="px-3 py-1 bg-red-600 text-white rounded text-sm" *ngIf="data.type !== 'RECEIVING_ORDER'">Remove</button>
-              </div>
-              <div *ngIf="last && data.type !== 'RECEIVING_ORDER'" class="flex justify-end mt-2">
-                <button type="button" (click)="addItem()" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Item</button>
-              </div>
             </div>
           </div>
-          <div *ngIf="!data.items.length && data.type !== 'RECEIVING_ORDER'" class="flex justify-end mt-2">
-            <button type="button" (click)="addItem()" class="px-3 py-1 bg-indigo-600 text-white rounded">Add Item</button>
+
+          <!-- Empty State -->
+          <div *ngIf="!data.items.length && data.type !== 'RECEIVING_ORDER'" class="flex justify-center py-8">
+            <button type="button" (click)="addItem()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm flex items-center gap-2 transition-colors">
+              <mat-icon class="text-sm">add</mat-icon>
+              Add First Item
+            </button>
           </div>
         </div>
       </div>

@@ -64,8 +64,7 @@ export class PurchaseDialogComponent implements OnInit {
   allowedBooks: Book[] = [];
   private allowedBookIds = new Set<number>();
   private discountAppliedMap = new Map<number, boolean>();
-  private discountByBookId = new Map<number, number>();
-  private supplierBookIdByBookId = new Map<number, number>();
+  private discountByPublisher = new Map<string, number>();
 
   constructor(
     public dialogRef: MatDialogRef<PurchaseDialogComponent>,
@@ -106,7 +105,9 @@ export class PurchaseDialogComponent implements OnInit {
     }
 
     this.store.getBooks().subscribe(data => {
-      this.books = data || [];
+      // Extract content array from paginated response, or use data directly if it's an array
+      const books = Array.isArray(data) ? data : ((data as any)?.content || []);
+      this.books = books;
       (this.data.items || []).forEach(item => {
         item.filteredBooks = this.getAvailableBooks();
       });
@@ -114,11 +115,14 @@ export class PurchaseDialogComponent implements OnInit {
         this.onSupplierChanged(this.data.party);
       }
     });
-    this.http.get<Party[]>(`${baseUrl}/parties`, {
+    this.http.get<any>(`${baseUrl}/parties`, {
       headers: this.auth.getAuthHeaders(),
       params: { type: 'Supplier' }
     }).subscribe({
-      next: (data) => this.parties = data || [],
+      next: (data) => {
+        // Handle both paginated response { content: [...] } and direct array []
+        this.parties = Array.isArray(data) ? data : (data?.content || []);
+      },
       error: () => this.parties = []
     });
     (this.data.items || []).forEach(item => {
@@ -348,21 +352,21 @@ export class PurchaseDialogComponent implements OnInit {
     item.rate = typeof fullBook.mrp === 'number' ? fullBook.mrp : Number(fullBook.mrp) || 0;
     item.qty = null;
     item.supplierDiscountApplied = this.discountAppliedMap.get(book.id) || false;
-    const cachedPercent = this.discountByBookId.get(book.id);
+    const publisherKey = this.normalizePublisher(fullBook.publisher);
+    const cachedPercent = publisherKey ? this.discountByPublisher.get(publisherKey) : undefined;
     if (cachedPercent === undefined) {
-      const supplierBookId = this.supplierBookIdByBookId.get(book.id);
-      if (supplierBookId) {
-        this.http.get<any>(`${baseUrl}/supplier-book-discounts`, {
+      if (publisherKey && this.data.party?.id) {
+        this.http.get<any>(`${baseUrl}/supplier-publisher-discounts`, {
           headers: this.auth.getAuthHeaders(),
-          params: { supplierBookId: String(supplierBookId) }
+          params: { supplierId: String(this.data.party.id), publisher: fullBook.publisher }
         }).subscribe({
           next: (res) => {
             const payload = Array.isArray(res) ? res[0] : res?.data || res?.result || res;
             const percent = payload?.percentage ?? payload?.discountPercent ?? payload?.discount;
             if (percent !== null && percent !== undefined && !isNaN(Number(percent))) {
               const value = Number(percent);
-              this.discountByBookId.set(book.id, value);
-              this.applyDiscountToItems(book.id, value);
+              this.discountByPublisher.set(publisherKey, value);
+              this.applyDiscountToItemsByPublisher(publisherKey, value);
             }
           }
         });
@@ -371,9 +375,13 @@ export class PurchaseDialogComponent implements OnInit {
     item.discountPercent = cachedPercent ?? this.data.supplierPercentageDiscount ?? item.discountPercent ?? null;
   }
 
-  private applyDiscountToItems(bookId: number, percent: number): void {
+  private normalizePublisher(value: any): string {
+    return (value || '').toString().trim().toLowerCase();
+  }
+
+  private applyDiscountToItemsByPublisher(publisherKey: string, percent: number): void {
     (this.data.items || []).forEach(item => {
-      if (item?.book?.id === bookId && (item.discountPercent === null || item.discountPercent === undefined)) {
+      if (this.normalizePublisher(item?.book?.publisher) === publisherKey && (item.discountPercent === null || item.discountPercent === undefined)) {
         item.discountPercent = percent;
       }
     });
@@ -384,8 +392,7 @@ export class PurchaseDialogComponent implements OnInit {
     this.allowedBooks = [];
     this.allowedBookIds.clear();
     this.discountAppliedMap.clear();
-    this.discountByBookId.clear();
-    this.supplierBookIdByBookId.clear();
+    this.discountByPublisher.clear();
     this.data.supplierPercentageDiscount = null;
 
     (this.data.items || []).forEach(item => {
@@ -439,25 +446,23 @@ export class PurchaseDialogComponent implements OnInit {
           }).filter(([bookId]: [number, boolean]) => !!bookId)
         );
 
-        (items || []).forEach((item: any) => {
-          const bookId = Number(item?.bookId ?? item?.book?.id ?? item?.id);
-          const supplierBookId = Number(item?.id ?? item?.supplierBookId);
-          if (!bookId || !supplierBookId) return;
-          this.supplierBookIdByBookId.set(bookId, supplierBookId);
-          this.http.get<any>(`${baseUrl}/supplier-book-discounts`, {
-            headers: this.auth.getAuthHeaders(),
-            params: { supplierBookId: String(supplierBookId) }
-          }).subscribe({
-            next: (res) => {
-              const payload = Array.isArray(res) ? res[0] : res?.data || res?.result || res;
-              const percent = payload?.percentage ?? payload?.discountPercent ?? payload?.discount;
-              if (percent !== null && percent !== undefined && !isNaN(Number(percent))) {
-                const value = Number(percent);
-                this.discountByBookId.set(bookId, value);
-                this.applyDiscountToItems(bookId, value);
-              }
-            }
-          });
+        this.http.get<any>(`${baseUrl}/supplier-publisher-discounts`, {
+          headers: this.auth.getAuthHeaders(),
+          params: { supplierId: String(party.id) }
+        }).subscribe({
+          next: (discountRes) => {
+            const payload = Array.isArray(discountRes)
+              ? discountRes
+              : discountRes?.data || discountRes?.result || discountRes?.discounts || discountRes?.items || [];
+            const discounts = Array.isArray(payload) ? payload : [payload];
+            discounts.forEach((discount: any) => {
+              const publisherKey = this.normalizePublisher(discount?.publisher);
+              const percent = discount?.percentage ?? discount?.discountPercent ?? discount?.discount;
+              if (!publisherKey || percent === null || percent === undefined || isNaN(Number(percent))) return;
+              this.discountByPublisher.set(publisherKey, Number(percent));
+              this.applyDiscountToItemsByPublisher(publisherKey, Number(percent));
+            });
+          }
         });
 
         (this.data.items || []).forEach(item => {

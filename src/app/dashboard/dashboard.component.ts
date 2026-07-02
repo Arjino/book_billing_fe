@@ -303,7 +303,9 @@ export class DashboardComponent implements OnInit {
     const transactionType = type;
     
     const dialogRef = this.dialog.open(SalesDialogComponent, {
-      width: '600px',
+      width: SALES_CONSTANTS.DIALOG_WIDTH,
+      maxWidth: '90vw',
+      maxHeight: '95vh',
       data: {
         id: 0,
         invoiceNo: '',

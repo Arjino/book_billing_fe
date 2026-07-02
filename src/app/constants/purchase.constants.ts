@@ -4,7 +4,7 @@
 
 export const PURCHASE_CONSTANTS = {
   // Dialog Configuration
-  DIALOG_WIDTH: '800px',
+  DIALOG_WIDTH: 'min(95vw, 1600px)',
 
   // Defaults
   DEFAULTS: {

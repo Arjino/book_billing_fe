@@ -81,6 +81,8 @@ export class SalesComponent implements OnInit {
   addSale() {
     const dialogRef = this.dialog.open(SalesDialogComponent, {
       width: SALES_CONSTANTS.DIALOG_WIDTH,
+      maxWidth: '90vw',
+      maxHeight: '95vh',
       data: {
         id: 0,
         invoiceNo: '',
