@@ -72,16 +72,27 @@ export class DataStoreService {
     );
   }
 
-  getPartiesPaginated(page: number = 0, size: number = 20, type?: string): Observable<any> {
-    const params = new HttpParams()
+  getPartiesPaginated(
+    page: number = 0,
+    size: number = 20,
+    force: boolean = false,
+    filterBy?: string,
+    filterValue?: string
+  ): Observable<any> {
+    let params = new HttpParams()
       .set('page', page.toString())
       .set('size', size.toString());
-    
-    const paramsWithType = type ? params.set('type', type) : params;
-    
-    return this.http.get<any>(enviort.partiesUrl, { 
+
+    const normalizedFilterValue = (filterValue || '').trim();
+    if (filterBy && normalizedFilterValue) {
+      params = params
+        .set('filterBy', filterBy)
+        .set('filterValue', normalizedFilterValue);
+    }
+
+    return this.http.get<any>(enviort.partiesUrl, {
       headers: this.auth.getAuthHeaders(),
-      params: paramsWithType
+      params: params
     })
       .pipe(
         catchError((error) => {

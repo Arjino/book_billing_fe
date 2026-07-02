@@ -61,11 +61,17 @@ export class PartiesComponent implements OnInit {
     this.loadPartiesByStatus();
   }
 
-  loadPartiesByStatus() {
+  loadPartiesByStatus(force: boolean = false) {
     if (this.partyStatus === PARTIES_CONSTANTS.STATUS.CURRENT) {
       this.loadingService.show('Loading parties...');
       const pageSize = Number(this.pageSize);
-      this.store.getPartiesPaginated(this.currentPage, pageSize).subscribe(data => {
+      this.store.getPartiesPaginated(
+        this.currentPage,
+        pageSize,
+        force,
+        this.filterBy,
+        this.filterValue
+      ).subscribe(data => {
         this.filteredParties = data?.content || [];
         this.totalRecords = data?.totalElements || 0;
         this.totalPages = data?.totalPages || 0;
@@ -107,8 +113,8 @@ export class PartiesComponent implements OnInit {
     this.router.navigate(['/dashboard']);
   }
 
-  loadParties() {
-    this.loadPartiesByStatus();
+  loadParties(force: boolean = false) {
+    this.loadPartiesByStatus(force);
   }
 
   addParty() {
