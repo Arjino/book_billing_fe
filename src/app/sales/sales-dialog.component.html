@@ -10,8 +10,10 @@
   <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
     <form #saleForm="ngForm">
       <div class="grid grid-cols-1 gap-4">
-        <!-- Invoice No removed per user request -->
-        <div class="book-dropdown-inline w-full">
+        <!-- Top fields: Party + Sale Date/Time split into two columns -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- Invoice No removed per user request -->
+          <div class="book-dropdown-inline w-full">
             <label>Party</label>
             <input type="hidden" name="party" [ngModel]="data.party?.id" required #partyModel="ngModel" />
             <div class="book-input-shell">
@@ -68,15 +70,16 @@
               <div class="book-sentinel" id="party-sentinel" [class.book-sentinel--hidden]="partyState?.last || partyState?.loading"></div>
             </div>
           </div>
-        </div>
+          </div>
 
-        <mat-form-field appearance="outline" class="w-full text-white">
+          <mat-form-field appearance="outline" class="w-full text-white">
           <mat-label>Sale Date & Time</mat-label>
           <input matInput [value]="getSaleDisplay()" readonly [matMenuTriggerFor]="saleMenu" #saleTrigger="matMenuTrigger" />
           <button mat-icon-button matSuffix class="date-time-icon" (click)="saleTrigger.openMenu()" aria-label="Open sale date time">
             <mat-icon>calendar_today</mat-icon>
           </button>
-        </mat-form-field>
+          </mat-form-field>
+        </div>
 
         <mat-menu #saleMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
           <div class="date-time-menu-content" (click)="$event.stopPropagation()">
@@ -98,34 +101,26 @@
           </div>
         </mat-menu>
 
-        <!-- Items Section -->
+        <!-- Items Section: render items as two-column cards so more items are visible -->
         <div class="mt-2 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
-          <div class="items-toolbar">
+          <div class="items-toolbar flex items-center justify-between">
             <h3 class="font-bold">Items</h3>
             <div class="items-count" *ngIf="data.items.length">{{ data.items.length }} item(s)</div>
           </div>
 
-          <div *ngIf="data.items.length" class="sale-items-table">
-            <div class="sale-items-head">
-              <div>Book</div>
-              <div>Qty</div>
-              <div>MRP</div>
-              <div>Disc %</div>
-              <div>Amount</div>
-              <div>Remove</div>
-            </div>
+          <div *ngIf="data.items.length" class="sale-items-grid grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+            <div *ngFor="let item of data.items; let i = index; trackBy: trackByIndex" class="sale-item-card border p-2 rounded">
+              <div class="flex items-center gap-2">
+                <input type="hidden" [name]="'book_' + i" [ngModel]="item.book?.id" required #bookModel="ngModel" />
 
-            <div class="sale-items-body">
-              <div *ngFor="let item of data.items; let i = index; trackBy: trackByIndex" class="sale-item-row">
-                <div class="sale-cell sale-cell-book" data-label="Book">
-                  <input type="hidden" [name]="'book_' + i" [ngModel]="item.book?.id" required #bookModel="ngModel" />
+                <div class="w-2/5 min-w-0">
                   <div class="book-dropdown-inline">
                     <div class="book-input-shell">
                       <input
                         type="text"
-                        class="book-input"
+                        class="book-input text-sm h-8"
                         [name]="'bookSearch_' + i"
-                        [ngModel]="item._bookDropdown?.search"
+                        [ngModel]="item.bookSearch || item._bookDropdown?.search"
                         (ngModelChange)="onBookSearchInput($event, i)"
                         (focus)="openBookDropdown(i)"
                         (click)="openBookDropdown(i)"
@@ -138,78 +133,61 @@
                         <span class="toggle-caret" [class.toggle-caret--open]="item._bookDropdown?.open">▾</span>
                       </button>
                     </div>
+                      <div class="book-panel" *ngIf="item._bookDropdown?.open">
+                        <div class="book-options" [attr.id]="'book-options-' + i">
+                          <button
+                            type="button"
+                            class="book-option"
+                            [class.book-option--active]="idx === item._bookDropdown?.activeIndex"
+                            [class.book-option--selected]="item.book?.id === b.id"
+                            [class.book-option--muted]="isBookOptionMuted(b)"
+                            [attr.data-option-index]="idx"
+                            *ngFor="let b of item._bookDropdown?.options || []; let idx = index; trackBy: trackByBookId"
+                            (click)="onBookOptionClicked(b, item, i)"
+                          >
+                            <div class="book-option-title" [innerHTML]="highlightBookMatch(b.title, i)"></div>
+                            <div class="book-option-meta">
+                              <span [innerHTML]="highlightBookMatch(b.sku, i)"></span>
+                              <span class="meta-dot">•</span>
+                              <span [innerHTML]="highlightBookMatch(b.publisher, i)"></span>
+                              <span class="meta-dot">•</span>
+                              <span>MRP {{ b.mrp | number:'1.2-2' }}</span>
+                            </div>
+                          </button>
 
-                    <div class="book-panel" *ngIf="item._bookDropdown?.open">
-                      <div class="book-options" [attr.id]="'book-options-' + i">
-                        <button
-                          type="button"
-                          class="book-option"
-                          [class.book-option--active]="idx === item._bookDropdown?.activeIndex"
-                          [class.book-option--selected]="item.book?.id === b.id"
-                          [class.book-option--muted]="isBookOptionMuted(b)"
-                          [attr.data-option-index]="idx"
-                          *ngFor="let b of item._bookDropdown?.options || []; let idx = index; trackBy: trackByBookId"
-                          (click)="onBookOptionClicked(b, item, i)"
-                        >
-                          <div class="book-option-title" [innerHTML]="highlightBookMatch(b.title, i)"></div>
-                          <div class="book-option-meta">
-                            <span [innerHTML]="highlightBookMatch(b.sku, i)"></span>
-                            <span class="meta-dot">•</span>
-                            <span [innerHTML]="highlightBookMatch(b.publisher, i)"></span>
-                            <span class="meta-dot">•</span>
-                            <span>MRP {{ b.mrp | number:'1.2-2' }}</span>
+                          <div class="book-empty" *ngIf="!item._bookDropdown?.loading && !(item._bookDropdown?.options?.length)">
+                            No books found
                           </div>
-                        </button>
 
-                        <div class="book-empty" *ngIf="!item._bookDropdown?.loading && !(item._bookDropdown?.options?.length)">
-                          No books found
+                          <div class="book-loading" *ngIf="item._bookDropdown?.loading">
+                            <span class="spinner" aria-hidden="true"></span>
+                            Loading books...
+                          </div>
+
+                          <div class="book-sentinel" [attr.id]="'book-sentinel-' + i" [class.book-sentinel--hidden]="item._bookDropdown?.last || item._bookDropdown?.loading"></div>
                         </div>
-
-                        <div class="book-loading" *ngIf="item._bookDropdown?.loading">
-                          <span class="spinner" aria-hidden="true"></span>
-                          Loading books...
-                        </div>
-
-                        <div class="book-sentinel" [attr.id]="'book-sentinel-' + i" [class.book-sentinel--hidden]="item._bookDropdown?.last || item._bookDropdown?.loading"></div>
                       </div>
-                    </div>
                   </div>
                   <div class="text-xs text-red-400 mt-1" *ngIf="bookModel.invalid && (bookModel.dirty || bookModel.touched)">Required</div>
                 </div>
 
-                <div class="sale-cell" data-label="Qty">
-                  <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
-                    <mat-label class="text-xs">Qty</mat-label>
-                    <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" required #qtyModel="ngModel" inputmode="numeric" (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item); validateQty(item, qtyModel)" min="1" [attr.max]="item.book?.stock" step="1" class="text-sm text-center" />
-                    <mat-error *ngIf="qtyModel.invalid && (qtyModel.dirty && qtyModel.touched)" class="text-xs">
-                      <span *ngIf="qtyModel.errors?.['required']">Req</span>
-                      <span *ngIf="qtyModel.errors?.['exceededStock']">Qty exceeds stock</span>
-                    </mat-error>
-                  </mat-form-field>
-                </div>
+                <mat-form-field appearance="outline" class="w-16 mat-form-field-dense">
+                  <mat-label class="text-xs">Qty</mat-label>
+                  <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" required #qtyModel="ngModel" inputmode="numeric" (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item); validateQty(item, qtyModel)" min="1" [attr.max]="item.book?.stock" step="1" class="text-sm text-center h-8" />
+                </mat-form-field>
 
-                <div class="sale-cell" data-label="MRP">
-                  <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
-                    <mat-label class="text-xs">MRP</mat-label>
-                    <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" readonly class="text-sm text-center" />
-                    <mat-error *ngIf="rateModel.invalid && (rateModel.dirty && rateModel.touched)" class="text-xs">
-                      <span *ngIf="rateModel.errors?.['required']">Req</span>
-                    </mat-error>
-                  </mat-form-field>
-                </div>
+                <mat-form-field appearance="outline" class="w-20 mat-form-field-dense">
+                  <mat-label class="text-xs">MRP</mat-label>
+                  <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" readonly class="text-sm text-center h-8" />
+                </mat-form-field>
 
-                <div class="sale-cell" data-label="Disc %">
-                  <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
-                    <mat-label class="text-xs">Disc %</mat-label>
-                    <input matInput type="number" [(ngModel)]="item.discount" [name]="'discount_' + i" min="0" max="100" (ngModelChange)="calculateAmount(item)" class="text-sm text-center" />
-                  </mat-form-field>
-                </div>
+                <mat-form-field appearance="outline" class="w-20 mat-form-field-dense">
+                  <mat-label class="text-xs">Disc %</mat-label>
+                  <input matInput type="number" [(ngModel)]="item.discount" [name]="'discount_' + i" min="0" max="100" (ngModelChange)="calculateAmount(item)" class="text-sm text-center h-8" />
+                </mat-form-field>
 
-                <div class="sale-cell sale-cell-amount" data-label="Amount">
-                  <div class="amount-value">{{ item.amount | number:'1.2-2' }}</div>
-                </div>
-
-                <div class="sale-cell sale-cell-remove" data-label="Remove">
+                <div class="ml-auto flex items-center gap-2">
+                  <div class="amount-value text-sm font-semibold">{{ item.amount | number:'1.2-2' }}</div>
                   <button type="button" (click)="removeItem(i)" class="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded transition-colors" title="Remove item">
                     <mat-icon class="text-lg">delete</mat-icon>
                   </button>
@@ -219,7 +197,7 @@
           </div>
 
           <!-- Add Item Button -->
-          <div *ngIf="data.items.length" class="flex justify-end mt-3">
+          <div class="flex justify-end mt-3">
             <button type="button" (click)="addItem()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm flex items-center gap-2 transition-colors">
               <mat-icon class="text-sm">add</mat-icon>
               Add Item
@@ -237,43 +215,48 @@
 
         <!-- Totals Section -->
         <div class="mt-3 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Total Amount (after item discounts)</mat-label>
-            <input matInput type="number" [(ngModel)]="data.totalAmount" name="totalAmount" readonly />
-          </mat-form-field>
-          <div class="grid grid-cols-1 gap-2 mt-2">
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Tax Amount</mat-label>
-              <input matInput type="number" [(ngModel)]="data.taxAmount" name="taxAmount" (ngModelChange)="calculateTotals()" #taxModel="ngModel" (ngModelChange)="taxModel.control.markAsTouched()" />
-            </mat-form-field>
-
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Payment Status</mat-label>
-            <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus" required #paymentStatusModel="ngModel">
-              <mat-option value="UNPAID">UNPAID</mat-option>
-              <mat-option value="PAID">PAID</mat-option>
-              <mat-option value="PARTIAL">PARTIAL</mat-option>
-            </mat-select>
-            <mat-error *ngIf="paymentStatusModel.invalid && (paymentStatusModel.dirty && paymentStatusModel.touched)">
-              <span *ngIf="paymentStatusModel.errors?.['required']">Payment status is required.</span>
-            </mat-error>
-          </mat-form-field>
+                <mat-label>Total Amount (after item discounts)</mat-label>
+                <input matInput type="number" [(ngModel)]="data.totalAmount" name="totalAmount" readonly />
+              </mat-form-field>
 
-        <div *ngIf="data.paymentStatus === 'PARTIAL'">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Partial Payment Amount</mat-label>
-            <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
-            <mat-error *ngIf="paidAmountModel.invalid && (paidAmountModel.dirty && paidAmountModel.touched)">
-              <span *ngIf="paidAmountModel.errors?.['required']">Partial amount is required.</span>
-            </mat-error>
-            <mat-error *ngIf="isOverpay()">Paid amount cannot exceed grand total.</mat-error>
-          </mat-form-field>
-        </div>
+              <mat-form-field appearance="outline" class="w-full mt-2">
+                <mat-label>Tax Amount</mat-label>
+                <input matInput type="number" [(ngModel)]="data.taxAmount" name="taxAmount" (ngModelChange)="calculateTotals()" #taxModel="ngModel" />
+              </mat-form-field>
+            </div>
 
-            <mat-form-field appearance="outline" class="w-full">
-              <mat-label>Grand Total</mat-label>
-              <input matInput type="number" [(ngModel)]="data.grandTotal" name="grandTotal" readonly class="font-bold" />
-            </mat-form-field>
+            <div>
+              <mat-form-field appearance="outline" class="w-full">
+                <mat-label>Payment Status</mat-label>
+                <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus" required #paymentStatusModel="ngModel">
+                  <mat-option value="UNPAID">UNPAID</mat-option>
+                  <mat-option value="PAID">PAID</mat-option>
+                  <mat-option value="PARTIAL">PARTIAL</mat-option>
+                </mat-select>
+                <mat-error *ngIf="paymentStatusModel.invalid && (paymentStatusModel.dirty && paymentStatusModel.touched)">
+                  <span *ngIf="paymentStatusModel.errors?.['required']">Payment status is required.</span>
+                </mat-error>
+              </mat-form-field>
+
+              <div *ngIf="data.paymentStatus === 'PARTIAL'" class="mt-2">
+                <mat-form-field appearance="outline" class="w-full">
+                  <mat-label>Partial Payment Amount</mat-label>
+                  <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
+                  <mat-error *ngIf="paidAmountModel.invalid && (paidAmountModel.dirty && paidAmountModel.touched)">
+                    <span *ngIf="paidAmountModel.errors?.['required']">Partial amount is required.</span>
+                  </mat-error>
+                  <mat-error *ngIf="isOverpay()">Paid amount cannot exceed grand total.</mat-error>
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline" class="w-full mt-2">
+                <mat-label>Grand Total</mat-label>
+                <input matInput type="number" [(ngModel)]="data.grandTotal" name="grandTotal" readonly class="font-bold" />
+              </mat-form-field>
+            </div>
           </div>
         </div>
       </div>
