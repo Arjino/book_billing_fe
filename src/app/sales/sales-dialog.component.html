@@ -11,16 +11,64 @@
     <form #saleForm="ngForm">
       <div class="grid grid-cols-1 gap-4">
         <!-- Invoice No removed per user request -->
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Party</mat-label>
-          <mat-select [(ngModel)]="data.party" name="party" required #partyModel="ngModel">
-            <mat-option [value]="null">Select Party</mat-option>
-            <mat-option *ngFor="let p of parties" [value]="p">{{ p.name }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="partyModel.invalid && (partyModel.dirty && partyModel.touched)">
-            <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
-          </mat-error>
-        </mat-form-field>
+        <div class="book-dropdown-inline w-full">
+            <label>Party</label>
+            <input type="hidden" name="party" [ngModel]="data.party?.id" required #partyModel="ngModel" />
+            <div class="book-input-shell">
+              <input
+                type="text"
+                class="book-input"
+                name="partySearch"
+                [ngModel]="partyState?.search"
+                (ngModelChange)="onPartySearchInput($event)"
+                (focus)="openPartyDropdown()"
+                (click)="openPartyDropdown()"
+                (keydown)="onPartyInputKeydown($event)"
+                placeholder="Search parties by name, phone, or GST"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button type="button" class="toggle-button" (click)="partyState?.open ? closePartyDropdown() : openPartyDropdown()" aria-label="Toggle parties list">
+                <span class="toggle-caret" [class.toggle-caret--open]="partyState?.open">▾</span>
+              </button>
+            </div>
+
+            <div class="book-error" *ngIf="partyModel.invalid && (partyModel.dirty && partyModel.touched)">
+              <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
+            </div>
+
+          <div class="book-panel" *ngIf="partyState?.open">
+            <div class="book-options" id="party-options">
+              <button
+                type="button"
+                class="book-option"
+                *ngFor="let p of partyState?.options || []; let idx = index; trackBy: trackByPartyId"
+                [class.book-option--active]="idx === partyState?.activeIndex"
+                [class.book-option--selected]="data.party?.id === p.id"
+                [attr.data-option-index]="idx"
+                (click)="onPartyOptionClicked(p)"
+              >
+                <div class="book-option-title" [innerHTML]="highlightPartyMatch(p.name)"></div>
+                <div class="book-option-meta">
+                  <span [innerHTML]="highlightPartyMatch(p.phone)"></span>
+                  <span class="meta-dot">•</span>
+                  <span [innerHTML]="highlightPartyMatch(p?.gstin)"></span>
+                </div>
+              </button>
+
+              <div class="book-empty" *ngIf="!partyState?.loading && !(partyState?.options?.length)">
+                No parties found
+              </div>
+
+              <div class="book-loading" *ngIf="partyState?.loading">
+                <span class="spinner" aria-hidden="true"></span>
+                Loading parties...
+              </div>
+
+              <div class="book-sentinel" id="party-sentinel" [class.book-sentinel--hidden]="partyState?.last || partyState?.loading"></div>
+            </div>
+          </div>
+        </div>
 
         <mat-form-field appearance="outline" class="w-full text-white">
           <mat-label>Sale Date & Time</mat-label>

@@ -28,6 +28,28 @@ interface BooksDropdownPageResponse {
   last: boolean;
 }
 
+interface PartiesDropdownPageResponse {
+  content: Party[];
+  number: number;
+  size: number;
+  totalElements: number;
+  last: boolean;
+}
+
+interface PartyDropdownState {
+  open: boolean;
+  search: string;
+  options: Party[];
+  page: number;
+  last: boolean;
+  loading: boolean;
+  activeIndex: number;
+  searchInput$: Subject<string>;
+  searchSub: Subscription;
+  requestSub: Subscription | null;
+  observer: IntersectionObserver | null;
+}
+
 interface BookDropdownState {
   open: boolean;
   search: string;
@@ -52,6 +74,7 @@ interface BookDropdownState {
 export class SalesDialogComponent implements OnInit, OnDestroy {
   books: Book[] = [];
   parties: Party[] = [];
+  partyState: PartyDropdownState | null = null;
   authToken = '';
   private readonly dropdownBaseUrl = baseUrl.replace(/\/api$/, '');
   private readonly pageSize = 50;
@@ -112,6 +135,9 @@ export class SalesDialogComponent implements OnInit, OnDestroy {
     
     this.store.getParties().subscribe(data => this.parties = data || []);
 
+    // Initialize party dropdown state (searchable, paginated)
+    this.attachPartyDropdownState();
+
     // Initialize per-row dropdown state for existing items.
     (this.data.items || []).forEach(item => {
       item.bookSearch = item.book ? item.book.title : '';
@@ -131,6 +157,17 @@ export class SalesDialogComponent implements OnInit, OnDestroy {
         state.observer.disconnect();
       }
     });
+
+    // cleanup party dropdown
+    if (this.partyState) {
+      this.partyState.searchSub.unsubscribe();
+      if (this.partyState.requestSub) {
+        this.partyState.requestSub.unsubscribe();
+      }
+      if (this.partyState.observer) {
+        this.partyState.observer.disconnect();
+      }
+    }
   }
   formatDateDisplay(date: string | Date): string {
     if (!date) return '';
@@ -513,7 +550,7 @@ export class SalesDialogComponent implements OnInit, OnDestroy {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement | null;
-    if (target?.closest('.book-dropdown-inline')) {
+    if (target?.closest('.book-dropdown-inline') || target?.closest('.party-dropdown-inline')) {
       return;
     }
 
@@ -523,9 +560,11 @@ export class SalesDialogComponent implements OnInit, OnDestroy {
   @HostListener('document:keydown.escape', ['$event'])
   onEscape(event: Event): void {
     const hasOpen = (this.data.items || []).some((item) => this.getBookDropdownState(item)?.open);
-    if (!hasOpen) return;
+    const partyOpen = !!this.partyState?.open;
+    if (!hasOpen && !partyOpen) return;
     event.preventDefault();
     this.closeAllDropdowns();
+    if (partyOpen) this.closePartyDropdown();
   }
 
   private attachBookDropdownState(item: any): void {
@@ -660,6 +699,9 @@ export class SalesDialogComponent implements OnInit, OnDestroy {
 
   private closeAllDropdowns(): void {
     (this.data.items || []).forEach((_, idx) => this.closeBookDropdown(idx));
+    if (this.partyState?.open) {
+      this.closePartyDropdown();
+    }
   }
 
   private closeAllDropdownsExcept(index: number): void {
@@ -668,6 +710,242 @@ export class SalesDialogComponent implements OnInit, OnDestroy {
         this.closeBookDropdown(idx);
       }
     });
+  }
+
+  // --- Party dropdown (single) ---
+  private attachPartyDropdownState(): void {
+    if (this.partyState) return;
+
+    const searchInput$ = new Subject<string>();
+    const state: PartyDropdownState = {
+      open: false,
+      search: this.data?.party?.name || '',
+      options: [],
+      page: 0,
+      last: false,
+      loading: false,
+      activeIndex: -1,
+      searchInput$,
+      searchSub: new Subscription(),
+      requestSub: null,
+      observer: null
+    };
+
+    state.searchSub = searchInput$
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe((query) => {
+        if (!state.open) return;
+        this.resetAndFetchParties(query);
+      });
+
+    this.partyState = state;
+  }
+
+  private getPartyDropdownState(): PartyDropdownState | null {
+    return this.partyState;
+  }
+
+  openPartyDropdown(): void {
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+
+    if (!state.open) {
+      state.open = true;
+      state.activeIndex = -1;
+      if (!state.options.length) {
+        this.resetAndFetchParties(state.search.trim());
+      } else {
+        this.setupPartyObserver();
+      }
+    }
+  }
+
+  closePartyDropdown(restoreInput = true): void {
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+    state.open = false;
+    state.activeIndex = -1;
+    if (state.observer) {
+      state.observer.disconnect();
+      state.observer = null;
+    }
+    if (restoreInput) {
+      state.search = this.data?.party?.name || '';
+    }
+  }
+
+  onPartySearchInput(value: string): void {
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+
+    state.search = value ?? '';
+    state.activeIndex = -1;
+
+    if (this.data.party && state.search !== this.data.party.name) {
+      this.data.party = null;
+    }
+
+    this.openPartyDropdown();
+    state.searchInput$.next(state.search.trim());
+  }
+
+  onPartyInputKeydown(event: Event): void {
+    const keyboardEvent = event as KeyboardEvent;
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+
+    if (!state.open && (keyboardEvent.key === 'ArrowDown' || keyboardEvent.key === 'ArrowUp')) {
+      keyboardEvent.preventDefault();
+      this.openPartyDropdown();
+      return;
+    }
+
+    if (!state.open) return;
+
+    if (keyboardEvent.key === 'ArrowDown') {
+      keyboardEvent.preventDefault();
+      if (!state.options.length) return;
+      state.activeIndex = Math.min(state.activeIndex + 1, state.options.length - 1);
+      this.scrollActivePartyIntoView();
+      return;
+    }
+
+    if (keyboardEvent.key === 'ArrowUp') {
+      keyboardEvent.preventDefault();
+      if (!state.options.length) return;
+      state.activeIndex = state.activeIndex <= 0 ? 0 : state.activeIndex - 1;
+      this.scrollActivePartyIntoView();
+      return;
+    }
+
+    if (keyboardEvent.key === 'Enter') {
+      if (state.activeIndex >= 0 && state.activeIndex < state.options.length) {
+        keyboardEvent.preventDefault();
+        this.onPartyOptionClicked(state.options[state.activeIndex]);
+        this.closePartyDropdown();
+      }
+      return;
+    }
+
+    if (keyboardEvent.key === 'Escape') {
+      keyboardEvent.preventDefault();
+      this.closePartyDropdown();
+    }
+  }
+
+  onPartyOptionClicked(p: Party): void {
+    if (!p) return;
+    this.parties = this.parties.some(x => x.id === p.id) ? this.parties : [...this.parties, p];
+    this.data.party = p;
+    if (this.partyState) {
+      this.partyState.search = p.name;
+    }
+    this.closePartyDropdown();
+  }
+
+  private resetAndFetchParties(query: string): void {
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+
+    if (state.requestSub) {
+      state.requestSub.unsubscribe();
+      state.requestSub = null;
+    }
+
+    state.options = [];
+    state.page = 0;
+    state.last = false;
+    state.activeIndex = -1;
+
+    this.loadPartiesPage(query, 0, true);
+  }
+
+  private fetchNextPartiesPage(): void {
+    const state = this.getPartyDropdownState();
+    if (!state || state.loading || state.last) return;
+    this.loadPartiesPage(state.search.trim(), state.page + 1, false);
+  }
+
+  private loadPartiesPage(query: string, page: number, replace: boolean): void {
+    const state = this.getPartyDropdownState();
+    if (!state || state.loading || state.last || !this.authToken) return;
+
+    state.loading = true;
+
+    const headers = new HttpHeaders({ Authorization: `Bearer ${this.authToken}` });
+    const params = new HttpParams()
+      .set('q', query || '')
+      .set('page', String(page))
+      .set('size', String(this.pageSize));
+
+    state.requestSub = this.http
+      .get<PartiesDropdownPageResponse>(`${this.dropdownBaseUrl}/api/parties/dropdown`, { headers, params })
+      .subscribe({
+        next: (response) => {
+          const incoming = response?.content || [];
+          state.options = replace ? incoming : [...state.options, ...incoming];
+          state.page = response?.number ?? page;
+          state.last = response?.last ?? true;
+          state.loading = false;
+
+          setTimeout(() => this.setupPartyObserver(), 0);
+        },
+        error: () => {
+          state.loading = false;
+          state.last = true;
+        }
+      });
+  }
+
+  private setupPartyObserver(): void {
+    const state = this.getPartyDropdownState();
+    if (!state || !state.open) return;
+
+    const optionsContainer = document.getElementById(`party-options`);
+    const sentinel = document.getElementById(`party-sentinel`);
+    if (!optionsContainer || !sentinel) return;
+
+    if (state.observer) {
+      state.observer.disconnect();
+      state.observer = null;
+    }
+
+    state.observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          this.fetchNextPartiesPage();
+        }
+      },
+      { root: optionsContainer, threshold: 0.1 }
+    );
+
+    state.observer.observe(sentinel);
+  }
+
+  private scrollActivePartyIntoView(): void {
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+
+    const optionsContainer = document.getElementById(`party-options`);
+    if (!optionsContainer) return;
+
+    const activeEl = optionsContainer.querySelector<HTMLElement>(`.book-option[data-option-index="${state.activeIndex}"]`);
+    if (!activeEl) return;
+    activeEl.scrollIntoView({ block: 'nearest' });
+  }
+
+  trackByPartyId(_: number, p: Party): number {
+    return p.id;
+  }
+
+  highlightPartyMatch(text: string | null | undefined): string {
+    const state = this.getPartyDropdownState();
+    const safeText = this.escapeHtml(text || '');
+    const query = (state?.search || '').trim();
+    if (!query) return safeText;
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'ig');
+    return safeText.replace(regex, '<mark>$1</mark>');
   }
 
   private escapeHtml(value: string): string {
