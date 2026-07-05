@@ -313,7 +313,7 @@ input,textarea,select,mat-form-field .mat-input-element{background:rgba(255,255,
 }
 
 ::ng-deep .date-time-menu .mat-calendar-body-label {
-	display: none;
+	visibility: hidden;
 }
 
 .date-time-icon mat-icon {

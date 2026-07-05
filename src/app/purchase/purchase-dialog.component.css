@@ -370,7 +370,7 @@ select:focus {
 }
 
 ::ng-deep .date-time-menu .mat-calendar-body-label {
-  display: none;
+  visibility: hidden;
 }
 
 .date-time-icon mat-icon {

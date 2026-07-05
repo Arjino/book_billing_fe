@@ -128,7 +128,7 @@ input, select { background: rgba(255,255,255,0.02); color: #fff; }
 }
 
 ::ng-deep .date-time-menu .mat-calendar-body-label {
-  display: none;
+  visibility: hidden;
 }
 
 ::ng-deep .date-time-menu .mat-calendar-controls {

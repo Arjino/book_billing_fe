@@ -180,7 +180,7 @@
 }
 
 ::ng-deep .date-time-menu .mat-calendar-body-label {
-  display: none;
+  visibility: hidden;
 }
 
 ::ng-deep .date-time-menu .mat-calendar-controls {
