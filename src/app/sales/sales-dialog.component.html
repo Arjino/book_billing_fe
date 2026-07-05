@@ -109,7 +109,7 @@
           </div>
 
           <div *ngIf="data.items.length" class="sale-items-grid grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
-            <div *ngFor="let item of data.items; let i = index; trackBy: trackByIndex" class="sale-item-card border p-2 rounded">
+            <div *ngFor="let item of data.items; let i = index; trackBy: trackByIndex" class="sale-item-card p-1 rounded">
               <div class="flex items-center gap-2">
                 <input type="hidden" [name]="'book_' + i" [ngModel]="item.book?.id" required #bookModel="ngModel" />
 
@@ -171,20 +171,59 @@
                   <div class="text-xs text-red-400 mt-1" *ngIf="bookModel.invalid && (bookModel.dirty || bookModel.touched)">Required</div>
                 </div>
 
-                <mat-form-field appearance="outline" class="w-16 mat-form-field-dense">
-                  <mat-label class="text-xs">Qty</mat-label>
-                  <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" required #qtyModel="ngModel" inputmode="numeric" (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item); validateQty(item, qtyModel)" min="1" [attr.max]="item.book?.stock" step="1" class="text-sm text-center h-8" />
-                </mat-form-field>
+                <div class="w-16">
+                  <label class="item-field-label">Qty</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="item.qty"
+                    [name]="'qty_' + i"
+                    required
+                    #qtyModel="ngModel"
+                    inputmode="numeric"
+                    (ngModelChange)="qtyModel.control.markAsTouched(); calculateAmount(item); validateQty(item, qtyModel)"
+                    min="1"
+                    [attr.max]="item.book?.stock"
+                    step="1"
+                    class="text-sm text-center compact-input"
+                    placeholder="0"
+                    aria-label="Qty"
+                    style="margin:0;"
+                  />
+                </div>
 
-                <mat-form-field appearance="outline" class="w-20 mat-form-field-dense">
-                  <mat-label class="text-xs">MRP</mat-label>
-                  <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" readonly class="text-sm text-center h-8" />
-                </mat-form-field>
+                <div class="w-20">
+                  <label class="item-field-label">MRP</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="item.rate"
+                    [name]="'rate_' + i"
+                    required
+                    #rateModel="ngModel"
+                    min="0"
+                    inputmode="decimal"
+                    readonly
+                    class="text-sm text-center compact-input"
+                    placeholder="MRP"
+                    aria-label="MRP"
+                    style="margin:0;"
+                  />
+                </div>
 
-                <mat-form-field appearance="outline" class="w-20 mat-form-field-dense">
-                  <mat-label class="text-xs">Disc %</mat-label>
-                  <input matInput type="number" [(ngModel)]="item.discount" [name]="'discount_' + i" min="0" max="100" (ngModelChange)="calculateAmount(item)" class="text-sm text-center h-8" />
-                </mat-form-field>
+                <div class="w-20">
+                  <label class="item-field-label">Disc %</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="item.discount"
+                    [name]="'discount_' + i"
+                    min="0"
+                    max="100"
+                    (ngModelChange)="calculateAmount(item)"
+                    class="text-sm text-center compact-input"
+                    placeholder="0"
+                    aria-label="Disc %"
+                    style="margin:0;"
+                  />
+                </div>
 
                 <div class="ml-auto flex items-center gap-2">
                   <div class="amount-value text-sm font-semibold">{{ item.amount | number:'1.2-2' }}</div>
