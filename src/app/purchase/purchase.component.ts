@@ -27,6 +27,7 @@ import { PurchaseOrderPreviewComponent } from './purchase-order-preview.componen
 import { ReceivingOrderPreviewComponent } from './receiving-order-preview.component';
 import { RoPaymentPromptDialogComponent } from './ro-payment-prompt-dialog.component';
 import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
+import { SALES_CONSTANTS } from '../constants/sales.constants';
 
 type PurchaseTransaction = {
   id: number;
@@ -311,7 +312,9 @@ export class PurchaseComponent implements OnInit {
     }
 
     const dialogRef = this.dialog.open(PurchaseDialogComponent, {
-      width: PURCHASE_CONSTANTS.DIALOG_WIDTH,
+      width: SALES_CONSTANTS.DIALOG_WIDTH,
+            maxWidth: '90vw',
+            maxHeight: '95vh',
       data: {
         id: 0,
         poNumber: '',

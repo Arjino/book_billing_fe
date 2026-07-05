@@ -1,4 +1,4 @@
-<div class="modern-dialog w-full max-w-2xl text-white">
+<div class="modern-dialog purchase-dialog-shell w-full text-white">
   <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#0EA5E9,#7C3AED);">
     <div class="flex items-center gap-3">
       <mat-icon>receipt_long</mat-icon>
@@ -10,50 +10,102 @@
   <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
     <form #purchaseForm="ngForm">
       <div class="grid grid-cols-1 gap-4">
-        <mat-form-field appearance="outline" class="w-full" *ngIf="data.type !== 'RECEIVING_ORDER'">
-          <mat-label>Party</mat-label>
-          <mat-select [(ngModel)]="data.party" name="party" required #partyModel="ngModel" (selectionChange)="onSupplierChanged($event.value)">
-            <mat-option [value]="null">Select Party</mat-option>
-            <mat-option *ngFor="let p of parties" [value]="p">{{ p.name }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="partyModel.invalid && (partyModel.dirty && partyModel.touched)">
-            <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
-          </mat-error>
-        </mat-form-field>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" *ngIf="data.type !== 'RECEIVING_ORDER'">
+          <div class="party-dropdown-inline w-full">
+            <label>Party</label>
+            <input type="hidden" name="party" [ngModel]="data.party?.id" required #partyModel="ngModel" />
+            <div class="book-input-shell">
+              <input
+                type="text"
+                class="book-input"
+                name="partySearch"
+                [ngModel]="partyState?.search"
+                (ngModelChange)="onPartySearchInput($event)"
+                (focus)="openPartyDropdown()"
+                (click)="openPartyDropdown()"
+                (keydown)="onPartyInputKeydown($event)"
+                placeholder="Search suppliers by name, phone, or GST"
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <button type="button" class="toggle-button" (click)="partyState?.open ? closePartyDropdown() : openPartyDropdown()" aria-label="Toggle parties list">
+                <span class="toggle-caret" [class.toggle-caret--open]="partyState?.open">▾</span>
+              </button>
+            </div>
 
-        <mat-form-field appearance="outline" class="w-full" *ngIf="data.type === 'RECEIVING_ORDER'">
-          <mat-label>Party Name</mat-label>
-          <input matInput [value]="data.party?.name || ''" readonly />
-        </mat-form-field>
+            <div class="book-error" *ngIf="partyModel.invalid && (partyModel.dirty || partyModel.touched)">
+              <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
+            </div>
 
-        <mat-form-field appearance="outline" class="w-full" *ngIf="data.type === 'RECEIVING_ORDER'">
-          <mat-label>PO Number</mat-label>
-          <input matInput [value]="data.poNumber || ''" readonly />
-        </mat-form-field>
+            <div class="book-panel" *ngIf="partyState?.open">
+              <div class="book-options" id="party-options">
+                <button
+                  type="button"
+                  class="book-option"
+                  *ngFor="let p of partyState?.options || []; let idx = index; trackBy: trackByPartyId"
+                  [class.book-option--active]="idx === partyState?.activeIndex"
+                  [class.book-option--selected]="data.party?.id === p.id"
+                  [attr.data-option-index]="idx"
+                  (click)="onPartyOptionClicked(p)"
+                >
+                  <div class="book-option-title" [innerHTML]="highlightPartyMatch(p.name)"></div>
+                  <div class="book-option-meta">
+                    <span [innerHTML]="highlightPartyMatch(p.phone)"></span>
+                    <span class="meta-dot">•</span>
+                    <span [innerHTML]="highlightPartyMatch(p?.gstin)"></span>
+                  </div>
+                </button>
 
-        <mat-form-field appearance="outline" class="w-full text-white" *ngIf="data.type !== 'RECEIVING_ORDER'">
-          <mat-label>Date</mat-label>
-          <input matInput [value]="getPurchaseDisplay()" readonly [matMenuTriggerFor]="purchaseMenu" #purchaseTrigger="matMenuTrigger" />
-          <input type="hidden" [(ngModel)]="purchaseDateTime" name="date" required #dateModel="ngModel" />
-          <button mat-icon-button matSuffix class="date-time-icon" (click)="purchaseTrigger.openMenu()" aria-label="Open purchase date time">
-            <mat-icon>calendar_today</mat-icon>
-          </button>
-          <mat-error *ngIf="dateModel.invalid && (dateModel.dirty && dateModel.touched)">
-            <span *ngIf="dateModel.errors?.['required']">Date is required.</span>
-          </mat-error>
-        </mat-form-field>
+                <div class="book-empty" *ngIf="!partyState?.loading && !(partyState?.options?.length)">
+                  No parties found
+                </div>
 
-        <mat-form-field appearance="outline" class="w-full text-white" *ngIf="data.type === 'RECEIVING_ORDER'">
-          <mat-label>Received Date</mat-label>
-          <input matInput [value]="getReceivedDisplay()" readonly [matMenuTriggerFor]="receivedMenu" #receivedTrigger="matMenuTrigger" />
-          <input type="hidden" [(ngModel)]="receivedDateTime" name="receivedDate" required #receivedDateModel="ngModel" />
-          <button mat-icon-button matSuffix class="date-time-icon" (click)="receivedTrigger.openMenu()" aria-label="Open received date time">
-            <mat-icon>calendar_today</mat-icon>
-          </button>
-          <mat-error *ngIf="receivedDateModel.invalid && (receivedDateModel.dirty && receivedDateModel.touched)">
-            <span *ngIf="receivedDateModel.errors?.['required']">Received date is required.</span>
-          </mat-error>
-        </mat-form-field>
+                <div class="book-loading" *ngIf="partyState?.loading">
+                  <span class="spinner" aria-hidden="true"></span>
+                  Loading parties...
+                </div>
+
+                <div class="book-sentinel" id="party-sentinel" [class.book-sentinel--hidden]="partyState?.last || partyState?.loading"></div>
+              </div>
+            </div>
+          </div>
+
+          <mat-form-field appearance="outline" class="w-full text-white">
+            <mat-label>Date</mat-label>
+            <input matInput [value]="getPurchaseDisplay()" readonly [matMenuTriggerFor]="purchaseMenu" #purchaseTrigger="matMenuTrigger" />
+            <input type="hidden" [(ngModel)]="purchaseDateTime" name="date" required #dateModel="ngModel" />
+            <button mat-icon-button matSuffix class="date-time-icon" (click)="purchaseTrigger.openMenu()" aria-label="Open purchase date time">
+              <mat-icon>calendar_today</mat-icon>
+            </button>
+            <mat-error *ngIf="dateModel.invalid && (dateModel.dirty || dateModel.touched)">
+              <span *ngIf="dateModel.errors?.['required']">Date is required.</span>
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4" *ngIf="data.type === 'RECEIVING_ORDER'">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Party Name</mat-label>
+            <input matInput [value]="data.party?.name || ''" readonly />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>PO Number</mat-label>
+            <input matInput [value]="data.poNumber || ''" readonly />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full text-white">
+            <mat-label>Received Date</mat-label>
+            <input matInput [value]="getReceivedDisplay()" readonly [matMenuTriggerFor]="receivedMenu" #receivedTrigger="matMenuTrigger" />
+            <input type="hidden" [(ngModel)]="receivedDateTime" name="receivedDate" required #receivedDateModel="ngModel" />
+            <button mat-icon-button matSuffix class="date-time-icon" (click)="receivedTrigger.openMenu()" aria-label="Open received date time">
+              <mat-icon>calendar_today</mat-icon>
+            </button>
+            <mat-error *ngIf="receivedDateModel.invalid && (receivedDateModel.dirty || receivedDateModel.touched)">
+              <span *ngIf="receivedDateModel.errors?.['required']">Received date is required.</span>
+            </mat-error>
+          </mat-form-field>
+        </div>
 
         <mat-menu #purchaseMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
           <div class="date-time-menu-content" (click)="$event.stopPropagation()">
@@ -96,76 +148,131 @@
         </mat-menu>
 
         <div class="mt-2 border p-3 rounded bg-[rgba(255,255,255,0.02)]">
-          <div class="flex items-center mb-3">
+          <div class="items-toolbar flex items-center justify-between">
             <h3 class="font-bold">Items</h3>
+            <div class="items-count" *ngIf="data.items.length && data.type !== 'RECEIVING_ORDER'">{{ data.items.length }} item(s)</div>
           </div>
 
-          <!-- Table Header for Purchase Order -->
-          <div *ngIf="data.items.length && data.type !== 'RECEIVING_ORDER'" class="mb-2 px-3 py-2 bg-[rgba(0,0,0,0.3)] rounded text-xs font-semibold flex gap-2 items-center">
-            <div class="flex-1 min-w-[200px]">Book</div>
-            <div class="w-20 text-center">Qty</div>
-            <div class="w-24 text-center">MRP</div>
-            <div class="w-24 text-center">Discount (%)</div>
-            <div class="w-16 text-center">Remove</div>
-          </div>
+          <div *ngIf="data.items.length && data.type !== 'RECEIVING_ORDER'" class="purchase-items-grid grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
+            <div *ngFor="let item of data.items; let i = index; trackBy: trackByIndex" class="purchase-item-card p-1 rounded" [ngClass]="{ 'purchase-item-card--discount': item.supplierDiscountApplied }">
+              <div class="flex items-center gap-2">
+                <input type="hidden" [name]="'book_' + i" [ngModel]="item.book?.id" required #bookModel="ngModel" />
 
-          <!-- Purchase Order Items (Horizontal Layout) -->
-          <div *ngIf="data.items.length && data.type !== 'RECEIVING_ORDER'" class="space-y-2 max-h-80 overflow-y-auto">
-            <div *ngFor="let item of data.items; let i = index; let last = last; trackBy: trackByIndex" class="flex gap-2 items-end px-3 py-2 rounded bg-[rgba(0,0,0,0.2)] border border-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.15)] transition-colors" [ngClass]="{ 'border-emerald-500/60 bg-[rgba(16,185,129,0.12)]': item.supplierDiscountApplied }">
-              <!-- Book Autocomplete -->
-              <div class="flex-1 min-w-[200px]">
-                <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
-                  <mat-label class="text-xs">Book</mat-label>
-                  <input type="text" matInput [matAutocomplete]="autoBook" [(ngModel)]="item.bookSearch" [name]="'bookSearch_' + i" (ngModelChange)="filterBooks($event, i)" placeholder="Search..." required #bookModel="ngModel" class="text-sm">
-                  <mat-autocomplete #autoBook="matAutocomplete" (optionSelected)="onBookSelected($event.option.value, item)">
-                    <mat-option *ngFor="let b of item.filteredBooks || books" [value]="b">{{ b.title }}</mat-option>
-                  </mat-autocomplete>
-                  <mat-error *ngIf="bookModel.invalid && (bookModel.dirty && bookModel.touched)" class="text-xs">
-                    <span *ngIf="bookModel.errors?.['required']">Required</span>
-                  </mat-error>
-                </mat-form-field>
-              </div>
+                <div class="w-2/5 min-w-0">
+                  <div class="book-dropdown-inline">
+                    <div class="book-input-shell">
+                      <input
+                        type="text"
+                        class="book-input text-sm h-8"
+                        [name]="'bookSearch_' + i"
+                        [ngModel]="item.bookSearch || $any(item)._bookDropdown?.search"
+                        (ngModelChange)="onBookSearchInput($event, i)"
+                        (focus)="openBookDropdown(i)"
+                        (click)="openBookDropdown(i)"
+                        (keydown)="onBookInputKeydown($event, i)"
+                        placeholder="Search by title, SKU, or publisher"
+                        autocomplete="off"
+                        spellcheck="false"
+                      />
+                      <button type="button" class="toggle-button" (click)="$any(item)._bookDropdown?.open ? closeBookDropdown(i) : openBookDropdown(i)" aria-label="Toggle books list">
+                        <span class="toggle-caret" [class.toggle-caret--open]="$any(item)._bookDropdown?.open">▾</span>
+                      </button>
+                    </div>
 
-              <!-- Quantity -->
-              <div class="w-20">
-                <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
-                  <mat-label class="text-xs">Qty</mat-label>
-                  <input matInput type="number" [(ngModel)]="item.qty" [name]="'qty_' + i" required #qtyModel="ngModel" inputmode="numeric" (ngModelChange)="qtyModel.control.markAsTouched(); validateQty(item, qtyModel)" min="1" step="1" class="text-sm text-center" />
-                  <mat-error *ngIf="qtyModel.invalid && (qtyModel.dirty && qtyModel.touched)" class="text-xs">
-                    <span *ngIf="qtyModel.errors?.['required']">Req</span>
-                  </mat-error>
-                </mat-form-field>
-              </div>
+                    <div class="book-panel" *ngIf="$any(item)._bookDropdown?.open">
+                      <div class="book-options" [attr.id]="'book-options-' + i">
+                        <button
+                          type="button"
+                          class="book-option"
+                          [class.book-option--active]="idx === $any(item)._bookDropdown?.activeIndex"
+                          [class.book-option--selected]="item.book?.id === b.id"
+                          [attr.data-option-index]="idx"
+                          *ngFor="let b of $any(item)._bookDropdown?.options || []; let idx = index; trackBy: trackByBookId"
+                          (click)="onBookOptionClicked(b, item, i)"
+                        >
+                          <div class="book-option-title" [innerHTML]="highlightBookMatch(b.title, i)"></div>
+                          <div class="book-option-meta">
+                            <span [innerHTML]="highlightBookMatch(b.sku, i)"></span>
+                            <span class="meta-dot">•</span>
+                            <span [innerHTML]="highlightBookMatch(b.publisher, i)"></span>
+                            <span class="meta-dot">•</span>
+                            <span>MRP {{ b.mrp | number:'1.2-2' }}</span>
+                          </div>
+                        </button>
 
-              <!-- MRP -->
-              <div class="w-24">
-                <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
-                  <mat-label class="text-xs">MRP</mat-label>
-                  <input matInput type="number" [(ngModel)]="item.rate" [name]="'rate_' + i" required #rateModel="ngModel" min="0" inputmode="decimal" readonly class="text-sm text-center" />
-                  <mat-error *ngIf="rateModel.invalid && (rateModel.dirty && rateModel.touched)" class="text-xs">
-                    <span *ngIf="rateModel.errors?.['required']">Req</span>
-                  </mat-error>
-                </mat-form-field>
-              </div>
+                        <div class="book-empty" *ngIf="!$any(item)._bookDropdown?.loading && !($any(item)._bookDropdown?.options?.length)">
+                          No books found
+                        </div>
 
-              <!-- Discount Percent -->
-              <div class="w-24">
-                <mat-form-field appearance="outline" class="w-full mat-form-field-dense">
-                  <mat-label class="text-xs">Disc %</mat-label>
-                  <input matInput type="text" [value]="item.discountPercent ?? ''" readonly class="text-sm text-center" />
-                </mat-form-field>
-              </div>
+                        <div class="book-loading" *ngIf="$any(item)._bookDropdown?.loading">
+                          <span class="spinner" aria-hidden="true"></span>
+                          Loading books...
+                        </div>
 
-              <!-- Remove Button -->
-              <div class="w-16 flex justify-center">
-                <button type="button" (click)="removeItem(i)" class="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded transition-colors" title="Remove item">
-                  <mat-icon class="text-lg">delete</mat-icon>
-                </button>
+                        <div class="book-sentinel" [attr.id]="'book-sentinel-' + i" [class.book-sentinel--hidden]="$any(item)._bookDropdown?.last || $any(item)._bookDropdown?.loading"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="text-xs text-red-400 mt-1" *ngIf="bookModel.invalid && (bookModel.dirty || bookModel.touched)">Required</div>
+                </div>
+
+                <div class="w-16">
+                  <label class="item-field-label">Qty</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="item.qty"
+                    [name]="'qty_' + i"
+                    required
+                    #qtyModel="ngModel"
+                    inputmode="numeric"
+                    (ngModelChange)="qtyModel.control.markAsTouched(); validateQty(item, qtyModel)"
+                    min="1"
+                    step="1"
+                    class="text-sm text-center compact-input"
+                    placeholder="0"
+                    aria-label="Qty"
+                  />
+                </div>
+
+                <div class="w-20">
+                  <label class="item-field-label">MRP</label>
+                  <input
+                    type="number"
+                    [(ngModel)]="item.rate"
+                    [name]="'rate_' + i"
+                    required
+                    #rateModel="ngModel"
+                    min="0"
+                    inputmode="decimal"
+                    readonly
+                    class="text-sm text-center compact-input"
+                    placeholder="MRP"
+                    aria-label="MRP"
+                  />
+                </div>
+
+                <div class="w-20">
+                  <label class="item-field-label">Disc %</label>
+                  <input
+                    type="number"
+                    [value]="item.discountPercent ?? ''"
+                    readonly
+                    class="text-sm text-center compact-input"
+                    placeholder="0"
+                    aria-label="Disc %"
+                  />
+                </div>
+
+                <div class="ml-auto flex items-center gap-2">
+                  <button type="button" (click)="removeItem(i)" class="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded transition-colors" title="Remove item">
+                    <mat-icon class="text-lg">delete</mat-icon>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Add Item Button for Purchase Order -->
           <div *ngIf="data.type !== 'RECEIVING_ORDER'" class="flex justify-end mt-3">
             <button type="button" (click)="addItem()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm flex items-center gap-2 transition-colors">
               <mat-icon class="text-sm">add</mat-icon>
@@ -173,7 +280,6 @@
             </button>
           </div>
 
-          <!-- Receiving Order Items (Keep Original Grid Layout) -->
           <div *ngIf="data.items.length && data.type === 'RECEIVING_ORDER'" class="space-y-3">
             <div *ngFor="let item of data.items; let i = index; let last = last; trackBy: trackByIndex" class="border p-3 rounded bg-[rgba(0,0,0,0.2)]">
               <div class="text-sm mb-2">
@@ -204,7 +310,7 @@
                     [attr.max]="$any(item).orderQty ?? item.orderedQty"
                     step="1" />
                   <mat-error>
-                    <span *ngIf="receivedQtyModel.errors?.['required'] && (receivedQtyModel.dirty && receivedQtyModel.touched)">Required</span>
+                    <span *ngIf="receivedQtyModel.errors?.['required'] && (receivedQtyModel.dirty || receivedQtyModel.touched)">Required</span>
                     <span *ngIf="data.type === 'RECEIVING_ORDER' && receivedQtyModel.errors?.['exceededOrder']">Exceeds PO qty ({{ $any(item).orderQty ?? item.orderedQty ?? 0 }})</span>
                   </mat-error>
                 </mat-form-field>
@@ -222,7 +328,7 @@
                     min="0"
                     step="1" />
                   <mat-error>
-                    <span *ngIf="acceptedQtyModel.errors?.['required'] && (acceptedQtyModel.dirty && acceptedQtyModel.touched)">Required</span>
+                    <span *ngIf="acceptedQtyModel.errors?.['required'] && (acceptedQtyModel.dirty || acceptedQtyModel.touched)">Required</span>
                   </mat-error>
                 </mat-form-field>
 
@@ -239,14 +345,13 @@
                     min="0"
                     step="1" />
                   <mat-error>
-                    <span *ngIf="rejectedQtyModel.errors?.['required'] && (rejectedQtyModel.dirty && rejectedQtyModel.touched)">Required</span>
+                    <span *ngIf="rejectedQtyModel.errors?.['required'] && (rejectedQtyModel.dirty || rejectedQtyModel.touched)">Required</span>
                   </mat-error>
                 </mat-form-field>
               </div>
             </div>
           </div>
 
-          <!-- Empty State -->
           <div *ngIf="!data.items.length && data.type !== 'RECEIVING_ORDER'" class="flex justify-center py-8">
             <button type="button" (click)="addItem()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-sm flex items-center gap-2 transition-colors">
               <mat-icon class="text-sm">add</mat-icon>
@@ -258,7 +363,7 @@
     </form>
   </div>
 
-  <div mat-dialog-actions class="flex flex-col md:flex-row md:justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
+  <div mat-dialog-actions class="dialog-footer flex flex-col md:flex-row md:justify-end gap-2 p-3 rounded-b-lg">
     <button mat-button class="w-full md:w-auto" (click)="onCancel()" aria-label="Back">
       <mat-icon class="inline md:hidden mr-2">arrow_back</mat-icon>
       <span class="hidden md:inline">Cancel</span>

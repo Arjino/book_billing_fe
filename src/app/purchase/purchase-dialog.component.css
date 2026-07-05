@@ -1,203 +1,389 @@
-/* Make form controls readable on translucent dialog backgrounds */
-input, textarea, select, mat-form-field .mat-input-element {
-	background: rgba(255,255,255,0.03);
-	color: rgba(255,255,255,0.95);
-	border: 1px solid rgba(179,71,233,0.95);
-	border-radius: 6px;
+input,
+textarea,
+select,
+mat-form-field .mat-input-element {
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  border-radius: 6px;
 }
 
-input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.6); }
+input::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
 
-button[mat-raised-button] { box-shadow: 0 6px 18px rgba(0,0,0,0.35); }
+button[mat-raised-button] {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
 
-/* Make native selects and options dark so text is visible */
-select, option {
-	background: rgba(10,10,10,0.96);
-	color: rgba(255,255,255,0.95);
+select,
+option {
+  background: rgba(10, 10, 10, 0.96);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 select:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(179,71,233,0.12);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.18);
 }
 
-[mat-dialog-actions] {
-		background: rgba(179,71,233,0.6);
+[mat-dialog-actions],
+.dialog-footer {
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.9), rgba(124, 58, 237, 0.9));
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(6px);
 }
 
-/* Make mat-form-field outline color stronger so borders look bold */
-:host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline {
-	stroke: rgba(179,71,233,0.95) !important;
+.purchase-dialog-shell {
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
 }
+
+.purchase-dialog-shell [mat-dialog-content] {
+  max-height: calc(92vh - 132px);
+  overflow: auto;
+}
+
+:host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline,
 :host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline .mat-form-field-outline-gap {
-	stroke: rgba(179,71,233,0.95) !important;
+  stroke: rgba(56, 189, 248, 0.55) !important;
 }
 
-/* Style error messages - make them visible in red */
 :host ::ng-deep .mat-error {
-	color: #ff6b6b !important;
-	font-size: 0.85rem !important;
+  color: #ff6b6b !important;
+  font-size: 0.85rem !important;
 }
 
-:host ::ng-deep .mat-form-field.mat-form-field-invalid .mat-form-field-outline {
-	stroke: #ff6b6b !important;
-}
-
+:host ::ng-deep .mat-form-field.mat-form-field-invalid .mat-form-field-outline,
 :host ::ng-deep .mat-form-field.mat-form-field-invalid .mat-form-field-outline-gap {
-	stroke: #ff6b6b !important;
+  stroke: #ff6b6b !important;
 }
 
 :host ::ng-deep .mat-form-field-invalid .mat-input-element {
-	color: #ff6b6b !important;
+  color: #ff6b6b !important;
+}
+
+.items-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  gap: 12px;
+}
+
+.items-count {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(34, 211, 238, 0.16);
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  color: #1e2d31;
+}
+
+.purchase-items-grid {
+  align-items: stretch;
+}
+
+.purchase-item-card {
+  border: 1px solid rgba(100, 116, 139, 0.45);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.2), rgba(30, 41, 59, 0.2));
+}
+
+.purchase-item-card--discount {
+  border-color: rgba(16, 185, 129, 0.6);
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.book-dropdown-inline,
+.party-dropdown-inline {
+  position: relative;
+}
+
+.book-input-shell {
+  display: flex;
+  align-items: center;
+  border: 1px solid rgba(14, 165, 233, 0.42);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.book-input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: #0f172a;
+  padding: 8px 12px;
+  font-size: 0.95rem;
+  min-width: 0;
+}
+
+.book-input:focus {
+  outline: none;
+}
+
+.toggle-button {
+  border: none;
+  background: transparent;
+  color: rgba(15, 23, 42, 0.72);
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.toggle-caret {
+  display: inline-block;
+  transition: transform 0.16s ease;
+}
+
+.toggle-caret--open {
+  transform: rotate(180deg);
+}
+
+.book-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 1200;
+  border: 1px solid rgba(14, 165, 233, 0.6);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.6);
+  max-height: 320px;
+  overflow: auto;
+}
+
+.book-options {
+  padding: 6px;
+}
+
+.book-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  color: rgba(118, 200, 247, 0.95);
+  border: none;
+  background: transparent;
+}
+
+.book-option:hover,
+.book-option--active {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.book-option--selected {
+  background: rgba(45, 212, 191, 0.08);
+}
+
+.book-option-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 3px;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.book-option-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: rgba(226, 232, 240, 0.65);
+  flex-wrap: wrap;
+}
+
+.meta-dot {
+  opacity: 0.5;
+}
+
+:host ::ng-deep mark {
+  background: #fde68a;
+  color: #111827;
+  padding: 0 1px;
+  border-radius: 2px;
+}
+
+.book-loading,
+.book-empty {
+  padding: 10px 8px;
+  font-size: 0.8rem;
+  color: rgba(226, 232, 240, 0.65);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.book-sentinel {
+  height: 2px;
+}
+
+.book-sentinel--hidden {
+  display: none;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(15, 23, 42, 0.25);
+  border-top-color: #0284c7;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.compact-input {
+  height: 32px;
+  padding: 6px 8px;
+  box-sizing: border-box;
+  border-radius: 6px;
+  border: 1px solid rgba(14, 165, 233, 0.42);
+  background: rgba(255, 255, 255, 0.06);
+  color: #0f172a;
+  min-width: 3.5rem;
+  max-width: 100%;
+  display: inline-block;
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1;
+}
+
+.item-field-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: rgba(15, 23, 42, 0.9);
+  line-height: 1;
+}
+
+.book-error {
+  font-size: 12px;
+  color: #ef4444;
+  margin-top: 6px;
 }
 
 ::ng-deep .date-time-menu .mat-mdc-menu-panel {
-	padding: 0;
-	max-width: 600px;
-	overflow: hidden;
+  padding: 0;
+  max-width: 600px;
+  overflow: hidden;
 }
 
 ::ng-deep .cdk-overlay-pane .date-time-menu {
-	max-width: 600px;
-	overflow-x: hidden;
+  max-width: 600px;
+  overflow-x: hidden;
 }
 
 .date-time-menu-content {
-	display: flex;
-	gap: 8px;
-	padding: 12px;
-	background: #f8fafc;
-	width: 480px;
-	box-sizing: border-box;
-	align-items: flex-start;
-	overflow-x: hidden;
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: #f8fafc;
+  width: 480px;
+  box-sizing: border-box;
+  align-items: flex-start;
+  overflow-x: hidden;
 }
 
 ::ng-deep .date-time-menu .mat-calendar {
-	width: 300px;
-	max-width: 300px;
+  width: 300px;
+  max-width: 300px;
 }
 
 .time-controls {
-	display: flex;
-	gap: 8px;
-	width: 170px;
+  display: flex;
+  gap: 8px;
+  width: 170px;
 }
 
 .time-column {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-	width: 78px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 78px;
 }
 
 .time-col-title {
-	font-size: 14px;
-	font-weight: 700;
-	color: #111827;
+  font-size: 14px;
+  font-weight: 700;
+  color: #111827;
 }
 
 .time-list {
-	display: grid;
-	grid-auto-rows: minmax(38px, auto);
-	gap: 8px;
-	max-height: 300px;
-	overflow-y: auto;
-	padding-right: 6px;
-	scrollbar-width: thin;
-	scrollbar-color: #cbd5f5 transparent;
+  display: grid;
+  grid-auto-rows: minmax(38px, auto);
+  gap: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5f5 transparent;
 }
 
 .time-list::-webkit-scrollbar {
-	width: 6px;
+  width: 6px;
 }
 
 .time-list::-webkit-scrollbar-thumb {
-	background: #cbd5f5;
-	border-radius: 6px;
+  background: #cbd5f5;
+  border-radius: 6px;
 }
 
 .time-item {
-	border: none;
-	border-radius: 50%;
-	width: 36px;
-	height: 36px;
-	padding: 0;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	background: transparent;
-	color: #111827;
-	font-size: 14px;
-	cursor: pointer;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: #111827;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .time-item--active {
-	background: #93c5fd;
-	color: #0f172a;
-	font-weight: 600;
+  background: #93c5fd;
+  color: #0f172a;
+  font-weight: 600;
 }
 
 .time-item:hover {
-	background: rgba(147, 197, 253, 0.35);
+  background: rgba(147, 197, 253, 0.35);
 }
 
 ::ng-deep .date-time-menu .mat-calendar-body-selected,
 ::ng-deep .date-time-menu .mat-calendar-body-cell-content.mat-calendar-body-selected {
-	background-color: #93c5fd !important;
-	color: #0f172a !important;
+  background-color: #93c5fd !important;
+  color: #0f172a !important;
 }
 
 ::ng-deep .date-time-menu .mat-calendar-body-label {
-	display: none;
+  display: none;
 }
 
 .date-time-icon mat-icon {
-	color: #0f766e;
+  color: #0f766e;
 }
 
-/* Compact form field styles for items table */
-:host ::ng-deep .mat-form-field-dense {
-	width: 100%;
-}
+@media (max-width: 640px) {
+  .purchase-dialog-shell {
+    max-height: 96vh;
+  }
 
-:host ::ng-deep .mat-form-field-dense .mat-form-field-infix {
-	padding: 0.5em 0;
-}
-
-:host ::ng-deep .mat-form-field-dense .mat-form-field-label {
-	font-size: 0.75rem;
-}
-
-:host ::ng-deep .mat-form-field-dense .mat-input-element {
-	font-size: 0.875rem;
-	padding: 0.375rem 0.5rem;
-}
-
-:host ::ng-deep .mat-form-field-dense .mat-form-field-outline {
-	top: 0.5em;
-}
-
-:host ::ng-deep .mat-form-field-dense.mat-form-field-appearance-outline .mat-form-field-infix {
-	border-top: 0.6em solid transparent;
-	padding: 0.375em 0.75em;
-}
-
-/* Scrollbar styling for items list */
-.space-y-2::-webkit-scrollbar {
-	width: 6px;
-}
-
-.space-y-2::-webkit-scrollbar-track {
-	background: rgba(255,255,255,0.02);
-	border-radius: 3px;
-}
-
-.space-y-2::-webkit-scrollbar-thumb {
-	background: rgba(179,71,233,0.5);
-	border-radius: 3px;
-}
-
-.space-y-2::-webkit-scrollbar-thumb:hover {
-	background: rgba(179,71,233,0.7);
+  .purchase-dialog-shell [mat-dialog-content] {
+    max-height: calc(96vh - 136px);
+    padding: 12px !important;
+  }
 }

@@ -487,7 +487,9 @@ export class DashboardComponent implements OnInit {
     const transactionType = mode === 'purchase-order' ? 'PURCHASE_ORDER' : 'RECEIVING_ORDER';
 
     const dialogRef = this.dialog.open(PurchaseDialogComponent, {
-      width: '600px',
+     width: SALES_CONSTANTS.DIALOG_WIDTH,
+      maxWidth: '90vw',
+      maxHeight: '95vh',
       data: {
         invoiceNo: '',
         party: null,

@@ -1,26 +1,70 @@
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { Component, HostListener, Inject, OnDestroy, OnInit } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DataStoreService } from '../services/data-store.service';
 import { AuthService } from '../services/auth.service';
 import { LoadingService } from '../services/loading.service';
 import { Book } from '../interface/book';
 import { Party } from '../interface/party';
 import { PurchaseDialogData } from '../interface/purchase-dialog-data';
-import { formatDateForAPI, toISOUTCString } from '../utils/date.utils';
 import { baseUrl } from '../../environments/environment';
+
+interface BooksDropdownPageResponse {
+  content: Book[];
+  number: number;
+  size: number;
+  totalElements: number;
+  last: boolean;
+}
+
+interface PartiesDropdownPageResponse {
+  content: Party[];
+  number: number;
+  size: number;
+  totalElements: number;
+  last: boolean;
+}
+
+interface PartyDropdownState {
+  open: boolean;
+  search: string;
+  options: Party[];
+  page: number;
+  last: boolean;
+  loading: boolean;
+  activeIndex: number;
+  searchInput$: Subject<string>;
+  searchSub: Subscription;
+  requestSub: Subscription | null;
+  observer: IntersectionObserver | null;
+}
+
+interface BookDropdownState {
+  open: boolean;
+  search: string;
+  options: Book[];
+  page: number;
+  last: boolean;
+  loading: boolean;
+  activeIndex: number;
+  searchInput$: Subject<string>;
+  searchSub: Subscription;
+  requestSub: Subscription | null;
+  observer: IntersectionObserver | null;
+}
 
 @Component({
   selector: 'app-purchase-dialog',
@@ -35,7 +79,6 @@ import { baseUrl } from '../../environments/environment';
     MatSelectModule,
     MatFormFieldModule,
     MatInputModule,
-    MatAutocompleteModule,
     MatIconModule,
     MatDatepickerModule,
     MatNativeDateModule,
@@ -43,12 +86,14 @@ import { baseUrl } from '../../environments/environment';
     MatSnackBarModule
   ]
 })
-export class PurchaseDialogComponent implements OnInit {
-  @ViewChild('purchaseTrigger') purchaseMenuTrigger?: MatMenuTrigger;
-  @ViewChild('receivedTrigger') receivedMenuTrigger?: MatMenuTrigger;
-
+export class PurchaseDialogComponent implements OnInit, OnDestroy {
   books: Book[] = [];
   parties: Party[] = [];
+  partyState: PartyDropdownState | null = null;
+  authToken = '';
+  private readonly dropdownBaseUrl = baseUrl.replace(/\/api$/, '');
+  private readonly pageSize = 50;
+
   purchaseDateTime = '';
   receivedDateTime = '';
   maxDateTimeLocal = '';
@@ -65,6 +110,7 @@ export class PurchaseDialogComponent implements OnInit {
   private allowedBookIds = new Set<number>();
   private discountAppliedMap = new Map<number, boolean>();
   private discountByPublisher = new Map<string, number>();
+  private supplierBooksLoaded = false;
 
   constructor(
     public dialogRef: MatDialogRef<PurchaseDialogComponent>,
@@ -89,6 +135,7 @@ export class PurchaseDialogComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.authToken = this.auth.getAccessToken() || '';
     const now = new Date();
     this.maxDateTimeLocal = this.toDateTimeLocalValue(now);
     this.hours = this.buildHourOptions();
@@ -102,33 +149,47 @@ export class PurchaseDialogComponent implements OnInit {
       const purchaseValue = this.data.date || now;
       this.purchaseDateTime = this.toDateTimeLocalValue(purchaseValue);
       this.syncPurchasePartsFromDateTime();
+      this.attachPartyDropdownState();
     }
 
     this.store.getBooks().subscribe(data => {
-      // Extract content array from paginated response, or use data directly if it's an array
       const books = Array.isArray(data) ? data : ((data as any)?.content || []);
       this.books = books;
-      (this.data.items || []).forEach(item => {
-        item.filteredBooks = this.getAvailableBooks();
-      });
       if (this.data.type === 'PURCHASE_ORDER' && this.data.party?.id) {
         this.onSupplierChanged(this.data.party);
       }
     });
-    this.http.get<any>(`${baseUrl}/parties`, {
-      headers: this.auth.getAuthHeaders(),
-      params: { type: 'Supplier' }
-    }).subscribe({
-      next: (data) => {
-        // Handle both paginated response { content: [...] } and direct array []
-        this.parties = Array.isArray(data) ? data : (data?.content || []);
-      },
-      error: () => this.parties = []
-    });
+
     (this.data.items || []).forEach(item => {
-      item.filteredBooks = this.getAvailableBooks();
       item.bookSearch = item.book ? item.book.title : '';
+      if (this.data.type !== 'RECEIVING_ORDER') {
+        this.attachBookDropdownState(item);
+      }
     });
+  }
+
+  ngOnDestroy(): void {
+    (this.data.items || []).forEach((item) => {
+      const state = this.getBookDropdownState(item);
+      if (!state) return;
+      state.searchSub.unsubscribe();
+      if (state.requestSub) {
+        state.requestSub.unsubscribe();
+      }
+      if (state.observer) {
+        state.observer.disconnect();
+      }
+    });
+
+    if (this.partyState) {
+      this.partyState.searchSub.unsubscribe();
+      if (this.partyState.requestSub) {
+        this.partyState.requestSub.unsubscribe();
+      }
+      if (this.partyState.observer) {
+        this.partyState.observer.disconnect();
+      }
+    }
   }
 
   dateFilter = (date: Date | null): boolean => {
@@ -140,18 +201,21 @@ export class PurchaseDialogComponent implements OnInit {
   onCancel(): void {
     this.dialogRef.close();
   }
+
   remainingQty(item: any): number {
     const orderedQty = Number(item?.orderQty ?? item?.orderedQty ?? 0);
     const previousReceivedQty = Number(item?.recivedQty ?? 0);
     const remaining = orderedQty - previousReceivedQty;
     return remaining > 0 ? remaining : 0;
   }
+
   onSave(): void {
     if (this.data.type === 'PURCHASE_ORDER') {
       (this.data.items || []).forEach(item => {
         item.discountPercent = Number(item.discountPercent ?? this.data.supplierPercentageDiscount ?? 0);
       });
     }
+
     if (this.data.type === 'PURCHASE_ORDER' && this.data.party?.id) {
       const invalidItem = (this.data.items || []).find(it => it.book && !this.allowedBookIds.has(it.book.id));
       if (invalidItem) {
@@ -162,6 +226,7 @@ export class PurchaseDialogComponent implements OnInit {
         return;
       }
     }
+
     if (this.data.type === 'RECEIVING_ORDER') {
       if (this.receivedDateTime) {
         const d = new Date(this.receivedDateTime);
@@ -171,6 +236,7 @@ export class PurchaseDialogComponent implements OnInit {
       const d = new Date(this.purchaseDateTime);
       this.data.date = isNaN(d.getTime()) ? new Date() : d;
     }
+
     this.dialogRef.close(this.data);
   }
 
@@ -299,41 +365,42 @@ export class PurchaseDialogComponent implements OnInit {
         receivedQty: null,
         acceptedQty: null,
         rejectedQty: null,
-        bookSearch: '',
-        filteredBooks: this.getAvailableBooks()
+        bookSearch: ''
       });
       return;
     }
+
     this.data.items.push({
       id: 0,
       book: null,
       qty: null,
       rate: null,
       discountPercent: null,
-      bookSearch: '',
-      filteredBooks: this.getAvailableBooks()
+      bookSearch: ''
     });
-  }
 
-  filterBooks(search: string, index: number): void {
-    const value = (typeof search === 'string' ? search : '').toLowerCase();
-    const source = this.getAvailableBooks();
-    if (!value) {
-      this.data.items[index].filteredBooks = source.slice();
-      return;
-    }
-    this.data.items[index].filteredBooks = source.filter(b =>
-      b.title.toLowerCase().includes(value) ||
-      (b.sku && b.sku.toLowerCase().includes(value))
-    );
+    const addedItem = this.data.items[this.data.items.length - 1];
+    this.attachBookDropdownState(addedItem);
   }
 
   removeItem(index: number): void {
+    const item = this.data.items[index];
+    const state = this.getBookDropdownState(item);
+    if (state) {
+      state.searchSub.unsubscribe();
+      if (state.requestSub) {
+        state.requestSub.unsubscribe();
+      }
+      if (state.observer) {
+        state.observer.disconnect();
+      }
+    }
     this.data.items.splice(index, 1);
   }
 
   onBookSelected(book: Book | null, item: any): void {
     if (!book) return;
+
     if (this.data.type === 'PURCHASE_ORDER' && this.allowedBookIds.size > 0 && !this.allowedBookIds.has(book.id)) {
       item.book = null;
       item.bookSearch = '';
@@ -346,32 +413,38 @@ export class PurchaseDialogComponent implements OnInit {
       });
       return;
     }
+
     const fullBook = this.books.find(b => b.id === book.id) || book;
     item.book = fullBook;
     item.bookSearch = fullBook.title;
+    const state = this.getBookDropdownState(item);
+    if (state) {
+      state.search = fullBook.title;
+    }
     item.rate = typeof fullBook.mrp === 'number' ? fullBook.mrp : Number(fullBook.mrp) || 0;
     item.qty = null;
     item.supplierDiscountApplied = this.discountAppliedMap.get(book.id) || false;
+
     const publisherKey = this.normalizePublisher(fullBook.publisher);
     const cachedPercent = publisherKey ? this.discountByPublisher.get(publisherKey) : undefined;
-    if (cachedPercent === undefined) {
-      if (publisherKey && this.data.party?.id) {
-        this.http.get<any>(`${baseUrl}/supplier-publisher-discounts`, {
-          headers: this.auth.getAuthHeaders(),
-          params: { supplierId: String(this.data.party.id), publisher: fullBook.publisher }
-        }).subscribe({
-          next: (res) => {
-            const payload = Array.isArray(res) ? res[0] : res?.data || res?.result || res;
-            const percent = payload?.percentage ?? payload?.discountPercent ?? payload?.discount;
-            if (percent !== null && percent !== undefined && !isNaN(Number(percent))) {
-              const value = Number(percent);
-              this.discountByPublisher.set(publisherKey, value);
-              this.applyDiscountToItemsByPublisher(publisherKey, value);
-            }
+
+    if (cachedPercent === undefined && publisherKey && this.data.party?.id) {
+      this.http.get<any>(`${baseUrl}/supplier-publisher-discounts`, {
+        headers: this.auth.getAuthHeaders(),
+        params: { supplierId: String(this.data.party.id), publisher: fullBook.publisher }
+      }).subscribe({
+        next: (res) => {
+          const payload = Array.isArray(res) ? res[0] : res?.data || res?.result || res;
+          const percent = payload?.percentage ?? payload?.discountPercent ?? payload?.discount;
+          if (percent !== null && percent !== undefined && !isNaN(Number(percent))) {
+            const value = Number(percent);
+            this.discountByPublisher.set(publisherKey, value);
+            this.applyDiscountToItemsByPublisher(publisherKey, value);
           }
-        });
-      }
+        }
+      });
     }
+
     item.discountPercent = cachedPercent ?? this.data.supplierPercentageDiscount ?? item.discountPercent ?? null;
   }
 
@@ -389,11 +462,13 @@ export class PurchaseDialogComponent implements OnInit {
 
   onSupplierChanged(party: Party | null): void {
     if (this.data.type !== 'PURCHASE_ORDER') return;
+
     this.allowedBooks = [];
     this.allowedBookIds.clear();
     this.discountAppliedMap.clear();
     this.discountByPublisher.clear();
     this.data.supplierPercentageDiscount = null;
+    this.supplierBooksLoaded = false;
 
     (this.data.items || []).forEach(item => {
       item.book = null;
@@ -401,7 +476,14 @@ export class PurchaseDialogComponent implements OnInit {
       item.rate = null;
       item.qty = null;
       item.supplierDiscountApplied = false;
-      item.filteredBooks = [];
+      const state = this.getBookDropdownState(item);
+      if (state) {
+        state.search = '';
+        state.options = [];
+        state.page = 0;
+        state.last = false;
+        state.activeIndex = -1;
+      }
     });
 
     if (!party?.id) {
@@ -438,6 +520,7 @@ export class PurchaseDialogComponent implements OnInit {
             return null;
           })
           .filter((b: Book | null): b is Book => !!b && !!b.id);
+
         this.allowedBookIds = new Set(this.allowedBooks.map(b => b.id));
         this.discountAppliedMap = new Map(
           (items || []).map((item: any) => {
@@ -465,22 +548,570 @@ export class PurchaseDialogComponent implements OnInit {
           }
         });
 
-        (this.data.items || []).forEach(item => {
-          item.filteredBooks = this.getAvailableBooks();
-        });
+        this.supplierBooksLoaded = true;
       },
       error: (error) => {
         this.loadingService.hide();
+        this.supplierBooksLoaded = true;
         console.error('Failed to load supplier books:', error);
       }
     });
   }
 
-  private getAvailableBooks(): Book[] {
-    if (this.data.type === 'PURCHASE_ORDER' && this.data.party?.id) {
-      return this.allowedBooks.slice();
+  openBookDropdown(index: number): void {
+    if (this.data.type === 'RECEIVING_ORDER') return;
+    const item = this.data.items[index];
+    const state = this.getBookDropdownState(item);
+    if (!item || !state) return;
+
+    this.closeAllDropdownsExcept(index);
+    if (!state.open) {
+      state.open = true;
+      state.activeIndex = -1;
+      if (!state.options.length) {
+        this.resetAndFetchBooks(index, state.search.trim());
+      } else {
+        this.setupBookObserver(index);
+      }
     }
-    return this.books.slice();
+  }
+
+  closeBookDropdown(index: number, restoreInput = true): void {
+    const item = this.data.items[index];
+    const state = this.getBookDropdownState(item);
+    if (!state) return;
+
+    state.open = false;
+    state.activeIndex = -1;
+    if (state.observer) {
+      state.observer.disconnect();
+      state.observer = null;
+    }
+
+    if (restoreInput) {
+      state.search = item?.book?.title || '';
+    }
+  }
+
+  onBookSearchInput(value: string, index: number): void {
+    const item = this.data.items[index];
+    const state = this.getBookDropdownState(item);
+    if (!state) return;
+
+    state.search = value ?? '';
+    state.activeIndex = -1;
+
+    if (item.book && state.search !== item.book.title) {
+      item.book = null;
+      item.rate = null;
+      item.qty = null;
+    }
+
+    this.openBookDropdown(index);
+    state.searchInput$.next(state.search.trim());
+  }
+
+  onBookInputKeydown(event: Event, index: number): void {
+    const keyboardEvent = event as KeyboardEvent;
+    const item = this.data.items[index];
+    const state = this.getBookDropdownState(item);
+    if (!state) return;
+
+    if (!state.open && (keyboardEvent.key === 'ArrowDown' || keyboardEvent.key === 'ArrowUp')) {
+      keyboardEvent.preventDefault();
+      this.openBookDropdown(index);
+      return;
+    }
+
+    if (!state.open) return;
+
+    if (keyboardEvent.key === 'ArrowDown') {
+      keyboardEvent.preventDefault();
+      if (!state.options.length) return;
+      state.activeIndex = Math.min(state.activeIndex + 1, state.options.length - 1);
+      this.scrollActiveBookIntoView(index);
+      return;
+    }
+
+    if (keyboardEvent.key === 'ArrowUp') {
+      keyboardEvent.preventDefault();
+      if (!state.options.length) return;
+      state.activeIndex = state.activeIndex <= 0 ? 0 : state.activeIndex - 1;
+      this.scrollActiveBookIntoView(index);
+      return;
+    }
+
+    if (keyboardEvent.key === 'Enter') {
+      if (state.activeIndex >= 0 && state.activeIndex < state.options.length) {
+        keyboardEvent.preventDefault();
+        this.onBookOptionClicked(state.options[state.activeIndex], item, index);
+      }
+      return;
+    }
+
+    if (keyboardEvent.key === 'Escape') {
+      keyboardEvent.preventDefault();
+      this.closeBookDropdown(index);
+    }
+  }
+
+  onBookOptionClicked(book: Book, item: any, index: number): void {
+    this.onBookSelected(book, item);
+    this.closeBookDropdown(index);
+  }
+
+  highlightBookMatch(text: string | null | undefined, index: number): string {
+    const item = this.data.items[index];
+    const state = this.getBookDropdownState(item);
+    const safeText = this.escapeHtml(text || '');
+    const query = (state?.search || '').trim();
+    if (!query) {
+      return safeText;
+    }
+
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'ig');
+    return safeText.replace(regex, '<mark>$1</mark>');
+  }
+
+  private attachBookDropdownState(item: any): void {
+    if (!item || item._bookDropdown) return;
+
+    const searchInput$ = new Subject<string>();
+    const state: BookDropdownState = {
+      open: false,
+      search: item?.book?.title || '',
+      options: [],
+      page: 0,
+      last: false,
+      loading: false,
+      activeIndex: -1,
+      searchInput$,
+      searchSub: new Subscription(),
+      requestSub: null,
+      observer: null
+    };
+
+    state.searchSub = searchInput$
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe((query) => {
+        if (!state.open) return;
+        const rowIndex = this.data.items.indexOf(item);
+        if (rowIndex < 0) return;
+        this.resetAndFetchBooks(rowIndex, query);
+      });
+
+    item._bookDropdown = state;
+  }
+
+  private getBookDropdownState(item: any): BookDropdownState | null {
+    return item?._bookDropdown || null;
+  }
+
+  private resetAndFetchBooks(index: number, query: string): void {
+    const item = this.data.items[index];
+    const state = this.getBookDropdownState(item);
+    if (!state) return;
+
+    if (state.requestSub) {
+      state.requestSub.unsubscribe();
+      state.requestSub = null;
+    }
+
+    state.options = [];
+    state.page = 0;
+    state.last = false;
+    state.activeIndex = -1;
+
+    this.loadBooksPage(index, query, 0, true);
+  }
+
+  private fetchNextBooksPage(index: number): void {
+    const item = this.data.items[index];
+    const state = this.getBookDropdownState(item);
+    if (!state || state.loading || state.last) return;
+    this.loadBooksPage(index, state.search.trim(), state.page + 1, false);
+  }
+
+  private loadBooksPage(index: number, query: string, page: number, replace: boolean): void {
+    const item = this.data.items[index];
+    const state = this.getBookDropdownState(item);
+    if (!state || state.loading || state.last || !this.authToken) return;
+
+    if (this.data.type === 'PURCHASE_ORDER' && !!this.data.party?.id && !this.supplierBooksLoaded) {
+      state.loading = false;
+      state.options = [];
+      state.last = true;
+      return;
+    }
+
+    state.loading = true;
+
+    const headers = new HttpHeaders({ Authorization: `Bearer ${this.authToken}` });
+    const params = new HttpParams()
+      .set('q', query || '')
+      .set('page', String(page))
+      .set('size', String(this.pageSize));
+
+    state.requestSub = this.http
+      .get<BooksDropdownPageResponse>(`${this.dropdownBaseUrl}/api/books/dropdown`, { headers, params })
+      .subscribe({
+        next: (response) => {
+          const incoming = (response?.content || []).filter((book) => {
+            if (this.data.type === 'PURCHASE_ORDER' && !!this.data.party?.id) {
+              return this.allowedBookIds.has(Number(book.id));
+            }
+            return true;
+          });
+
+          state.options = replace ? incoming : [...state.options, ...incoming];
+          state.page = response?.number ?? page;
+          state.last = response?.last ?? true;
+          state.loading = false;
+
+          setTimeout(() => this.setupBookObserver(index), 0);
+        },
+        error: () => {
+          state.loading = false;
+          state.last = true;
+        }
+      });
+  }
+
+  private setupBookObserver(index: number): void {
+    const item = this.data.items[index];
+    const state = this.getBookDropdownState(item);
+    if (!state || !state.open) return;
+
+    const optionsContainer = document.getElementById(`book-options-${index}`);
+    const sentinel = document.getElementById(`book-sentinel-${index}`);
+    if (!optionsContainer || !sentinel) return;
+
+    if (state.observer) {
+      state.observer.disconnect();
+      state.observer = null;
+    }
+
+    state.observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          this.fetchNextBooksPage(index);
+        }
+      },
+      { root: optionsContainer, threshold: 0.1 }
+    );
+
+    state.observer.observe(sentinel);
+  }
+
+  private scrollActiveBookIntoView(index: number): void {
+    const item = this.data.items[index];
+    const state = this.getBookDropdownState(item);
+    if (!state) return;
+
+    const optionsContainer = document.getElementById(`book-options-${index}`);
+    if (!optionsContainer) return;
+
+    const activeEl = optionsContainer.querySelector<HTMLElement>(`.book-option[data-option-index="${state.activeIndex}"]`);
+    if (!activeEl) return;
+    activeEl.scrollIntoView({ block: 'nearest' });
+  }
+
+  private attachPartyDropdownState(): void {
+    if (this.partyState) return;
+
+    const searchInput$ = new Subject<string>();
+    const state: PartyDropdownState = {
+      open: false,
+      search: this.data?.party?.name || '',
+      options: [],
+      page: 0,
+      last: false,
+      loading: false,
+      activeIndex: -1,
+      searchInput$,
+      searchSub: new Subscription(),
+      requestSub: null,
+      observer: null
+    };
+
+    state.searchSub = searchInput$
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe((query) => {
+        if (!state.open) return;
+        this.resetAndFetchParties(query);
+      });
+
+    this.partyState = state;
+  }
+
+  private getPartyDropdownState(): PartyDropdownState | null {
+    return this.partyState;
+  }
+
+  openPartyDropdown(): void {
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+
+    if (!state.open) {
+      state.open = true;
+      state.activeIndex = -1;
+      if (!state.options.length) {
+        this.resetAndFetchParties(state.search.trim());
+      } else {
+        this.setupPartyObserver();
+      }
+    }
+  }
+
+  closePartyDropdown(restoreInput = true): void {
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+
+    state.open = false;
+    state.activeIndex = -1;
+    if (state.observer) {
+      state.observer.disconnect();
+      state.observer = null;
+    }
+
+    if (restoreInput) {
+      state.search = this.data?.party?.name || '';
+    }
+  }
+
+  onPartySearchInput(value: string): void {
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+
+    state.search = value ?? '';
+    state.activeIndex = -1;
+
+    if (this.data.party && state.search !== this.data.party.name) {
+      this.data.party = null;
+      this.onSupplierChanged(null);
+    }
+
+    this.openPartyDropdown();
+    state.searchInput$.next(state.search.trim());
+  }
+
+  onPartyInputKeydown(event: Event): void {
+    const keyboardEvent = event as KeyboardEvent;
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+
+    if (!state.open && (keyboardEvent.key === 'ArrowDown' || keyboardEvent.key === 'ArrowUp')) {
+      keyboardEvent.preventDefault();
+      this.openPartyDropdown();
+      return;
+    }
+
+    if (!state.open) return;
+
+    if (keyboardEvent.key === 'ArrowDown') {
+      keyboardEvent.preventDefault();
+      if (!state.options.length) return;
+      state.activeIndex = Math.min(state.activeIndex + 1, state.options.length - 1);
+      this.scrollActivePartyIntoView();
+      return;
+    }
+
+    if (keyboardEvent.key === 'ArrowUp') {
+      keyboardEvent.preventDefault();
+      if (!state.options.length) return;
+      state.activeIndex = state.activeIndex <= 0 ? 0 : state.activeIndex - 1;
+      this.scrollActivePartyIntoView();
+      return;
+    }
+
+    if (keyboardEvent.key === 'Enter') {
+      if (state.activeIndex >= 0 && state.activeIndex < state.options.length) {
+        keyboardEvent.preventDefault();
+        this.onPartyOptionClicked(state.options[state.activeIndex]);
+        this.closePartyDropdown();
+      }
+      return;
+    }
+
+    if (keyboardEvent.key === 'Escape') {
+      keyboardEvent.preventDefault();
+      this.closePartyDropdown();
+    }
+  }
+
+  onPartyOptionClicked(p: Party): void {
+    if (!p) return;
+    this.parties = this.parties.some(x => x.id === p.id) ? this.parties : [...this.parties, p];
+    this.data.party = p;
+    if (this.partyState) {
+      this.partyState.search = p.name;
+    }
+    this.onSupplierChanged(p);
+    this.closePartyDropdown(false);
+  }
+
+  private resetAndFetchParties(query: string): void {
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+
+    if (state.requestSub) {
+      state.requestSub.unsubscribe();
+      state.requestSub = null;
+    }
+
+    state.options = [];
+    state.page = 0;
+    state.last = false;
+    state.activeIndex = -1;
+
+    this.loadPartiesPage(query, 0, true);
+  }
+
+  private fetchNextPartiesPage(): void {
+    const state = this.getPartyDropdownState();
+    if (!state || state.loading || state.last) return;
+    this.loadPartiesPage(state.search.trim(), state.page + 1, false);
+  }
+
+  private loadPartiesPage(query: string, page: number, replace: boolean): void {
+    const state = this.getPartyDropdownState();
+    if (!state || state.loading || state.last || !this.authToken) return;
+
+    state.loading = true;
+
+    const headers = new HttpHeaders({ Authorization: `Bearer ${this.authToken}` });
+    const params = new HttpParams()
+      .set('q', query || '')
+      .set('page', String(page))
+      .set('size', String(this.pageSize))
+      .set('type', 'Supplier');
+
+    state.requestSub = this.http
+      .get<PartiesDropdownPageResponse>(`${this.dropdownBaseUrl}/api/parties/dropdown`, { headers, params })
+      .subscribe({
+        next: (response) => {
+          const incoming = (response?.content || []).filter((party) => this.isSupplierParty(party));
+          state.options = replace ? incoming : [...state.options, ...incoming];
+          state.page = response?.number ?? page;
+          state.last = response?.last ?? true;
+          state.loading = false;
+
+          setTimeout(() => this.setupPartyObserver(), 0);
+        },
+        error: () => {
+          state.loading = false;
+          state.last = true;
+        }
+      });
+  }
+
+  private setupPartyObserver(): void {
+    const state = this.getPartyDropdownState();
+    if (!state || !state.open) return;
+
+    const optionsContainer = document.getElementById('party-options');
+    const sentinel = document.getElementById('party-sentinel');
+    if (!optionsContainer || !sentinel) return;
+
+    if (state.observer) {
+      state.observer.disconnect();
+      state.observer = null;
+    }
+
+    state.observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          this.fetchNextPartiesPage();
+        }
+      },
+      { root: optionsContainer, threshold: 0.1 }
+    );
+
+    state.observer.observe(sentinel);
+  }
+
+  private scrollActivePartyIntoView(): void {
+    const state = this.getPartyDropdownState();
+    if (!state) return;
+
+    const optionsContainer = document.getElementById('party-options');
+    if (!optionsContainer) return;
+
+    const activeEl = optionsContainer.querySelector<HTMLElement>(`.book-option[data-option-index="${state.activeIndex}"]`);
+    if (!activeEl) return;
+    activeEl.scrollIntoView({ block: 'nearest' });
+  }
+
+  private isSupplierParty(party: Party): boolean {
+    const kind = (party as any)?.type ?? (party as any)?.partyType ?? (party as any)?.accountType;
+    if (!kind) return true;
+    return String(kind).toLowerCase().includes('supplier');
+  }
+
+  private closeAllDropdowns(): void {
+    (this.data.items || []).forEach((_, idx) => this.closeBookDropdown(idx));
+    if (this.partyState?.open) {
+      this.closePartyDropdown();
+    }
+  }
+
+  private closeAllDropdownsExcept(index: number): void {
+    (this.data.items || []).forEach((_, idx) => {
+      if (idx !== index) {
+        this.closeBookDropdown(idx);
+      }
+    });
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('.book-dropdown-inline') || target?.closest('.party-dropdown-inline')) {
+      return;
+    }
+
+    this.closeAllDropdowns();
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscape(event: Event): void {
+    const hasOpen = (this.data.items || []).some((item) => this.getBookDropdownState(item)?.open);
+    const partyOpen = !!this.partyState?.open;
+    if (!hasOpen && !partyOpen) return;
+    event.preventDefault();
+    this.closeAllDropdowns();
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  trackByBookId(_: number, book: Book): number {
+    return book.id;
+  }
+
+  trackByPartyId(_: number, party: Party): number {
+    return party.id;
+  }
+
+  highlightPartyMatch(text: string | null | undefined): string {
+    const state = this.getPartyDropdownState();
+    const safeText = this.escapeHtml(text || '');
+    const query = (state?.search || '').trim();
+    if (!query) return safeText;
+    const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedQuery})`, 'ig');
+    return safeText.replace(regex, '<mark>$1</mark>');
+  }
+
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   isQtyExceedsStock(item: any): boolean {
@@ -506,9 +1137,5 @@ export class PurchaseDialogComponent implements OnInit {
 
   hasQtyError(): boolean {
     return (this.data.items || []).some((item: any) => this.isQtyExceedsOrder(item));
-  }
-
-  trackByIndex(index: number): number {
-    return index;
   }
 }
