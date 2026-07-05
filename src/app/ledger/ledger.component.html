@@ -16,13 +16,59 @@
 
     <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-indigo-500/30 rounded-2xl p-6 backdrop-blur-xl text-white">
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        <mat-form-field appearance="outline" class="w-full text-white" [style.color]="'white'">
-          <mat-label class="text-white">Party</mat-label>
-          <mat-select class="text-white" [style.color]="'white'" [(ngModel)]="partyId" (selectionChange)="onPartySelected($event.value)">
-            <mat-option value="">All</mat-option>
-            <mat-option *ngFor="let p of parties" [value]="p.id">{{p.name}}</mat-option>
-          </mat-select>
-        </mat-form-field>
+        <div class="ledger-party-dropdown w-full" *ngIf="partyState as state">
+          <label class="text-white text-sm mb-2 block">Party</label>
+          <div class="book-input-shell">
+            <input
+              type="text"
+              class="book-input"
+              name="ledgerPartySearch"
+              [ngModel]="state.search"
+              (ngModelChange)="onPartySearchInput($event)"
+              (focus)="openPartyDropdown()"
+              (click)="openPartyDropdown()"
+              (keydown)="onPartyInputKeydown($event)"
+              placeholder="Search parties by name, phone, or GST"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button type="button" class="toggle-button" (click)="state.open ? closePartyDropdown() : openPartyDropdown()" aria-label="Toggle parties list">
+              <span class="toggle-caret" [class.toggle-caret--open]="state.open">▾</span>
+            </button>
+          </div>
+
+          <div class="book-panel" *ngIf="state.open">
+            <div class="book-options" id="ledger-party-options">
+              <button
+                type="button"
+                class="book-option"
+                *ngFor="let p of state.options || []; let idx = index; trackBy: trackByPartyId"
+                [class.book-option--active]="idx === state.activeIndex"
+                [class.book-option--selected]="partyId === p.id"
+                [attr.data-option-index]="idx"
+                (click)="onPartyOptionClicked(p)"
+              >
+                <div class="book-option-title" [innerHTML]="highlightPartyMatch(p.name)"></div>
+                <div class="book-option-meta">
+                  <span [innerHTML]="highlightPartyMatch(p.phone)"></span>
+                  <span class="meta-dot">•</span>
+                  <span [innerHTML]="highlightPartyMatch(p?.gstin)"></span>
+                </div>
+              </button>
+
+              <div class="book-empty" *ngIf="!state.loading && !(state.options.length)">
+                No parties found
+              </div>
+
+              <div class="book-loading" *ngIf="state.loading">
+                <span class="spinner" aria-hidden="true"></span>
+                Loading parties...
+              </div>
+
+              <div class="book-sentinel" id="ledger-party-sentinel" [class.book-sentinel--hidden]="state.last || state.loading"></div>
+            </div>
+          </div>
+        </div>
 
         <mat-form-field appearance="outline" class="w-full text-white" [style.color]="'white'">
           <mat-label class="text-white">Type</mat-label>

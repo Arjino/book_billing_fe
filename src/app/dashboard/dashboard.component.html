@@ -205,12 +205,59 @@
                 
                 <!-- Ledger Card Content -->
                 <div *ngIf="card.title === 'Ledger'" class="space-y-3">
-                  <mat-form-field appearance="outline" class="w-full">
-                    <mat-label>Select Party</mat-label>
-                    <mat-select [(ngModel)]="selectedLedgerParty" class="text-white">
-                      <mat-option *ngFor="let p of parties" [value]="p.id">{{ p.name }}</mat-option>
-                    </mat-select>
-                  </mat-form-field>
+                  <div class="dashboard-ledger-party-dropdown" *ngIf="ledgerPartyState as partyState">
+                    <label class="block text-sm text-purple-200 mb-2">Select Party</label>
+                    <div class="book-input-shell">
+                      <input
+                        type="text"
+                        class="book-input"
+                        name="dashboardLedgerPartySearch"
+                        [ngModel]="partyState.search"
+                        (ngModelChange)="onLedgerPartySearchInput($event)"
+                        (focus)="openLedgerPartyDropdown()"
+                        (click)="openLedgerPartyDropdown()"
+                        (keydown)="onLedgerPartyInputKeydown($event)"
+                        placeholder="Search parties by name, phone, or GST"
+                        autocomplete="off"
+                        spellcheck="false"
+                      />
+                      <button type="button" class="toggle-button" (click)="partyState.open ? closeLedgerPartyDropdown() : openLedgerPartyDropdown()" aria-label="Toggle parties list">
+                        <span class="toggle-caret" [class.toggle-caret--open]="partyState.open">▾</span>
+                      </button>
+                    </div>
+
+                    <div class="book-panel" *ngIf="partyState.open">
+                      <div class="book-options" id="dashboard-ledger-party-options">
+                        <button
+                          type="button"
+                          class="book-option"
+                          *ngFor="let p of partyState.options || []; let idx = index; trackBy: trackByPartyId"
+                          [class.book-option--active]="idx === partyState.activeIndex"
+                          [class.book-option--selected]="selectedLedgerParty === p.id"
+                          [attr.data-option-index]="idx"
+                          (click)="onLedgerPartyOptionClicked(p)"
+                        >
+                          <div class="book-option-title" [innerHTML]="highlightLedgerPartyMatch(p.name)"></div>
+                          <div class="book-option-meta">
+                            <span [innerHTML]="highlightLedgerPartyMatch(p.phone)"></span>
+                            <span class="meta-dot">•</span>
+                            <span [innerHTML]="highlightLedgerPartyMatch(p?.gstin)"></span>
+                          </div>
+                        </button>
+
+                        <div class="book-empty" *ngIf="!partyState.loading && !(partyState.options.length)">
+                          No parties found
+                        </div>
+
+                        <div class="book-loading" *ngIf="partyState.loading">
+                          <span class="spinner" aria-hidden="true"></span>
+                          Loading parties...
+                        </div>
+
+                        <div class="book-sentinel" id="dashboard-ledger-party-sentinel" [class.book-sentinel--hidden]="partyState.last || partyState.loading"></div>
+                      </div>
+                    </div>
+                  </div>
                   <div class="flex gap-2">
                     <button mat-raised-button color="primary" class="flex-1" [disabled]="!selectedLedgerParty" (click)="openLedgerForParty(selectedLedgerParty)">Show Ledger</button>
                     <button mat-stroked-button color="accent" class="flex-1" (click)="navigateTo('/ledger')">Open Ledger Page</button>
