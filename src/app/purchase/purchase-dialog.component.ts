@@ -497,9 +497,21 @@ export class PurchaseDialogComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: (response) => {
         this.loadingService.hide();
-        const items = Array.isArray(response)
+        const itemsPayload = Array.isArray(response)
           ? response
-          : response?.books || response?.supplierBooks || response?.mappings || response?.data || response?.items || [];
+          : response?.content
+            || response?.books
+            || response?.supplierBooks
+            || response?.mappings
+            || response?.items
+            || response?.data?.content
+            || response?.data?.items
+            || response?.data
+            || response?.result?.content
+            || response?.result?.items
+            || response?.result
+            || [];
+        const items = Array.isArray(itemsPayload) ? itemsPayload : [];
 
         this.data.supplierPercentageDiscount = response?.supplierPercentageDiscount ?? response?.supplierDiscountPercent ?? null;
 
@@ -738,13 +750,6 @@ export class PurchaseDialogComponent implements OnInit, OnDestroy {
     const state = this.getBookDropdownState(item);
     if (!state || state.loading || state.last || !this.authToken) return;
 
-    if (this.data.type === 'PURCHASE_ORDER' && !!this.data.party?.id && !this.supplierBooksLoaded) {
-      state.loading = false;
-      state.options = [];
-      state.last = true;
-      return;
-    }
-
     state.loading = true;
 
     const headers = new HttpHeaders({ Authorization: `Bearer ${this.authToken}` });
@@ -757,8 +762,24 @@ export class PurchaseDialogComponent implements OnInit, OnDestroy {
       .get<BooksDropdownPageResponse>(`${this.dropdownBaseUrl}/api/books/dropdown`, { headers, params })
       .subscribe({
         next: (response) => {
-          const incoming = (response?.content || []).filter((book) => {
-            if (this.data.type === 'PURCHASE_ORDER' && !!this.data.party?.id) {
+          const booksPayload = Array.isArray(response)
+            ? response
+            : (response as any)?.content
+              || (response as any)?.data?.content
+              || (response as any)?.data?.items
+              || (response as any)?.data
+              || (response as any)?.items
+              || (response as any)?.result?.content
+              || (response as any)?.result?.items
+              || (response as any)?.result
+              || [];
+          const incoming = (Array.isArray(booksPayload) ? booksPayload : []).filter((book) => {
+            if (
+              this.data.type === 'PURCHASE_ORDER'
+              && !!this.data.party?.id
+              && this.supplierBooksLoaded
+              && this.allowedBookIds.size > 0
+            ) {
               return this.allowedBookIds.has(Number(book.id));
             }
             return true;
