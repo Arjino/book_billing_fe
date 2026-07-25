@@ -23,6 +23,8 @@ import { toISODateTimeUTC } from '../utils/date.utils';
 import { Sale } from '../interface/Sale';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
 import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
+import { ReturnRequest } from '../interface/return-request';
+import { createIdempotencyKey, downloadBlobFile, extractHttpErrorMessage } from '../utils/http.utils';
 
 @Component({
   selector: 'app-sales',
@@ -46,6 +48,8 @@ export class SalesComponent implements OnInit {
   maxDate = new Date();
   minEndDate: Date | null = null;
   showStartDateError: boolean = false;
+  private returnSubmitInProgress = false;
+  private lastReturnAttempt: { fingerprint: string; key: string } | null = null;
 
   constructor(
     private dialog: MatDialog, 
@@ -86,6 +90,8 @@ export class SalesComponent implements OnInit {
       data: {
         id: 0,
         invoiceNo: '',
+        originalInvoiceNo: '',
+        returnReason: '',
         party: null,
         createdAt: new Date(),
         totalAmount: 0,
@@ -127,23 +133,48 @@ export class SalesComponent implements OnInit {
       
       // If this is a Return In, call the sale returns endpoint with mapped payload
       if (payload.type === 'RETURN_IN') {
-        const returnPayload: any = {
+        const returnPayload: ReturnRequest = {
           partyId: payload.party && payload.party.id ? payload.party.id : payload.party,
           returnDate: createdAt,
+          originalInvoiceNo: (payload.originalInvoiceNo || '').trim(),
+          returnReason: (payload.returnReason || '').trim(),
           items: (payload.items || []).map((it: any) => ({
             // Prefer sku when it looks numeric, else fallback to id
-            bookId: it.book?.sku || it.book?.id || null,
+            bookId: String(it.book?.sku || it.book?.id || ''),
             qty: it.qty,
-            rate: it.rate,
-            // include per-item discount (percentage)
-            discount: it.discount
+            rate: it.rate
           }))
         };
 
+        const hasInvalidItems = !returnPayload.items.length || returnPayload.items.some((it: any) => !it.bookId || Number(it.qty || 0) <= 0);
+        if (!returnPayload.originalInvoiceNo || !returnPayload.returnReason || hasInvalidItems) {
+          this.snackBar.open('Please provide invoice number, return reason, and at least one valid return item.', 'Close', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+          return;
+        }
+
+        if (this.returnSubmitInProgress) {
+          this.snackBar.open('Return submission is already in progress. Please wait.', 'Close', {
+            duration: 3000
+          });
+          return;
+        }
+
+        const fingerprint = JSON.stringify(returnPayload);
+        const idempotencyKey = this.lastReturnAttempt?.fingerprint === fingerprint
+          ? this.lastReturnAttempt.key
+          : createIdempotencyKey();
+        this.lastReturnAttempt = { fingerprint, key: idempotencyKey };
+
         this.loadingService.show('Processing return...');
-        this.salesService.createSaleReturn(returnPayload).subscribe({
-          next: () => {
+        this.returnSubmitInProgress = true;
+        this.salesService.createSaleReturn(returnPayload, idempotencyKey).subscribe({
+          next: (blob) => {
+            downloadBlobFile(blob, 'return-receipt.pdf');
             this.loadingService.hide();
+            this.returnSubmitInProgress = false;
             this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_SUCCESS || 'Return created successfully!', 'Close', { 
               duration: 3000,
               panelClass: ['success-snackbar']
@@ -151,10 +182,12 @@ export class SalesComponent implements OnInit {
             this.loadSales();
             this.store.refreshBooks();
           },
-          error: (err) => {
+          error: async (err) => {
             this.loadingService.hide();
+            this.returnSubmitInProgress = false;
             console.error('Failed to post sale return:', err);
-            this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR, 'Close', { 
+            const errorMessage = await extractHttpErrorMessage(err, SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR);
+            this.snackBar.open(errorMessage, 'Close', { 
               duration: 5000,
               panelClass: ['error-snackbar']
             });

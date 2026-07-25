@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { Sale } from '../interface/Sale';
 import { enviort } from '../../environments/environment';
 import { normalizeUTCDatePayload, toUTCDateTimePlus00 } from '../utils/date.utils';
+import { ReturnRequest } from '../interface/return-request';
 
 @Injectable({ providedIn: 'root' })
 export class SalesService {
@@ -46,8 +47,11 @@ export class SalesService {
     );
   }
 
-  createSaleReturn(payload: any): Observable<any> {
-    return this.http.post(enviort.saleReturnsUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
+  createSaleReturn(payload: ReturnRequest, idempotencyKey?: string): Observable<Blob> {
+    const headers = idempotencyKey
+      ? this.auth.getAuthHeaders().set('Idempotency-Key', idempotencyKey)
+      : this.auth.getAuthHeaders();
+    return this.http.post(enviort.saleReturnsUrl, payload, { headers, responseType: 'blob' }).pipe(
       catchError((error) => {
         console.error('Error creating sale return:', error);
         return throwError(() => error);

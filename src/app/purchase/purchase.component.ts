@@ -28,6 +28,10 @@ import { ReceivingOrderPreviewComponent } from './receiving-order-preview.compon
 import { RoPaymentPromptDialogComponent } from './ro-payment-prompt-dialog.component';
 import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
+import { SalesDialogComponent } from '../sales/sales-dialog.component';
+import { SalesDialogData } from '../interface/sales-dialog-data';
+import { ReturnRequest } from '../interface/return-request';
+import { createIdempotencyKey, downloadBlobFile, extractHttpErrorMessage } from '../utils/http.utils';
 
 type PurchaseTransaction = {
   id: number;
@@ -69,6 +73,8 @@ export class PurchaseComponent implements OnInit {
   receivingPoNumber: string | null = null;
   purchaseOrderNumberOptions: string[] = [];
   filteredPurchaseOrderNumbers: string[] = [];
+  private returnSubmitInProgress = false;
+  private lastReturnAttempt: { fingerprint: string; key: string } | null = null;
 
   constructor(
     private dialog: MatDialog,
@@ -383,6 +389,111 @@ export class PurchaseComponent implements OnInit {
           console.error('Failed to create purchase order:', err);
           const errorMessage = PURCHASE_CONSTANTS.MESSAGES.CREATE_ERROR || 'Failed to create purchase order. Please try again.';
           this.snackBar.open(errorMessage, 'Close', {
+            duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.LONG,
+            panelClass: ['error-snackbar']
+          });
+        }
+      });
+    });
+  }
+
+  addPurchaseReturn(): void {
+    const dialogRef = this.dialog.open(SalesDialogComponent, {
+      width: SALES_CONSTANTS.DIALOG_WIDTH,
+      maxWidth: '90vw',
+      maxHeight: '95vh',
+      data: {
+        id: 0,
+        invoiceNo: '',
+        originalInvoiceNo: '',
+        returnReason: '',
+        party: null,
+        createdAt: new Date(),
+        totalAmount: 0,
+        discount: 0,
+        taxAmount: 0,
+        roundOff: 0,
+        grandTotal: 0,
+        paymentStatus: SALES_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
+        paidAmount: 0,
+        type: 'RETURN_OUT',
+        items: [{
+          id: 0,
+          sale: null,
+          book: null,
+          qty: null,
+          rate: null,
+          discount: 0,
+          amount: null,
+          bookSearch: '',
+          filteredBooks: []
+        }]
+      } as SalesDialogData,
+      disableClose: false
+    });
+
+    dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
+      if (!result) return;
+
+      const createdAt = result.createdAt instanceof Date
+        ? result.createdAt.toISOString()
+        : result.createdAt
+          ? new Date(result.createdAt).toISOString()
+          : new Date().toISOString();
+
+      const returnPayload: ReturnRequest = {
+        partyId: result.party && (result.party as any).id ? (result.party as any).id : (result.party as any),
+        returnDate: createdAt,
+        originalInvoiceNo: (result.originalInvoiceNo || '').trim(),
+        returnReason: (result.returnReason || '').trim(),
+        items: (result.items || []).map((it: any) => ({
+          bookId: String(it.book?.sku || it.book?.id || ''),
+          qty: it.qty,
+          rate: it.rate
+        }))
+      };
+
+      const hasInvalidItems = !returnPayload.items.length || returnPayload.items.some((it) => !it.bookId || Number(it.qty || 0) <= 0);
+      if (!returnPayload.originalInvoiceNo || !returnPayload.returnReason || hasInvalidItems) {
+        this.snackBar.open('Please provide invoice number, return reason, and at least one valid return item.', 'Close', {
+          duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.LONG,
+          panelClass: ['error-snackbar']
+        });
+        return;
+      }
+
+      if (this.returnSubmitInProgress) {
+        this.snackBar.open('Return submission is already in progress. Please wait.', 'Close', {
+          duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.SHORT
+        });
+        return;
+      }
+
+      const fingerprint = JSON.stringify(returnPayload);
+      const idempotencyKey = this.lastReturnAttempt?.fingerprint === fingerprint
+        ? this.lastReturnAttempt.key
+        : createIdempotencyKey();
+      this.lastReturnAttempt = { fingerprint, key: idempotencyKey };
+
+      this.returnSubmitInProgress = true;
+      this.loadingService.show('Processing purchase return...');
+      this.purchaseService.createPurchaseReturn(returnPayload, idempotencyKey).subscribe({
+        next: (blob) => {
+          this.returnSubmitInProgress = false;
+          this.loadingService.hide();
+          downloadBlobFile(blob, 'purchase-return-receipt.pdf');
+          this.snackBar.open('Purchase return submitted successfully!', 'Close', {
+            duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.SHORT,
+            panelClass: ['success-snackbar']
+          });
+          this.loadPurchases();
+          this.store.refreshBooks();
+        },
+        error: async (error) => {
+          this.returnSubmitInProgress = false;
+          this.loadingService.hide();
+          const message = await extractHttpErrorMessage(error, 'Failed to submit purchase return. Please try again.');
+          this.snackBar.open(message, 'Close', {
             duration: PURCHASE_CONSTANTS.SNACKBAR_DURATION.LONG,
             panelClass: ['error-snackbar']
           });

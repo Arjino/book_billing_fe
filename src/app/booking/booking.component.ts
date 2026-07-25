@@ -20,6 +20,10 @@ import { Book } from '../interface/book';
 import { BookDialogData } from '../interface/book-dialog-data';
 import { BOOKING_CONSTANTS } from '../constants/booking.constants';
 import { firstValueFrom } from 'rxjs';
+import { StockSummary } from '../interface/stock-summary';
+import { StockLedgerEntry } from '../interface/stock-ledger-entry';
+import { StockReconciliationReport } from '../interface/stock-reconciliation-report';
+import { extractHttpErrorMessage } from '../utils/http.utils';
 
 @Component({
   selector: 'app-booking',
@@ -47,6 +51,16 @@ export class BookingComponent implements OnInit {
   pageSize: number = 25;
   totalRecords: number = 0;
   totalPages: number = 0;
+  selectedBook: Book | null = null;
+  stockSummary: StockSummary | null = null;
+  stockLedger: StockLedgerEntry[] = [];
+  stockLoading = false;
+  stockError = '';
+  adjustmentQty: number | null = null;
+  adjustmentSourceRef = '';
+  adjustmentSubmitting = false;
+  reconciliationRunning = false;
+  reconciliationResult: StockReconciliationReport | null = null;
 
   constructor(
     private dialog: MatDialog,
@@ -348,5 +362,136 @@ export class BookingComponent implements OnInit {
       this.currentPage--;
       this.loadBooksByStatus();
     }
+  }
+
+  openStockDetails(book: Book): void {
+    this.selectedBook = book;
+    this.stockSummary = null;
+    this.stockLedger = [];
+    this.stockError = '';
+    this.loadStockDetails();
+  }
+
+  closeStockDetails(): void {
+    this.selectedBook = null;
+    this.stockSummary = null;
+    this.stockLedger = [];
+    this.stockError = '';
+    this.adjustmentQty = null;
+    this.adjustmentSourceRef = '';
+  }
+
+  loadStockDetails(): void {
+    if (!this.selectedBook?.id) {
+      return;
+    }
+
+    const stockBookId = String(this.selectedBook.id);
+
+    this.stockLoading = true;
+    this.stockError = '';
+
+    this.booksService.getStockSummary(stockBookId).subscribe({
+      next: (summary) => {
+        this.stockSummary = summary;
+      },
+      error: async (error) => {
+        this.stockError = await extractHttpErrorMessage(error, 'Failed to load stock summary.');
+      }
+    });
+
+    this.booksService.getStockLedger(stockBookId).subscribe({
+      next: (ledger) => {
+        this.stockLedger = ledger || [];
+        this.stockLoading = false;
+      },
+      error: async (error) => {
+        this.stockLoading = false;
+        this.stockError = await extractHttpErrorMessage(error, 'Failed to load stock ledger.');
+      }
+    });
+  }
+
+  submitAdjustment(): void {
+    if (!this.selectedBook?.id || this.adjustmentSubmitting) {
+      return;
+    }
+
+    const stockBookId = String(this.selectedBook.id);
+
+    const qty = Number(this.adjustmentQty || 0);
+    if (!Number.isInteger(qty) || qty === 0) {
+      this.snackBar.open('Adjustment quantity must be a non-zero integer.', 'Close', {
+        duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+        panelClass: ['error-snackbar']
+      });
+      return;
+    }
+
+    this.adjustmentSubmitting = true;
+    this.booksService.applyStockAdjustment(stockBookId, {
+      qty,
+      sourceRef: (this.adjustmentSourceRef || '').trim() || undefined
+    }).subscribe({
+      next: () => {
+        this.adjustmentSubmitting = false;
+        this.adjustmentQty = null;
+        this.adjustmentSourceRef = '';
+        this.snackBar.open('Stock adjustment applied successfully.', 'Close', {
+          duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
+          panelClass: ['success-snackbar']
+        });
+        this.loadStockDetails();
+        this.loadBooks(true);
+      },
+      error: async (error) => {
+        this.adjustmentSubmitting = false;
+        const message = await extractHttpErrorMessage(error, 'Failed to apply stock adjustment.');
+        this.snackBar.open(message, 'Close', {
+          duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.LONG,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
+  }
+
+  runStockReconciliation(): void {
+    if (this.reconciliationRunning) {
+      return;
+    }
+
+    this.reconciliationRunning = true;
+    this.booksService.runStockReconciliation().subscribe({
+      next: (result) => {
+        this.reconciliationRunning = false;
+        this.reconciliationResult = result;
+        this.snackBar.open('Stock reconciliation completed.', 'Close', {
+          duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
+          panelClass: ['success-snackbar']
+        });
+        if (this.selectedBook) {
+          this.loadStockDetails();
+        }
+      },
+      error: async (error) => {
+        this.reconciliationRunning = false;
+        const message = await extractHttpErrorMessage(error, 'Stock reconciliation failed.');
+        this.snackBar.open(message, 'Close', {
+          duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.LONG,
+          panelClass: ['error-snackbar']
+        });
+      }
+    });
+  }
+
+  movementTypeClass(movementType: string): string {
+    const type = (movementType || '').toUpperCase();
+    if (type === 'IN' || type === 'RELEASED') {
+      return 'bg-green-500/20 text-green-300';
+    }
+    if (type === 'OUT' || type === 'RESERVED') {
+      return 'bg-red-500/20 text-red-300';
+    }
+    return 'bg-yellow-500/20 text-yellow-300';
   }
 }

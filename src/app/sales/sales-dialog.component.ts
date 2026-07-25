@@ -95,7 +95,17 @@ export class SalesDialogComponent implements OnInit, OnDestroy {
   ) {}
 
   getDialogTitle(): string {
+    if (this.data?.type === 'RETURN_OUT') {
+      return 'Create Purchase Return';
+    }
+    if (this.isReturnMode()) {
+      return 'Create Sale Return';
+    }
     return 'Add Sale';
+  }
+
+  isReturnMode(): boolean {
+    return this.data?.type === 'RETURN_IN' || this.data?.type === 'RETURN_OUT';
   }
   ngOnInit() {
     this.authToken = this.auth.getAccessToken() || '';
@@ -191,6 +201,10 @@ export class SalesDialogComponent implements OnInit, OnDestroy {
   
 
   onSave(): void {
+    if (this.isReturnMode() && this.hasInvalidReturnForm()) {
+      return;
+    }
+
     // Combine date and time into a single Date object
     const combined = new Date(
       this.saleDate.getFullYear(),
@@ -203,6 +217,10 @@ export class SalesDialogComponent implements OnInit, OnDestroy {
     );
     if(this.data.paymentStatus == "PAID"){
       this.data.paidAmount = this.data.totalAmount
+    }
+    if (this.isReturnMode()) {
+      this.data.originalInvoiceNo = (this.data.originalInvoiceNo || '').trim();
+      this.data.returnReason = (this.data.returnReason || '').trim();
     }
     // Keep only createdAt in dialog payload; parent will convert to UTC ISO string.
     this.data.createdAt = combined;
@@ -531,6 +549,25 @@ export class SalesDialogComponent implements OnInit, OnDestroy {
 
   hasQtyError(): boolean {
     return (this.data.items || []).some((item: any) => this.isQtyExceedsStock(item));
+  }
+
+  hasInvalidReturnForm(): boolean {
+    if (!this.isReturnMode()) {
+      return false;
+    }
+
+    const invoiceNo = (this.data.originalInvoiceNo || '').trim();
+    const reason = (this.data.returnReason || '').trim();
+    if (!invoiceNo || !reason) {
+      return true;
+    }
+
+    const items = this.data.items || [];
+    if (!items.length) {
+      return true;
+    }
+
+    return items.some((item: any) => !item?.book?.sku || Number(item?.qty || 0) <= 0);
   }
 
   isOverpay(): boolean {

@@ -36,6 +36,10 @@ export const enviort = {
   purchasesUrl: baseUrl + '/purchases',
   purchasesByDateUrl: baseUrl + '/purchases/by-date', // Returns today's purchases by default
   purchaseReturnsUrl: baseUrl + '/purchases/returns',
+  stockSummaryUrl: (bookId: string) => baseUrl + `/stocks/books/${encodeURIComponent(bookId)}/summary`,
+  stockLedgerUrl: (bookId: string) => baseUrl + `/stocks/books/${encodeURIComponent(bookId)}/ledger`,
+  stockAdjustmentsUrl: (bookId: string) => baseUrl + `/stocks/books/${encodeURIComponent(bookId)}/adjustments`,
+  stockReconciliationUrl: baseUrl + '/stocks/reconciliation/run',
   purchaseOrdersUrl: baseUrl + '/purchase-orders',
   // purchaseOrdersPdfUrl: baseUrl + '/pdf/purchase-order',
   receivingOrdersUrl: baseUrl + '/receiving-orders',

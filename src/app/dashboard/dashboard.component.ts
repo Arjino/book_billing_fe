@@ -50,6 +50,8 @@ import { DashboardStats } from '../interface/dashboard-stats';
 import { baseUrl } from '../../environments/environment';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { ReturnRequest } from '../interface/return-request';
+import { createIdempotencyKey, downloadBlobFile, extractHttpErrorMessage } from '../utils/http.utils';
 
 interface PartiesDropdownPageResponse {
   content: Party[];
@@ -95,6 +97,8 @@ interface PartyDropdownState {
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+    private returnSubmitInProgress = false;
+    private lastReturnAttempt: { fingerprint: string; key: string } | null = null;
   accessToken = signal<string | null>(null);
   isLoggedIn = signal(false);
   cards = [
@@ -605,6 +609,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
       data: {
         id: 0,
         invoiceNo: '',
+        originalInvoiceNo: '',
+        returnReason: '',
         party: null,
         createdAt: new Date(),
         items: [{
@@ -640,31 +646,59 @@ export class DashboardComponent implements OnInit, OnDestroy {
       const { paymentStatus, createdAt: _discardCreatedAt, ...payload } = result as any;
       payload.createdAt = createdAt;
       if (payload.type === 'RETURN_IN') {
-        const returnPayload: any = {
+        const returnPayload: ReturnRequest = {
           partyId: payload.party && payload.party.id ? payload.party.id : payload.party,
           returnDate: formatDateForUTC(payload.createdAt),
+          originalInvoiceNo: (payload.originalInvoiceNo || '').trim(),
+          returnReason: (payload.returnReason || '').trim(),
           items: (payload.items || []).map((it: any) => ({
-            bookId:  it.book.sku ,
+            bookId: String(it.book?.sku || it.book?.id || ''),
             qty: it.qty,
-            rate: it.rate,
-            discount: it.discount
+            rate: it.rate
           }))
         };
 
+        const hasInvalidItems = !returnPayload.items.length || returnPayload.items.some((it: any) => !it.bookId || Number(it.qty || 0) <= 0);
+        if (!returnPayload.originalInvoiceNo || !returnPayload.returnReason || hasInvalidItems) {
+          this.snackBar.open('Please provide invoice number, return reason, and at least one valid return item.', 'Close', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+          return;
+        }
+
+        if (this.returnSubmitInProgress) {
+          this.snackBar.open('Return submission is already in progress. Please wait.', 'Close', {
+            duration: 3000
+          });
+          return;
+        }
+
+        const fingerprint = JSON.stringify(returnPayload);
+        const idempotencyKey = this.lastReturnAttempt?.fingerprint === fingerprint
+          ? this.lastReturnAttempt.key
+          : createIdempotencyKey();
+        this.lastReturnAttempt = { fingerprint, key: idempotencyKey };
+
         this.loadingService.show('Processing return...');
-        this.store.createSaleReturn(returnPayload).subscribe({
-          next: () => {
+        this.returnSubmitInProgress = true;
+        this.salesService.createSaleReturn(returnPayload, idempotencyKey).subscribe({
+          next: (blob) => {
+            downloadBlobFile(blob, 'return-receipt.pdf');
             this.loadingService.hide();
+            this.returnSubmitInProgress = false;
             this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_SUCCESS || 'Return created successfully!', 'Close', { 
               duration: 3000,
               panelClass: ['success-snackbar']
             });
             this.store.refreshBooks();
           },
-          error: (error: any) => {
+          error: async (error: any) => {
             this.loadingService.hide();
+            this.returnSubmitInProgress = false;
             console.error('Failed to add sale return:', error);
-            this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR, 'Close', { 
+            const errorMessage = await extractHttpErrorMessage(error, SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR);
+            this.snackBar.open(errorMessage, 'Close', { 
               duration: 5000,
               panelClass: ['error-snackbar']
             });

@@ -15,6 +15,10 @@
         <p class="text-green-200">Manage your book inventory</p>
       </div>
       <div class="flex gap-3 w-full md:w-auto justify-between md:justify-end mt-4 md:mt-0">
+        <button mat-raised-button (click)="runStockReconciliation()" [disabled]="reconciliationRunning" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
+          <mat-icon>sync</mat-icon>
+          {{ reconciliationRunning ? 'Reconciling...' : 'Run Reconciliation' }}
+        </button>
         <button mat-raised-button color="accent" [disabled]="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED" (click)="addBook()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600">
           <mat-icon>add</mat-icon>
           Add Book
@@ -129,6 +133,9 @@
                 <button *ngIf="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED" mat-icon-button (click)="enableBook(b)" class="text-green-400 hover:text-green-300 ml-2" title="Enable Book">
                   <mat-icon>check_circle</mat-icon>
                 </button>
+                <button *ngIf="bookStatus === BOOKING_CONSTANTS.STATUS.AVAILABLE" mat-icon-button (click)="openStockDetails(b)" class="text-amber-300 hover:text-amber-200 ml-2" title="Stock Details">
+                  <mat-icon>insights</mat-icon>
+                </button>
               </td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="['id','title','publisher','mrp','sku','stock','actions']"></tr>
@@ -180,6 +187,112 @@
         <mat-icon class="text-6xl text-green-500/30 mb-4">inventory_2</mat-icon>
         <p class="text-green-300/60" *ngIf="filterValue">No results found for your filter.</p>
         <p class="text-green-300/60" *ngIf="!filterValue">No books found. Create your first book entry.</p>
+      </div>
+    </div>
+
+    <div *ngIf="reconciliationResult" class="mt-6 bg-gradient-to-br from-slate-900/90 to-slate-950 border border-amber-500/30 rounded-2xl backdrop-blur-xl p-6 text-white">
+      <h3 class="text-lg font-bold text-amber-300 mb-3">Last Reconciliation Result</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div>
+          <div class="text-amber-200/80">Books Checked</div>
+          <div class="text-xl font-semibold">{{ reconciliationResult.totalBooksChecked }}</div>
+        </div>
+        <div>
+          <div class="text-amber-200/80">Bootstrapped</div>
+          <div class="text-xl font-semibold">{{ reconciliationResult.bootstrappedBooks }}</div>
+        </div>
+        <div>
+          <div class="text-amber-200/80">Mismatched</div>
+          <div class="text-xl font-semibold">{{ reconciliationResult.mismatchedBooks }}</div>
+        </div>
+        <div>
+          <div class="text-amber-200/80">Checked At</div>
+          <div class="text-sm font-semibold">{{ reconciliationResult.checkedAt | date:'dd/MM/yyyy hh:mm a' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="selectedBook" class="mt-6 bg-gradient-to-br from-slate-900/90 to-slate-950 border border-cyan-500/30 rounded-2xl backdrop-blur-xl p-6 text-white">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <h3 class="text-2xl font-bold text-cyan-300">Stock Details</h3>
+          <p class="text-cyan-100/80">{{ selectedBook.title }} (SKU: {{ selectedBook.sku }})</p>
+        </div>
+        <div class="flex gap-2">
+          <button mat-stroked-button (click)="loadStockDetails()" class="border-cyan-500/50 text-cyan-300">Refresh</button>
+          <button mat-icon-button (click)="closeStockDetails()" class="text-cyan-200" title="Close">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      </div>
+
+      <div *ngIf="stockError" class="mb-4 p-3 rounded-lg bg-red-500/15 border border-red-500/40 text-red-200">
+        {{ stockError }}
+      </div>
+
+      <div *ngIf="stockLoading" class="mb-4 text-cyan-200">Loading stock data...</div>
+
+      <div *ngIf="stockSummary && !stockLoading" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+          <div class="text-cyan-100/70 text-sm">On Hand Stock</div>
+          <div class="text-2xl font-semibold">{{ stockSummary.onHandStock }}</div>
+        </div>
+        <div class="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
+          <div class="text-orange-100/70 text-sm">Reserved Stock</div>
+          <div class="text-2xl font-semibold">{{ stockSummary.reservedStock }}</div>
+        </div>
+        <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+          <div class="text-emerald-100/70 text-sm">Available To Sell</div>
+          <div class="text-2xl font-semibold">{{ stockSummary.availableToSell }}</div>
+        </div>
+      </div>
+
+      <div class="mb-6 p-4 rounded-xl bg-slate-800/60 border border-cyan-500/20">
+        <h4 class="text-lg font-semibold text-cyan-300 mb-3">Manual Adjustment</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Adjustment Qty (+/-)</mat-label>
+            <input matInput type="number" [(ngModel)]="adjustmentQty" name="adjustmentQty" placeholder="e.g. 5 or -3" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Source Reference (optional)</mat-label>
+            <input matInput type="text" [(ngModel)]="adjustmentSourceRef" name="adjustmentSourceRef" />
+          </mat-form-field>
+          <button mat-raised-button (click)="submitAdjustment()" [disabled]="adjustmentSubmitting" class="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600">
+            {{ adjustmentSubmitting ? 'Applying...' : 'Apply Adjustment' }}
+          </button>
+        </div>
+      </div>
+
+      <h4 class="text-lg font-semibold text-cyan-300 mb-3">Stock Ledger</h4>
+      <div *ngIf="!stockLedger.length && !stockLoading" class="text-cyan-100/70">No stock ledger entries found for this book.</div>
+      <div class="overflow-x-auto" *ngIf="stockLedger.length">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-cyan-200/80 border-b border-cyan-500/20">
+              <th class="text-left py-2 pr-3">Date/Time</th>
+              <th class="text-left py-2 pr-3">Type</th>
+              <th class="text-left py-2 pr-3">Qty</th>
+              <th class="text-left py-2 pr-3">Source</th>
+              <th class="text-left py-2 pr-3">On Hand</th>
+              <th class="text-left py-2 pr-3">Reserved</th>
+              <th class="text-left py-2 pr-3">Available</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of stockLedger" class="border-b border-cyan-500/10">
+              <td class="py-2 pr-3">{{ row.createdAt | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td class="py-2 pr-3">
+                <span class="px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="movementTypeClass(row.movementType)">{{ row.movementType }}</span>
+              </td>
+              <td class="py-2 pr-3">{{ row.qty }}</td>
+              <td class="py-2 pr-3">{{ row.sourceType || '-' }} / {{ row.sourceRef || '-' }}</td>
+              <td class="py-2 pr-3">{{ row.onHandBalance }}</td>
+              <td class="py-2 pr-3">{{ row.reservedBalance }}</td>
+              <td class="py-2 pr-3">{{ row.availableBalance }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

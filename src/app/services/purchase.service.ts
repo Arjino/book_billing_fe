@@ -8,6 +8,11 @@ import { ReceivingOrder } from '../interface/receiving-order';
 import { PurchaseOrder } from '../interface/purchase-order';
 import { enviort } from '../../environments/environment';
 import { normalizeUTCDatePayload } from '../utils/date.utils';
+import { ReturnRequest } from '../interface/return-request';
+import { StockSummary } from '../interface/stock-summary';
+import { StockLedgerEntry } from '../interface/stock-ledger-entry';
+import { ManualStockAdjustmentRequest } from '../interface/manual-stock-adjustment-request';
+import { StockReconciliationReport } from '../interface/stock-reconciliation-report';
 
 @Injectable({ providedIn: 'root' })
 export class PurchaseService {
@@ -194,10 +199,49 @@ export class PurchaseService {
     );
   }
 
-  createPurchaseReturn(payload: any): Observable<any> {
-    return this.http.post(enviort.purchaseReturnsUrl, payload, { headers: this.auth.getAuthHeaders() }).pipe(
+  createPurchaseReturn(payload: ReturnRequest, idempotencyKey?: string): Observable<Blob> {
+    const headers = idempotencyKey
+      ? this.auth.getAuthHeaders().set('Idempotency-Key', idempotencyKey)
+      : this.auth.getAuthHeaders();
+    return this.http.post(enviort.purchaseReturnsUrl, payload, { headers, responseType: 'blob' }).pipe(
       catchError((error) => {
         console.error('Error creating purchase return:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getStockSummary(bookId: string): Observable<StockSummary> {
+    return this.http.get<StockSummary>(enviort.stockSummaryUrl(bookId), { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading stock summary:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getStockLedger(bookId: string): Observable<StockLedgerEntry[]> {
+    return this.http.get<StockLedgerEntry[]>(enviort.stockLedgerUrl(bookId), { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error loading stock ledger:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  applyStockAdjustment(bookId: string, payload: ManualStockAdjustmentRequest): Observable<StockSummary> {
+    return this.http.post<StockSummary>(enviort.stockAdjustmentsUrl(bookId), payload, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error applying stock adjustment:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  runStockReconciliation(): Observable<StockReconciliationReport> {
+    return this.http.post<StockReconciliationReport>(enviort.stockReconciliationUrl, {}, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error running stock reconciliation:', error);
         return throwError(() => error);
       })
     );

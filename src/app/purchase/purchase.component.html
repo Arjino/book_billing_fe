@@ -38,6 +38,10 @@
           <mat-icon>add</mat-icon>
           {{ getButtonLabel() }}
         </button>
+        <button *ngIf="purchaseMode === 'purchase'" mat-raised-button color="accent" (click)="addPurchaseReturn()" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+          <mat-icon>assignment_return</mat-icon>
+          Add Purchase Return
+        </button>
         <button mat-icon-button (click)="goBack()" class="bg-slate-800/50 hover:bg-slate-700/50 text-emerald-300 rounded-lg border border-emerald-500/30" title="Back to Dashboard">
           <mat-icon>arrow_back</mat-icon>
         </button>

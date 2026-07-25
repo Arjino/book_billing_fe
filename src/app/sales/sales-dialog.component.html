@@ -81,6 +81,38 @@
           </mat-form-field>
         </div>
 
+        <div *ngIf="isReturnMode()" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Original Invoice No</mat-label>
+            <input
+              matInput
+              [(ngModel)]="data.originalInvoiceNo"
+              name="originalInvoiceNo"
+              required
+              #originalInvoiceNoModel="ngModel"
+              (ngModelChange)="data.originalInvoiceNo = ($event || '').trimStart()"
+            />
+            <mat-error *ngIf="originalInvoiceNoModel.invalid && (originalInvoiceNoModel.dirty || originalInvoiceNoModel.touched)">
+              Original invoice number is required.
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Return Reason</mat-label>
+            <input
+              matInput
+              [(ngModel)]="data.returnReason"
+              name="returnReason"
+              required
+              #returnReasonModel="ngModel"
+              (ngModelChange)="data.returnReason = ($event || '').trimStart()"
+            />
+            <mat-error *ngIf="returnReasonModel.invalid && (returnReasonModel.dirty || returnReasonModel.touched)">
+              Return reason is required.
+            </mat-error>
+          </mat-form-field>
+        </div>
+
         <mat-menu #saleMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
           <div class="date-time-menu-content" (click)="$event.stopPropagation()">
             <mat-calendar [selected]="saleDate" [maxDate]="maxDate" (selectedChange)="onSaleDateSelected($event)"></mat-calendar>
@@ -268,7 +300,7 @@
             </div>
 
             <div>
-              <mat-form-field appearance="outline" class="w-full">
+              <mat-form-field appearance="outline" class="w-full" *ngIf="!isReturnMode()">
                 <mat-label>Payment Status</mat-label>
                 <mat-select [(ngModel)]="data.paymentStatus" name="paymentStatus" required #paymentStatusModel="ngModel">
                   <mat-option value="UNPAID">UNPAID</mat-option>
@@ -280,7 +312,7 @@
                 </mat-error>
               </mat-form-field>
 
-              <div *ngIf="data.paymentStatus === 'PARTIAL'" class="mt-2">
+              <div *ngIf="!isReturnMode() && data.paymentStatus === 'PARTIAL'" class="mt-2">
                 <mat-form-field appearance="outline" class="w-full">
                   <mat-label>Partial Payment Amount</mat-label>
                   <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
@@ -307,9 +339,9 @@
       <mat-icon class="inline md:hidden mr-2">arrow_back</mat-icon>
       <span class="hidden md:inline">Cancel</span>
     </button>
-    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="saleForm.invalid || hasQtyError() || isOverpay()" aria-label="Save">
+    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="saleForm.invalid || hasQtyError() || isOverpay() || hasInvalidReturnForm()" aria-label="Save">
       <mat-icon class="inline md:hidden mr-2">add</mat-icon>
-      <span class="hidden md:inline">Save Sale</span>
+      <span class="hidden md:inline">{{ isReturnMode() ? 'Submit Return' : 'Save Sale' }}</span>
     </button>
   </div>
 </div>
