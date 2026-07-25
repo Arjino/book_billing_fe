@@ -1,4 +1,4 @@
-export const baseUrl = 'http://localhost:8080/api';
+export const baseUrl = 'https://bookbilling-production.up.railway.app/api';
 
 export const enviort = {
   // Authentication
