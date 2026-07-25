@@ -171,7 +171,8 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly pageSize = 50;
   selectedBookingStatus: string = BOOKING_CONSTANTS.DEFAULTS.STATUS; // 'available' or 'discarded'
   selectedPartyStatus: string = PARTIES_CONSTANTS.DEFAULTS.STATUS; // 'current' or 'old'
-  selectedPurchaseType: string = 'purchase-order'; // 'purchase-order' | 'receiving' |  'purchase'
+  selectedSalesType: string = 'sale'; // 'sale' | 'sale-return'
+  selectedPurchaseType: string = 'purchase-order'; // 'purchase-order' | 'receiving' | 'purchase' | 'purchase-return'
   selectedTransactionType: 'SALE' | 'PURCHASE' = 'SALE';
   dashboardStats: DashboardStats = {
     totalBooks: 0,
@@ -631,7 +632,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         grandTotal: 0,
         paymentStatus: 'UNPAID',
         paidAmount: 0,
-        type: transactionType === 'purchase' ? 'PURCHASE' : 'SALE'
+        type: transactionType === 'sale-return' ? 'RETURN_IN' : (transactionType === 'purchase' ? 'PURCHASE' : 'SALE')
       } as unknown as SalesDialogData
     });
 
@@ -1037,11 +1038,41 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   navigateToSales(type: string) {
+    if (type === 'sale-return') {
+      this.router.navigate(['/sale-returns']);
+      return;
+    }
+
     this.router.navigate(['/sales'], { queryParams: { type } });
   }
 
+  getSalesTypeLabel(type: string): string {
+    return type === 'sale-return' ? 'Sale Return' : 'Sale';
+  }
+
   navigateToPurchase(type: string) {
+    if (type === 'purchase-return') {
+      this.router.navigate(['/purchase-returns']);
+      return;
+    }
+
     this.router.navigate(['/purchase'], { queryParams: { type } });
+  }
+
+  getPurchaseTypeLabel(type: string): string {
+    if (type === 'purchase') {
+      return 'Purchase';
+    }
+
+    if (type === 'receiving') {
+      return 'Receiving Order';
+    }
+
+    if (type === 'purchase-return') {
+      return 'Purchase Return';
+    }
+
+    return 'Purchase Order';
   }
 
   navigateToTransactions(type: 'SALE' | 'PURCHASE') {

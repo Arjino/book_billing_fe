@@ -1,0 +1,67 @@
+.sale-return-table {
+  border-collapse: collapse;
+}
+
+.sale-return-table th,
+.sale-return-table td {
+  padding: 1rem 1.5rem;
+  text-align: left;
+  border-top: 1px solid rgba(239, 68, 68, 0.15);
+}
+
+.sale-return-table th {
+  color: #fca5a5;
+  font-weight: 700;
+  border-top: none;
+  white-space: nowrap;
+}
+
+.sale-return-table td {
+  color: #ffe4e6;
+  vertical-align: top;
+}
+
+.sale-return-table tbody tr:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.filter-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: rgba(254, 202, 202, 0.9);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.filter-select {
+  width: 100%;
+  height: 3.5rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  background: rgba(15, 23, 42, 0.55);
+  color: #fff;
+  padding: 0 1rem;
+  outline: none;
+}
+
+.filter-select:focus {
+  border-color: rgba(248, 113, 113, 0.8);
+}
+
+.page-button {
+  min-width: 2.5rem;
+  border-color: rgba(248, 113, 113, 0.35);
+  color: #fecaca;
+}
+
+.page-button--active {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(244, 63, 94, 0.3));
+  color: #fff1f2;
+}
+
+@media (max-width: 768px) {
+  .sale-return-table th,
+  .sale-return-table td {
+    padding: 0.875rem 1rem;
+  }
+}

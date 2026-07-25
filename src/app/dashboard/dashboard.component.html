@@ -151,15 +151,22 @@
                   </div>
                 </div>
 
-                <!-- Sales Card Content: Sales only -->
+                <!-- Sales Card Content: Sales / Sale Return -->
                 <div *ngIf="card.title === 'Sales'" class="space-y-3">
+                  <mat-form-field appearance="outline" class="w-full">
+                    <mat-label>Sales Type</mat-label>
+                    <mat-select [(ngModel)]="selectedSalesType" class="text-white">
+                      <mat-option value="sale">Sale</mat-option>
+                      <mat-option value="sale-return">Sale Return</mat-option>
+                    </mat-select>
+                  </mat-form-field>
                   <div class="grid grid-cols-2 gap-2">
-                    <button mat-raised-button color="accent" class="w-full" (click)="openSalesDialog('sale')">
+                    <button mat-raised-button color="accent" class="w-full" (click)="openSalesDialog(selectedSalesType)">
                       <mat-icon>add</mat-icon>
-                      Add Sale
+                      Add {{ getSalesTypeLabel(selectedSalesType) }}
                     </button>
-                    <button mat-raised-button color="primary" class="w-full" (click)="navigateToSales('sale')">
-                      Open Sales
+                    <button mat-raised-button color="primary" class="w-full" (click)="navigateToSales(selectedSalesType)">
+                      Open {{ getSalesTypeLabel(selectedSalesType) }}
                     </button>
                   </div>
                 </div>
@@ -172,15 +179,16 @@
                       <mat-option value="purchase-order">Purchase Order</mat-option>
                       <mat-option value="receiving">Receiving Order</mat-option>
                       <mat-option value="purchase">Purchase</mat-option>
+                      <mat-option value="purchase-return">Purchase Return</mat-option>
                     </mat-select>
                   </mat-form-field>
                   <div class="grid grid-cols-2 gap-2">
-                    <button *ngIf="selectedPurchaseType !== 'purchase'" mat-raised-button color="accent" class="w-full" (click)="openPurchaseDialog(selectedPurchaseType)">
+                    <button *ngIf="selectedPurchaseType === 'purchase-order' || selectedPurchaseType === 'receiving'" mat-raised-button color="accent" class="w-full" (click)="openPurchaseDialog(selectedPurchaseType)">
                       <mat-icon>add</mat-icon>
-                      Add {{ selectedPurchaseType === 'purchase' ? 'Purchase' : (selectedPurchaseType === 'receiving' ? 'Receiving Order' : 'Purchase Order') }}
+                      Add {{ getPurchaseTypeLabel(selectedPurchaseType) }}
                     </button>
                     <button mat-raised-button color="primary" class="w-full" (click)="navigateToPurchase(selectedPurchaseType)">
-                      Open {{ selectedPurchaseType === 'purchase' ? 'Purchase' : (selectedPurchaseType === 'receiving' ? 'Receiving Order' : 'Purchase Order') }}
+                      Open {{ getPurchaseTypeLabel(selectedPurchaseType) }}
                     </button>
                   </div>
                 </div>

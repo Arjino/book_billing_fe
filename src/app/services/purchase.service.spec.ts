@@ -52,6 +52,102 @@ describe('PurchaseService', () => {
     req.flush(new Blob(['pdf'], { type: 'application/pdf' }));
   });
 
+  it('should load purchase returns with default pagination and no filters', () => {
+    service.getPurchaseReturns().subscribe((page) => {
+      expect(page.content.length).toBe(1);
+      expect(page.number).toBe(0);
+      expect(page.size).toBe(25);
+    });
+
+    const req = httpMock.expectOne((request) =>
+      request.url === enviort.purchaseReturnsUrl
+      && request.params.get('page') === '0'
+      && request.params.get('size') === '25'
+      && !request.params.has('startDate')
+      && !request.params.has('endDate')
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      content: [{ id: 1, returnNumber: 'PR-1', originalInvoiceNo: 'PINV-1', items: [] }],
+      number: 0,
+      size: 25,
+      totalElements: 1,
+      totalPages: 1,
+      first: true,
+      last: true,
+      numberOfElements: 1,
+      empty: false
+    });
+  });
+
+  it('should include both date filters when loading purchase returns', () => {
+    service.getPurchaseReturns({ page: 1, size: 50, startDate: '2026-07-01', endDate: '2026-07-25' }).subscribe();
+
+    const req = httpMock.expectOne((request) =>
+      request.url === enviort.purchaseReturnsUrl
+      && request.params.get('page') === '1'
+      && request.params.get('size') === '50'
+      && request.params.get('startDate') === '2026-07-01'
+      && request.params.get('endDate') === '2026-07-25'
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      content: [],
+      number: 1,
+      size: 50,
+      totalElements: 0,
+      totalPages: 0,
+      first: false,
+      last: true,
+      numberOfElements: 0,
+      empty: true
+    });
+  });
+
+  it('should include only startDate when provided for purchase returns', () => {
+    service.getPurchaseReturns({ startDate: '2026-07-01' }).subscribe();
+
+    const req = httpMock.expectOne((request) =>
+      request.url === enviort.purchaseReturnsUrl
+      && request.params.get('startDate') === '2026-07-01'
+      && !request.params.has('endDate')
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      content: [],
+      number: 0,
+      size: 25,
+      totalElements: 0,
+      totalPages: 0,
+      first: true,
+      last: true,
+      numberOfElements: 0,
+      empty: true
+    });
+  });
+
+  it('should include only endDate when provided for purchase returns', () => {
+    service.getPurchaseReturns({ endDate: '2026-07-25' }).subscribe();
+
+    const req = httpMock.expectOne((request) =>
+      request.url === enviort.purchaseReturnsUrl
+      && request.params.get('endDate') === '2026-07-25'
+      && !request.params.has('startDate')
+    );
+    expect(req.request.method).toBe('GET');
+    req.flush({
+      content: [],
+      number: 0,
+      size: 25,
+      totalElements: 0,
+      totalPages: 0,
+      first: true,
+      last: true,
+      numberOfElements: 0,
+      empty: true
+    });
+  });
+
   it('should call stock summary endpoint', () => {
     service.getStockSummary('SKU-1').subscribe((res) => {
       expect(res.availableToSell).toBe(7);

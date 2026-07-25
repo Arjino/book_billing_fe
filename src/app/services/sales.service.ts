@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Sale } from '../interface/Sale';
+import { SaleReturn } from '../interface/sale-return';
+import { SpringPage } from '../interface/spring-page';
 import { enviort } from '../../environments/environment';
 import { normalizeUTCDatePayload, toUTCDateTimePlus00 } from '../utils/date.utils';
 import { ReturnRequest } from '../interface/return-request';
@@ -54,6 +56,35 @@ export class SalesService {
     return this.http.post(enviort.saleReturnsUrl, payload, { headers, responseType: 'blob' }).pipe(
       catchError((error) => {
         console.error('Error creating sale return:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getSaleReturns(params?: {
+    page?: number;
+    size?: number;
+    startDate?: string;
+    endDate?: string;
+  }): Observable<SpringPage<SaleReturn>> {
+    let queryParams = new HttpParams()
+      .set('page', String(params?.page ?? 0))
+      .set('size', String(params?.size ?? 25));
+
+    if (params?.startDate) {
+      queryParams = queryParams.set('startDate', params.startDate);
+    }
+
+    if (params?.endDate) {
+      queryParams = queryParams.set('endDate', params.endDate);
+    }
+
+    return this.http.get<SpringPage<SaleReturn>>(enviort.saleReturnsUrl, {
+      headers: this.auth.getAuthHeaders(),
+      params: queryParams
+    }).pipe(
+      catchError((error) => {
+        console.error('Error loading sale returns:', error);
         return throwError(() => error);
       })
     );

@@ -19,7 +19,11 @@ export const routes: Routes = [
     ,
     { path: 'sales', loadComponent: () => import('./sales/sales.component').then(m => m.SalesComponent), canActivate: [AuthGuard] }
     ,
+    { path: 'sale-returns', loadComponent: () => import('./sales/sale-returns.component').then(m => m.SaleReturnsComponent), canActivate: [AuthGuard] }
+    ,
     { path: 'purchase', loadComponent: () => import('./purchase/purchase.component').then(m => m.PurchaseComponent), canActivate: [AuthGuard] }
+    ,
+    { path: 'purchase-returns', loadComponent: () => import('./purchase/purchase-returns.component').then(m => m.PurchaseReturnsComponent), canActivate: [AuthGuard] }
     ,
     { path: 'supplier-book-mapping', loadComponent: () => import('./supplier-book-mapping/supplier-book-mapping.component').then(m => m.SupplierBookMappingComponent), canActivate: [AuthGuard] }
     ,

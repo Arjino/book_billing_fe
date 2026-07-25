@@ -6,6 +6,8 @@ import { AuthService } from './auth.service';
 import { PurchaseInvoice } from '../interface/purchase-invoice';
 import { ReceivingOrder } from '../interface/receiving-order';
 import { PurchaseOrder } from '../interface/purchase-order';
+import { PurchaseReturn } from '../interface/purchase-return';
+import { SpringPage } from '../interface/spring-page';
 import { enviort } from '../../environments/environment';
 import { normalizeUTCDatePayload } from '../utils/date.utils';
 import { ReturnRequest } from '../interface/return-request';
@@ -206,6 +208,35 @@ export class PurchaseService {
     return this.http.post(enviort.purchaseReturnsUrl, payload, { headers, responseType: 'blob' }).pipe(
       catchError((error) => {
         console.error('Error creating purchase return:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getPurchaseReturns(params?: {
+    page?: number;
+    size?: number;
+    startDate?: string;
+    endDate?: string;
+  }): Observable<SpringPage<PurchaseReturn>> {
+    let queryParams = new HttpParams()
+      .set('page', String(params?.page ?? 0))
+      .set('size', String(params?.size ?? 25));
+
+    if (params?.startDate) {
+      queryParams = queryParams.set('startDate', params.startDate);
+    }
+
+    if (params?.endDate) {
+      queryParams = queryParams.set('endDate', params.endDate);
+    }
+
+    return this.http.get<SpringPage<PurchaseReturn>>(enviort.purchaseReturnsUrl, {
+      headers: this.auth.getAuthHeaders(),
+      params: queryParams
+    }).pipe(
+      catchError((error) => {
+        console.error('Error loading purchase returns:', error);
         return throwError(() => error);
       })
     );
