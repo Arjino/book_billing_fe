@@ -92,6 +92,7 @@ export class TransactionDialogComponent implements OnInit {
     }
     if (this.data?.transactionType === 'SALE') {
       this.loadSaleInvoices();
+      this.fetchDetails();
     }
   }
 

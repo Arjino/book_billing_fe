@@ -424,7 +424,7 @@ export class SalesComponent implements OnInit {
         type: 'SALE',
         openPayment: 'true',
         saleId,
-        invoiceId: saleId
+        invoiceId: s?.invoiceNo
       }
     });
   }

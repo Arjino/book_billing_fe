@@ -17,6 +17,7 @@ import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { TransactionDialogComponent } from './transaction-dialog.component';
 import { PaymentReceiptPreviewComponent } from './payment-receipt-preview.component';
 import { PurchaseService } from '../services/purchase.service';
+import { SalesService } from '../services/sales.service';
 import { TransactionsService } from '../services/transactions.service';
 import { LoadingService } from '../services/loading.service';
 import { Party } from '../interface/party';
@@ -56,6 +57,7 @@ export class TransactionComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private purchaseService: PurchaseService,
+    private salesService: SalesService,
     private transactionsService: TransactionsService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar
@@ -79,8 +81,8 @@ export class TransactionComponent implements OnInit {
       this.loadTransactions();
 
       const shouldOpenPaymentDialog = ['true', '1', 'yes'].includes((params['openPayment'] || '').toString().toLowerCase());
-      const purchaseId = Number(params['purchaseId'] || params['invoiceId']);
-      if (shouldOpenPaymentDialog && purchaseId > 0 && !this.hasAutoOpenedPaymentDialog) {
+      const purchaseId = params['purchaseId'] || params['invoiceId'];
+      if (shouldOpenPaymentDialog && purchaseId  && !this.hasAutoOpenedPaymentDialog) {
         this.hasAutoOpenedPaymentDialog = true;
         this.addTransaction(purchaseId);
         this.router.navigate([], {
@@ -152,7 +154,7 @@ export class TransactionComponent implements OnInit {
         paymentMode: 'Cash',
         remarks: '',
         totalAmount: 0,
-        invoiceNo: '',
+        invoiceNo: purchaseId,
         dueAmount: 0,
         purchaseId,
         transactionType: this.selectedTransactionType
@@ -160,15 +162,16 @@ export class TransactionComponent implements OnInit {
       disableClose: false
     });
     dialogRef.afterClosed().subscribe((result: Transaction) => {
-      if (result) {
-        if (result.transactionType !== 'PURCHASE') {
-          this.snackBar.open('Only purchase payments are supported.', 'Close', {
-            duration: 3000,
-            panelClass: ['error-snackbar']
-          });
-          return;
-        }
+      if (!result) return;
 
+      const payload = {
+        createdAt: typeof result.paymentDate === 'string' ? result.paymentDate : new Date(result.paymentDate as any).toISOString(),
+        paidAmount: result.paidAmount,
+        paymentMode: result.paymentMode,
+        remarks: result.remarks
+      };
+
+      if (result.transactionType === 'PURCHASE') {
         const purchaseId = result.purchaseId;
         if (!purchaseId) {
           this.snackBar.open('Purchase ID not found. Please reselect the invoice.', 'Close', {
@@ -177,13 +180,6 @@ export class TransactionComponent implements OnInit {
           });
           return;
         }
-
-        const payload = {
-          createdAt: typeof result.paymentDate === 'string' ? result.paymentDate : new Date(result.paymentDate as any).toISOString(),
-          paidAmount: result.paidAmount,
-          paymentMode: result.paymentMode,
-          remarks: result.remarks
-        };
 
         this.loadingService.show('Adding transaction...');
         this.purchaseService.createPurchasePayment(purchaseId, payload).subscribe({
@@ -217,7 +213,82 @@ export class TransactionComponent implements OnInit {
             });
           }
         });
+
+        return;
       }
+
+      if (result.transactionType === 'SALE') {
+        const invoiceNo = result.invoiceNo;
+        if (!invoiceNo) {
+          this.snackBar.open('Sale invoice number not found. Please reselect the invoice.', 'Close', {
+            duration: 4000,
+            panelClass: ['error-snackbar']
+          });
+          return;
+        }
+
+        this.loadingService.show('Adding transaction...');
+        this.salesService.getSaleByInvoiceNumber(String(invoiceNo)).subscribe({
+          next: (sale) => {
+            const saleId = (sale as any)?.id;
+            if (!saleId) {
+              this.loadingService.hide();
+              this.snackBar.open('Sale not found. Please reselect the invoice.', 'Close', {
+                duration: 4000,
+                panelClass: ['error-snackbar']
+              });
+              return;
+            }
+
+            this.salesService.createSalePayment(saleId, payload).subscribe({
+              next: () => {
+                this.salesService.getSaleByInvoiceNumber(String(invoiceNo)).subscribe({
+                  next: () => {
+                    this.loadingService.hide();
+                    this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', {
+                      duration: 3000,
+                      panelClass: ['success-snackbar']
+                    });
+                    this.loadTransactions();
+                  },
+                  error: () => {
+                    this.loadingService.hide();
+                    this.snackBar.open('Payment saved, but failed to reload invoice details.', 'Close', {
+                      duration: 4000,
+                      panelClass: ['error-snackbar']
+                    });
+                    this.loadTransactions();
+                  }
+                });
+              },
+              error: (error) => {
+                this.loadingService.hide();
+                console.error('Failed to add transaction:', error);
+                this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
+                  duration: 5000,
+                  panelClass: ['error-snackbar']
+                });
+              }
+            });
+          },
+          error: (error) => {
+            this.loadingService.hide();
+            console.error('Failed to load sale by invoice:', error);
+            this.snackBar.open('Sale not found. Please reselect the invoice.', 'Close', {
+              duration: 4000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
+
+        return;
+      }
+
+      // Fallback for unsupported transaction types
+      this.snackBar.open('Unsupported transaction type for payment.', 'Close', {
+        duration: 3000,
+        panelClass: ['error-snackbar']
+      });
     });
   }
 

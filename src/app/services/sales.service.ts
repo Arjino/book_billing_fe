@@ -100,6 +100,22 @@ export class SalesService {
     );
   }
 
+  createSalePayment(saleId: number, payload: { createdAt: string; paidAmount: number; paymentMode: string; remarks?: string }): Observable<any> {
+    const url = `${enviort.salesUrl}/${saleId}/payments`;
+    const body: any = { ...payload };
+    // Backward compatibility: if paymentDate exists, convert to createdAt
+    if ((body as any).paymentDate && !body.createdAt) {
+      body.createdAt = (body as any).paymentDate;
+      delete (body as any).paymentDate;
+    }
+    return this.http.post(url, body, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error creating sale payment:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   getUnpaidAndPartialSaleInvoices(): Observable<string[]> {
     const url = `${enviort.salesUrl}/unpaid-and-partial/invoices`;
     return this.http.get<string[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
