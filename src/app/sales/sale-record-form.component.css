@@ -1,0 +1,468 @@
+.page-shell {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-bg-page);
+  font-family: 'Roboto', 'Segoe UI', sans-serif;
+}
+
+.main-content {
+  flex: 1;
+  height: 100vh;
+  padding: 24px 28px 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+  max-width: 1180px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.form-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 20px 22px;
+}
+
+.heading {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+
+.heading-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--color-primary-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.heading h1 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.heading p {
+  margin: 2px 0 0;
+  font-size: 12.5px;
+  color: var(--color-text-muted);
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.btn .material-icons {
+  font-size: 17px;
+}
+
+.btn-ghost {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.btn-ghost:hover {
+  background: var(--color-surface-hover);
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 20px 22px;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.panel-title .material-icons {
+  color: var(--color-primary);
+  font-size: 19px;
+}
+
+.top-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+  margin-bottom: 4px;
+}
+
+.top-fields + .top-fields {
+  margin-top: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field + .field {
+  margin-top: 16px;
+}
+
+.top-fields .field {
+  margin-top: 0;
+}
+
+.field label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.field input,
+.field select,
+.field textarea {
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  padding: 0 12px;
+  font-size: 13.5px;
+  background: var(--color-surface-muted);
+  font-family: inherit;
+  color: var(--color-text);
+}
+
+.field textarea {
+  height: auto;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  background: var(--color-surface);
+}
+
+.field input[readonly] {
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.field-error {
+  font-size: 11.5px;
+  color: var(--color-danger);
+}
+
+.lines-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.lines-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-primary-hover);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.chip-btn .material-icons {
+  font-size: 15px;
+}
+
+.chip-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+.chip-primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.chip-primary:hover {
+  background: var(--color-primary-hover);
+}
+
+.chip-success {
+  color: var(--color-success);
+  border-color: var(--color-green-200);
+  background: var(--color-success-bg-soft);
+}
+
+.chip-success:hover {
+  background: var(--color-success-bg);
+}
+
+.chip-danger {
+  color: var(--color-danger);
+  border-color: var(--color-red-200);
+  background: var(--color-danger-bg-soft);
+}
+
+.chip-danger:hover {
+  background: var(--color-danger-bg);
+}
+
+.lines-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.line-card {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--color-surface-muted);
+}
+
+.line-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.line-index {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.book-select {
+  flex: 1;
+  height: 40px;
+  border-radius: 9px;
+  border: 1px solid var(--color-border);
+  padding: 0 10px;
+  font-size: 13px;
+  background: var(--color-surface);
+  min-width: 0;
+}
+
+.book-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+}
+
+.icon-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+.icon-btn.danger {
+  color: var(--color-danger);
+  border-color: var(--color-red-200);
+}
+
+.icon-btn.danger:hover {
+  background: var(--color-danger-bg-soft);
+}
+
+.line-card-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+.line-card-fields input {
+  height: 38px;
+  background: var(--color-surface);
+}
+
+.line-total {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 9px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-hover);
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.payment-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.payment-fields {
+  display: flex;
+  gap: 18px;
+  flex: 1;
+  min-width: 220px;
+}
+
+.payment-fields .field {
+  margin-top: 0;
+  min-width: 180px;
+}
+
+.totals-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+
+.totals-summary--full {
+  width: 100%;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.totals-line {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.totals-line strong {
+  color: var(--color-text);
+}
+
+.totals-grand {
+  font-size: 17px;
+  color: var(--color-primary-hover);
+  margin-top: 4px;
+}
+
+.totals-grand strong {
+  font-weight: 800;
+}
+
+.form-footer {
+  position: sticky;
+  bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  padding: 16px 22px;
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
+}
+
+.footer-summary {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.footer-summary strong {
+  color: var(--color-text);
+}
+
+.footer-amount {
+  margin-left: 18px;
+  font-size: 15px;
+  color: var(--color-primary-hover);
+}
+
+.footer-actions {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .top-fields,
+  .lines-grid,
+  .line-card-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .payment-panel {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .totals-summary {
+    align-items: flex-start;
+    text-align: left;
+  }
+}

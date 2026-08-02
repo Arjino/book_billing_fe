@@ -1,0 +1,47 @@
+<aside class="sidebar">
+  <div class="brand">
+    <div class="brand-icon">
+      <span class="material-icons">menu_book</span>
+    </div>
+    <div class="brand-text">
+      <div class="brand-title-row">
+        <span class="brand-title">{{ brandTitle }}</span>
+        <span class="brand-badge">{{ brandBadge }}</span>
+      </div>
+      <div class="brand-subtitle">{{ brandSubtitle }}</div>
+    </div>
+  </div>
+
+  <div class="nav-section-label">Navigation Modules</div>
+
+  <nav class="nav-list">
+    <a
+      *ngFor="let item of items"
+      class="nav-item"
+      [routerLink]="item.route"
+      routerLinkActive="active"
+      [routerLinkActiveOptions]="{ exact: false }">
+      <span class="material-icons nav-icon">{{ item.icon }}</span>
+      <span class="nav-text">
+        <span class="nav-label">{{ item.label }}</span>
+        <span class="nav-description">{{ item.description }}</span>
+      </span>
+      <button
+        type="button"
+        class="nav-quick-add"
+        *ngIf="item.showQuickAdd"
+        (click)="onQuickAddClick($event, item)"
+        [attr.aria-label]="'Add to ' + item.label"
+      >
+        <span class="material-icons">add</span>
+      </button>
+      <span class="nav-badge" *ngIf="item.badgeCount !== undefined">{{ item.badgeCount }}</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <span class="status-dot"></span>
+    <span class="status-text">{{ statusText }}</span>
+    <span class="version-text">{{ versionText }}</span>
+  </div>
+</aside>

@@ -8,17 +8,13 @@ import {
   HttpErrorResponse
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { tap, catchError, finalize } from 'rxjs/operators';
-import { LoadingService } from './loading.service';
+import { tap, catchError } from 'rxjs/operators';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { LOADING_CONSTANTS } from '../constants/loading.constants';
 
 @Injectable()
 export class LoadingInterceptor implements HttpInterceptor {
-  constructor(
-    private loadingService: LoadingService,
-    private snackBar: MatSnackBar
-  ) {}
+  constructor(private snackBar: MatSnackBar) {}
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     // Note: Spinner is now manually controlled in components for better granularity

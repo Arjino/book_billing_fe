@@ -1,0 +1,57 @@
+<div class="data-table-wrapper">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th
+          *ngFor="let column of columns"
+          [style.text-align]="column.align || 'left'"
+        >
+          {{ column.header }}
+        </th>
+        <th *ngIf="actions.length" class="data-table-actions-header" style="text-align: right;">
+          Action
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr
+        *ngFor="let row of rows; let i = index; trackBy: trackByIndex"
+        (click)="onRowClick(row)"
+      >
+        <td *ngFor="let column of columns" [style.text-align]="column.align || 'left'">
+          <ng-container [ngSwitch]="column.type || 'text'">
+            <span *ngSwitchCase="'currency'">₹{{ getNumberValue(row, column) | number:'1.0-0' }}</span>
+            <span *ngSwitchCase="'number'">{{ getNumberValue(row, column) | number }}</span>
+            <span *ngSwitchCase="'date'">{{ getDateValue(row, column) | date:'dd/MM/yyyy hh:mm a' }}</span>
+            <span
+              *ngSwitchCase="'status'"
+              class="status-pill"
+              [ngClass]="'status-pill--' + getStatusStyle(getCellValue(row, column)).variant"
+            >
+              {{ getStatusStyle(getCellValue(row, column)).label || getCellValue(row, column) }}
+            </span>
+            <span *ngSwitchDefault>{{ getCellValue(row, column) }}</span>
+          </ng-container>
+        </td>
+        <td *ngIf="actions.length" class="data-table-actions-cell">
+          <button
+            type="button"
+            class="row-action-btn"
+            *ngFor="let action of actions"
+            (click)="onActionClick($event, action.id, row)"
+            [attr.aria-label]="action.label"
+          >
+            <mat-icon *ngIf="action.icon">{{ action.icon }}</mat-icon>
+            <span *ngIf="!action.icon">{{ action.label }}</span>
+          </button>
+        </td>
+      </tr>
+
+      <tr *ngIf="!rows.length">
+        <td class="data-table-empty" [attr.colspan]="columns.length + (actions.length ? 1 : 0)">
+          {{ emptyMessage }}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

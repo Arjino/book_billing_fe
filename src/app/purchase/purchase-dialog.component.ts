@@ -17,9 +17,9 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DataStoreService } from '../services/data-store.service';
 import { AuthService } from '../services/auth.service';
 import { LoadingService } from '../services/loading.service';
-import { Book } from '../interface/book';
-import { Party } from '../interface/party';
-import { PurchaseDialogData } from '../interface/purchase-dialog-data';
+import { Book } from '../shared/models/book.model';
+import { Party } from '../shared/models/party.model';
+import { PurchaseDialogData } from './purchase-dialog.models';
 import { baseUrl } from '../../environments/environment';
 
 interface BooksDropdownPageResponse {
@@ -1135,7 +1135,7 @@ export class PurchaseDialogComponent implements OnInit, OnDestroy {
       .replace(/'/g, '&#39;');
   }
 
-  isQtyExceedsStock(item: any): boolean {
+  isQtyExceedsStock(_item: any): boolean {
     return false;
   }
 
@@ -1144,10 +1144,6 @@ export class PurchaseDialogComponent implements OnInit, OnDestroy {
     const orderedQty = Number(item?.orderQty ?? item?.orderedQty);
     if (isNaN(orderedQty)) return false;
     return Number(item.receivedQty) > orderedQty;
-  }
-
-  hasExceededStock(item: any): boolean {
-    return this.isQtyExceedsStock(item);
   }
 
   validateQty(item: any, qtyModel: any): void {

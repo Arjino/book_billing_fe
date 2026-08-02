@@ -1,100 +1,132 @@
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
-  <!-- Decorative Elements -->
-  <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-    <div class="absolute top-10 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-    <div class="absolute top-40 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-    <div class="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-  </div>
-
-  <mat-card class="w-full max-w-md relative z-10 shadow-2xl rounded-2xl overflow-hidden">
-    <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white">
-      <h1 class="text-3xl font-bold">Maa Kalika Publication</h1>
-      <p class="text-blue-100 mt-2">Sign in to your account</p>
+<div class="auth-shell">
+  <!-- Brand panel (hidden on small screens) -->
+  <aside class="auth-aside">
+    <div class="auth-brand">
+      <span class="auth-brand-icon"><span class="material-icons">menu_book</span></span>
+      <div>
+        <div class="auth-brand-row">
+          <span class="auth-brand-title">Maa Kalika</span>
+          <span class="auth-brand-badge">ERP</span>
+        </div>
+        <div class="auth-brand-subtitle">Publishing &amp; Billing Suite</div>
+      </div>
     </div>
 
-    <mat-card-content class="p-8">
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+    <div class="auth-hero">
+      <h2>Every sale, purchase and ledger entry — in one place.</h2>
+      <p>Sign in to your billing workspace and pick up right where you left off.</p>
+    </div>
+
+    <ul class="auth-feature-list">
+      <li>
+        <span class="auth-feature-icon"><span class="material-icons">receipt_long</span></span>
+        <div>
+          <strong>Sales &amp; Purchase Billing</strong>
+          <span>Create GST-ready invoices in seconds</span>
+        </div>
+      </li>
+      <li>
+        <span class="auth-feature-icon"><span class="material-icons">account_balance_wallet</span></span>
+        <div>
+          <strong>Party Ledger</strong>
+          <span>Track dues and payments per party</span>
+        </div>
+      </li>
+      <li>
+        <span class="auth-feature-icon"><span class="material-icons">inventory_2</span></span>
+        <div>
+          <strong>Stock &amp; Inventory</strong>
+          <span>Live stock visibility across every title</span>
+        </div>
+      </li>
+    </ul>
+
+    <div class="auth-aside-footer">&copy; 2026 Maa Kalika Publication</div>
+  </aside>
+
+  <!-- Form panel -->
+  <main class="auth-main">
+    <div class="auth-card">
+      <div class="auth-brand auth-brand--mobile">
+        <span class="auth-brand-icon"><span class="material-icons">menu_book</span></span>
+        <div>
+          <div class="auth-brand-row">
+            <span class="auth-brand-title">Maa Kalika</span>
+            <span class="auth-brand-badge">ERP</span>
+          </div>
+          <div class="auth-brand-subtitle">Publishing &amp; Billing Suite</div>
+        </div>
+      </div>
+
+      <div class="auth-heading">
+        <h1>Welcome back</h1>
+        <p>Sign in to continue to your dashboard</p>
+      </div>
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="auth-form">
         <!-- Username Field -->
-        <div class="space-y-2 mt-2">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Username</mat-label>
-            <mat-icon matPrefix class="mr-2">person</mat-icon>
+        <div class="field">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <span class="material-icons input-icon">person</span>
             <input
-              matInput
+              id="username"
               formControlName="username"
               type="text"
               autocomplete="username"
+              placeholder="Enter your username"
+              [class.invalid]="loginForm.get('username')?.invalid && loginForm.get('username')?.touched"
             />
-            @if (loginForm.get('username')?.hasError('required') && loginForm.get('username')?.touched) {
-              <mat-error>Username is required</mat-error>
-            }
-          </mat-form-field>
+          </div>
+          @if (loginForm.get('username')?.hasError('required') && loginForm.get('username')?.touched) {
+            <span class="field-error">Username is required</span>
+          }
         </div>
 
         <!-- Password Field -->
-        <div class="space-y-2">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Password</mat-label>
-            <mat-icon matPrefix class="mr-2">lock</mat-icon>
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-wrap has-toggle">
+            <span class="material-icons input-icon">lock</span>
             <input
-              matInput
+              id="password"
               formControlName="password"
               [type]="hidePassword() ? 'password' : 'text'"
               autocomplete="current-password"
+              placeholder="Enter your password"
+              [class.invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
             />
             <button
-              mat-icon-button
-              matSuffix
-              (click)="togglePasswordVisibility()"
               type="button"
-              class="text-gray-500"
+              class="toggle-visibility"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
             >
-              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              <span class="material-icons">{{ hidePassword() ? 'visibility_off' : 'visibility' }}</span>
             </button>
-            @if (loginForm.get('password')?.hasError('required') && loginForm.get('password')?.touched) {
-              <mat-error>Password is required</mat-error>
-            }
-            @if (loginForm.get('password')?.hasError('minlength') && loginForm.get('password')?.touched) {
-              <mat-error>Password must be at least 6 characters</mat-error>
-            }
-          </mat-form-field>
+          </div>
+          @if (loginForm.get('password')?.hasError('required') && loginForm.get('password')?.touched) {
+            <span class="field-error">Password is required</span>
+          }
+          @if (loginForm.get('password')?.hasError('minlength') && loginForm.get('password')?.touched) {
+            <span class="field-error">Password must be at least 6 characters</span>
+          }
         </div>
 
         <!-- Forgot Password Link -->
-        <div class="flex justify-end">
-          <a
-            routerLink="/auth/forgot-password"
-            class="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200"
-          >
-            Forgot Password?
-          </a>
+        <div class="field-row">
+          <a routerLink="/auth/forgot-password" class="link">Forgot password?</a>
         </div>
 
         <!-- Sign In Button -->
-        <button
-          mat-raised-button
-          color="primary"
-          class="w-full !bg-gradient-to-r !from-blue-600 !to-purple-600 !text-white !py-3 !text-lg !font-semibold hover:shadow-lg transition-all duration-200"
-          [disabled]="loginForm.invalid"
-        >
+        <button type="submit" class="btn-submit" [disabled]="loginForm.invalid">
           Sign In
         </button>
       </form>
 
-      <!-- Divider -->
-      <div class="flex items-center mt-6 mb-6">
-        <div class="flex-1 border-t border-gray-300"></div>
-        <span class="px-3 text-gray-500 text-sm">Don't have an account?</span>
-        <div class="flex-1 border-t border-gray-300"></div>
-      </div>
-
-      <!-- Sign Up Link -->
-      <a
-        routerLink="/auth/register"
-        class="block w-full text-center py-3 px-4 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors duration-200"
-      >
-        Create New Account
-      </a>
-    </mat-card-content>
-  </mat-card>
+      <p class="auth-switch">
+        Don't have an account? <a routerLink="/auth/register" class="link">Create one</a>
+      </p>
+    </div>
+  </main>
 </div>

@@ -20,7 +20,7 @@ export class LedgerService {
     );
   }
 
-  getLedgerForPartyByDateRange(partyId: number, params: any): Observable<any[]> {
+  getLedgerForPartyByDateRange(params: any): Observable<any[]> {
     return this.http.get<any[]>(enviort.ledgerFilterUrl, { 
       headers: this.auth.getAuthHeaders(),
       params

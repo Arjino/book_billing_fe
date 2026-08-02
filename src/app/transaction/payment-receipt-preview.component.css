@@ -12,5 +12,5 @@
 }
 
 iframe {
-  background: white;
+  background: var(--color-surface);
 }

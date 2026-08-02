@@ -1,14 +1,8 @@
 import { Component, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors, FormGroup } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { ActivatedRoute, Router } from '@angular/router';
 import { LoadingService } from '../../../services/loading.service';
-import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services/auth.service';
 import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
@@ -19,13 +13,6 @@ import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatIconModule,
-    // MatProgressSpinnerModule removed; using global spinner
-    MatCardModule,
     MatSnackBarModule
   ],
   templateUrl: './reset-password.component.html',
@@ -36,6 +23,8 @@ export class ResetPasswordComponent {
   submitted = signal(false);
   token = signal<string | null>(null);
   tokenMissing = computed(() => !this.token());
+  hidePassword = signal(true);
+  hideConfirmPassword = signal(true);
 
   constructor(
     private fb: FormBuilder,
@@ -68,15 +57,29 @@ export class ResetPasswordComponent {
     return password && confirmPassword && password !== confirmPassword ? { passwordMismatch: true } : null;
   }
 
+  togglePasswordVisibility(): void {
+    this.hidePassword.set(!this.hidePassword());
+  }
+
+  toggleConfirmPasswordVisibility(): void {
+    this.hideConfirmPassword.set(!this.hideConfirmPassword());
+  }
+
   onSubmit(): void {
     if (this.tokenMissing()) {
-      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.RESET_LINK_INVALID, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
+      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.RESET_LINK_INVALID, 'Close', {
+        duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+        panelClass: ['error-snackbar']
+      });
       return;
     }
 
     if (this.resetForm.invalid) {
       this.resetForm.markAllAsTouched();
-      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.RESET_FORM_INVALID, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
+      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.RESET_FORM_INVALID, 'Close', {
+        duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+        panelClass: ['error-snackbar']
+      });
       return;
     }
 
@@ -88,12 +91,18 @@ export class ResetPasswordComponent {
       next: () => {
         this.loadingService.hide();
         this.submitted.set(true);
-        this.snackBar.open(AUTH_CONSTANTS.MESSAGES.PASSWORD_UPDATED, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.LONG });
+        this.snackBar.open(AUTH_CONSTANTS.MESSAGES.PASSWORD_UPDATED, 'Close', {
+          duration: AUTH_CONSTANTS.SNACKBAR_DURATION.LONG,
+          panelClass: ['success-snackbar']
+        });
       },
       error: (error: any) => {
         this.loadingService.hide();
         const message = error?.error?.message || AUTH_CONSTANTS.MESSAGES.PASSWORD_RESET_ERROR;
-        this.snackBar.open(message, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.LONG });
+        this.snackBar.open(message, 'Close', {
+          duration: AUTH_CONSTANTS.SNACKBAR_DURATION.LONG,
+          panelClass: ['error-snackbar']
+        });
       }
     });
   }

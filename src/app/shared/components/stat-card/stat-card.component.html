@@ -1,0 +1,22 @@
+<div class="stat-card">
+  <div class="stat-card-top">
+    <div class="stat-icon" [ngClass]="'stat-icon--' + iconVariant">
+      <mat-icon>{{ icon }}</mat-icon>
+    </div>
+    <span class="stat-badge" *ngIf="badge" [ngClass]="'stat-badge--' + (badge.variant || 'default')">
+      {{ badge.text }}
+    </span>
+  </div>
+
+  <p class="stat-title">{{ title }}</p>
+  <p class="stat-value">{{ value }}</p>
+
+  <p
+    class="stat-footnote"
+    *ngIf="footnote"
+    [ngClass]="'stat-footnote--' + (footnote.variant || 'default')"
+  >
+    <mat-icon *ngIf="footnote.icon">{{ footnote.icon }}</mat-icon>
+    {{ footnote.text }}
+  </p>
+</div>

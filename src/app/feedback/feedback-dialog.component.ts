@@ -1,11 +1,6 @@
 import { Component, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { FEEDBACK_CONSTANTS } from '../constants/feedback.constants';
 
@@ -14,23 +9,17 @@ import { FEEDBACK_CONSTANTS } from '../constants/feedback.constants';
   templateUrl: './feedback-dialog.component.html',
   styleUrls: ['./feedback-dialog.component.css'],
   standalone: true,
-  imports: [
-    CommonModule,
-    MatDialogModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatButtonModule,
-    MatIconModule,
-    FormsModule
-  ]
+  imports: [CommonModule, FormsModule]
 })
 export class FeedbackDialogComponent {
-  categories = FEEDBACK_CONSTANTS.CATEGORIES;
-  
+  readonly categories = FEEDBACK_CONSTANTS.CATEGORIES;
+  readonly ratingOptions = FEEDBACK_CONSTANTS.RATING_OPTIONS;
+
   feedback = {
+    submittedBy: '',
     category: '',
-    description: ''
+    description: '',
+    rating: 5
   };
 
   constructor(
@@ -43,7 +32,7 @@ export class FeedbackDialogComponent {
   }
 
   onSubmit(): void {
-    if (this.feedback.category && this.feedback.description) {
+    if (this.feedback.category && this.feedback.description.trim()) {
       this.dialogRef.close(this.feedback);
     }
   }

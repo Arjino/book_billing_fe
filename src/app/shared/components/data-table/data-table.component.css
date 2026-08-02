@@ -1,0 +1,119 @@
+:host {
+  display: block;
+}
+
+.data-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table thead th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+  background: var(--color-surface-muted);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+
+.data-table tbody td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-gray-800);
+  white-space: nowrap;
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-surface-muted);
+  cursor: pointer;
+}
+
+.data-table-empty {
+  text-align: center;
+  color: var(--color-text-subtle);
+  padding: 24px 16px;
+  cursor: default;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--color-neutral-bg);
+  color: var(--color-neutral-text);
+  text-transform: capitalize;
+}
+
+.status-pill--success {
+  background: var(--color-emerald-50);
+  color: var(--color-emerald-600);
+}
+
+.status-pill--warning {
+  background: var(--color-warning-bg-soft);
+  color: var(--color-warning);
+}
+
+.status-pill--danger {
+  background: var(--color-danger-bg-soft);
+  color: var(--color-danger);
+}
+
+.status-pill--info {
+  background: var(--color-info-bg-soft);
+  color: var(--color-info);
+}
+
+.status-pill--primary {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.data-table-actions-cell {
+  text-align: right;
+}
+
+.row-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.row-action-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+.row-action-btn mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+}

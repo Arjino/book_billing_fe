@@ -1,0 +1,339 @@
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+
+import { DataStoreService } from '../services/data-store.service';
+import { SalesService } from '../services/sales.service';
+import { LoadingService } from '../services/loading.service';
+import { extractHttpErrorMessage, createIdempotencyKey, downloadBlobFile } from '../utils/http.utils';
+import { ReturnRequest } from '../shared/models/return-request.model';
+import { Book } from '../shared/models/book.model';
+import { Party } from '../shared/models/party.model';
+import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
+import { buildAppNavItems } from '../shared/nav-items';
+import { NavItem } from '../shared/models/common.models';
+
+type SaleDocumentType = 'SALE' | 'SALE_RETURN';
+
+interface SaleDocTypeOption {
+  readonly value: SaleDocumentType;
+  readonly label: string;
+}
+
+const DOC_TYPE_OPTIONS: ReadonlyArray<SaleDocTypeOption> = [
+  { value: 'SALE', label: 'Sale Invoice (SINV)' },
+  { value: 'SALE_RETURN', label: 'Sale Return (Credit Note)' }
+];
+
+interface SaleLine {
+  book: Book | null;
+  qty: number | null;
+  mrp: number | null;
+  discPercent: number | null;
+}
+
+const QUICK_ADD_COUNTS = [1, 5, 20] as const;
+const TAX_RATE = 0.05;
+
+function emptyLine(): SaleLine {
+  return { book: null, qty: null, mrp: null, discPercent: 0 };
+}
+
+/**
+ * Full-page bulk sale editor: creates a Sale Invoice or a Sale Return from a
+ * single dual-column book-lines grid, replacing the old modal dialog based
+ * flow with a dedicated route (mirrors the purchase record form).
+ */
+@Component({
+  selector: 'app-sale-record-form',
+  standalone: true,
+  imports: [CommonModule, FormsModule, MatSnackBarModule, SidebarNavComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './sale-record-form.component.html',
+  styleUrls: ['./sale-record-form.component.css']
+})
+export class SaleRecordFormComponent implements OnInit {
+  readonly docTypeOptions = DOC_TYPE_OPTIONS;
+  readonly quickAddCounts = QUICK_ADD_COUNTS;
+  readonly taxRatePercent = TAX_RATE * 100;
+
+  readonly navItems: ReadonlyArray<NavItem> = buildAppNavItems();
+
+  documentType: SaleDocumentType = 'SALE';
+  party: Party | null = null;
+  originalInvoiceNo = '';
+  returnReason = '';
+  paymentStatus: 'UNPAID' | 'PARTIAL' | 'PAID' = 'UNPAID';
+  receivedNow: number | null = null;
+  remarks = '';
+  invoiceDateTime = new Date();
+
+  lines: SaleLine[] = [emptyLine()];
+
+  parties: Party[] = [];
+  books: Book[] = [];
+
+  saving = false;
+
+  constructor(
+    private readonly router: Router,
+    private readonly route: ActivatedRoute,
+    private readonly store: DataStoreService,
+    private readonly salesService: SalesService,
+    private readonly loadingService: LoadingService,
+    private readonly snackBar: MatSnackBar,
+    private readonly cdr: ChangeDetectorRef
+  ) {}
+
+  ngOnInit(): void {
+    const requestedType = (this.route.snapshot.queryParamMap.get('type') || '').toUpperCase();
+    if (requestedType === 'RETURN' || requestedType === 'SALE_RETURN') {
+      this.documentType = 'SALE_RETURN';
+    }
+
+    this.store.getBooks().subscribe((data) => {
+      this.books = Array.isArray(data) ? data : ((data as any)?.content || []);
+      this.cdr.markForCheck();
+    });
+
+    this.store.getParties().subscribe((data) => {
+      this.parties = data || [];
+      this.cdr.markForCheck();
+    });
+  }
+
+  get formTitle(): string {
+    return 'Create New Sale Invoice / Sale Return';
+  }
+
+  get isReturn(): boolean {
+    return this.documentType === 'SALE_RETURN';
+  }
+
+  onDocumentTypeChange(): void {
+    this.originalInvoiceNo = '';
+    this.returnReason = '';
+    this.paymentStatus = 'UNPAID';
+    this.receivedNow = null;
+    this.lines = [emptyLine()];
+    this.cdr.markForCheck();
+  }
+
+  bookLabel(book: Book | null): string {
+    if (!book) return '';
+    return `${book.title} (SKU: ${book.sku} • Stock: ${book.stock} • MRP ₹${book.mrp})`;
+  }
+
+  onBookSelected(line: SaleLine, bookId: string): void {
+    const id = Number(bookId);
+    const book = this.books.find((b) => b.id === id) || null;
+    line.book = book;
+    line.mrp = book ? (typeof book.mrp === 'number' ? book.mrp : Number(book.mrp) || 0) : null;
+    if (line.qty === null) line.qty = 1;
+    this.cdr.markForCheck();
+  }
+
+  lineSubtotal(line: SaleLine): number {
+    return (Number(line.qty) || 0) * (Number(line.mrp) || 0);
+  }
+
+  lineDiscountAmount(line: SaleLine): number {
+    return this.lineSubtotal(line) * ((Number(line.discPercent) || 0) / 100);
+  }
+
+  lineAmount(line: SaleLine): number {
+    return this.lineSubtotal(line) - this.lineDiscountAmount(line);
+  }
+
+  addLines(count: number): void {
+    for (let i = 0; i < count; i++) {
+      this.lines.push(emptyLine());
+    }
+    this.cdr.markForCheck();
+  }
+
+  addAllBooks(): void {
+    const usedIds = new Set(this.lines.map((l) => l.book?.id).filter((id): id is number => !!id));
+    const remainingLines = this.lines.filter((l) => !l.book);
+    const additions = this.books
+      .filter((b) => !usedIds.has(b.id))
+      .map((book) => ({
+        book,
+        qty: 1,
+        mrp: typeof book.mrp === 'number' ? book.mrp : Number(book.mrp) || 0,
+        discPercent: 0
+      }));
+
+    if (!additions.length) return;
+
+    let additionIndex = 0;
+    for (const line of remainingLines) {
+      if (additionIndex >= additions.length) break;
+      Object.assign(line, additions[additionIndex]);
+      additionIndex++;
+    }
+    while (additionIndex < additions.length) {
+      this.lines.push(additions[additionIndex]);
+      additionIndex++;
+    }
+    this.cdr.markForCheck();
+  }
+
+  clearAllLines(): void {
+    this.lines = [emptyLine()];
+    this.cdr.markForCheck();
+  }
+
+  removeLine(index: number): void {
+    this.lines.splice(index, 1);
+    if (!this.lines.length) {
+      this.lines.push(emptyLine());
+    }
+    this.cdr.markForCheck();
+  }
+
+  get validLines(): SaleLine[] {
+    return this.lines.filter((l) => l.book && Number(l.qty) > 0);
+  }
+
+  get totalLines(): number {
+    return this.validLines.length;
+  }
+
+  get totalQty(): number {
+    return this.validLines.reduce((sum, l) => sum + (Number(l.qty) || 0), 0);
+  }
+
+  get subtotal(): number {
+    return this.validLines.reduce((sum, l) => sum + this.lineSubtotal(l), 0);
+  }
+
+  get discountTotal(): number {
+    return this.validLines.reduce((sum, l) => sum + this.lineDiscountAmount(l), 0);
+  }
+
+  get taxableAmount(): number {
+    return this.subtotal - this.discountTotal;
+  }
+
+  get estimatedTax(): number {
+    return this.taxableAmount * TAX_RATE;
+  }
+
+  get grandTotal(): number {
+    return this.taxableAmount + this.estimatedTax;
+  }
+
+  get paidAmount(): number {
+    if (this.paymentStatus === 'PAID') return this.grandTotal;
+    if (this.paymentStatus === 'PARTIAL') return Number(this.receivedNow) || 0;
+    return 0;
+  }
+
+  get isOverpay(): boolean {
+    return this.paymentStatus === 'PARTIAL' && this.paidAmount > this.grandTotal;
+  }
+
+  get canSave(): boolean {
+    if (this.saving) return false;
+    if (!this.validLines.length) return false;
+    if (!this.party) return false;
+
+    if (this.isReturn) {
+      return !!this.originalInvoiceNo.trim() && !!this.returnReason.trim();
+    }
+
+    if (this.paymentStatus === 'PARTIAL') {
+      return (Number(this.receivedNow) || 0) > 0 && !this.isOverpay;
+    }
+
+    return true;
+  }
+
+  cancel(): void {
+    this.router.navigate(['/sales']);
+  }
+
+  save(): void {
+    if (!this.canSave) return;
+    if (this.isReturn) {
+      this.saveSaleReturn();
+    } else {
+      this.saveSale();
+    }
+  }
+
+  private saveSale(): void {
+    const payload: any = {
+      id: 0,
+      invoiceNo: '',
+      party: this.party,
+      createdAt: new Date(),
+      totalAmount: this.taxableAmount,
+      discount: this.discountTotal,
+      taxAmount: this.estimatedTax,
+      roundOff: 0,
+      grandTotal: this.grandTotal,
+      paymentStatus: this.paymentStatus,
+      paidAmount: this.paidAmount,
+      items: this.validLines.map((l) => ({
+        id: 0,
+        sale: null,
+        book: l.book,
+        qty: l.qty,
+        rate: l.mrp,
+        discount: l.discPercent || 0,
+        amount: this.lineAmount(l)
+      }))
+    };
+
+    this.saving = true;
+    this.loadingService.show('Creating sale...');
+    this.store.createSale([payload]).subscribe({
+      next: () => this.onSaveSuccess('Sale created successfully!'),
+      error: (error) => this.onSaveError(error, 'Failed to create sale. Please try again.')
+    });
+  }
+
+  private saveSaleReturn(): void {
+    const payload: ReturnRequest = {
+      partyId: this.party?.id ?? null,
+      returnDate: new Date().toISOString(),
+      originalInvoiceNo: this.originalInvoiceNo.trim(),
+      returnReason: this.returnReason.trim(),
+      items: this.validLines.map((l) => ({
+        bookId: String(l.book?.sku || l.book?.id || ''),
+        qty: l.qty || 0,
+        rate: l.mrp || 0
+      }))
+    };
+
+    this.saving = true;
+    this.loadingService.show('Processing sale return...');
+    this.salesService.createSaleReturn(payload, createIdempotencyKey()).subscribe({
+      next: (blob) => {
+        downloadBlobFile(blob, 'sale-return-receipt.pdf');
+        this.onSaveSuccess('Sale return submitted successfully!');
+      },
+      error: (error) => this.onSaveError(error, 'Failed to submit sale return. Please try again.')
+    });
+  }
+
+  private onSaveSuccess(message: string): void {
+    this.saving = false;
+    this.loadingService.hide();
+    this.snackBar.open(message, 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
+    this.store.refreshBooks();
+    this.router.navigate(['/sales']);
+  }
+
+  private async onSaveError(error: unknown, fallback: string): Promise<void> {
+    this.saving = false;
+    this.loadingService.hide();
+    const message = await extractHttpErrorMessage(error, fallback);
+    this.snackBar.open(message, 'Close', { duration: 6000, panelClass: ['error-snackbar'] });
+    this.cdr.markForCheck();
+  }
+}

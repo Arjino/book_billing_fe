@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Book } from '../interface/book';
+import { Book } from '../shared/models/book.model';
 
 @Component({
   selector: 'app-bulk-import-dialog',

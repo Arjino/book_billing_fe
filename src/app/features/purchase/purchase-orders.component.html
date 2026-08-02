@@ -1,0 +1,219 @@
+<div class="page-shell">
+  <app-sidebar-nav [items]="navItems" (quickAdd)="onSidebarQuickAdd($event.id)"></app-sidebar-nav>
+
+  <main class="main-content">
+    <div class="content-header">
+      <div class="heading">
+        <div class="heading-icon">
+          <span class="material-icons">shopping_bag</span>
+        </div>
+        <div>
+          <h1>Purchase &amp; Stock Inbound Orders</h1>
+          <p>Total {{ filteredCount }} records &bull; Net Value: {{ formatCurrency(netValue) }}</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button type="button" class="btn btn-primary" (click)="openNewRecordForm()">
+          <span class="material-icons">add</span>
+          New Purchase Record / Return
+        </button>
+      </div>
+    </div>
+
+    <nav class="tabs-bar">
+      <button
+        type="button"
+        *ngFor="let tab of tabs"
+        class="tab-item"
+        [class.active]="activeTab === tab.id"
+        (click)="onTabChange(tab.id)">
+        {{ tab.label }} ({{ tabCount(tab) }})
+      </button>
+    </nav>
+
+    <section class="panel filters-panel">
+      <div class="filters-title-row">
+        <div class="panel-title">
+          <span class="material-icons">tune</span>
+          Purchase Filters
+        </div>
+        <button type="button" class="reset-link" *ngIf="hasActiveFilters" (click)="resetFilters()">
+          <span class="material-icons">close</span>
+          Reset Filters
+        </button>
+      </div>
+
+      <div class="filters-row">
+        <div class="filter-field search-field">
+          <span class="material-icons search-icon">search</span>
+          <input
+            type="text"
+            placeholder="Search Record No, Supplier, Reason, Book..."
+            [ngModel]="searchValue"
+            (ngModelChange)="onSearchChange($event)" />
+        </div>
+
+        <div class="amount-field">
+          <input type="number" min="0" [(ngModel)]="minAmount" (change)="onAmountChange()" placeholder="Min Amount ₹" />
+        </div>
+        <span class="amount-sep">-</span>
+        <div class="amount-field">
+          <input type="number" min="0" [(ngModel)]="maxAmount" (change)="onAmountChange()" placeholder="Max Amount ₹" />
+        </div>
+
+        <div class="date-field">
+          <label class="date-field-label">Start Date</label>
+          <div class="date-input-shell">
+            <input
+              type="text"
+              [value]="getStartDisplay()"
+              readonly
+              [matMenuTriggerFor]="startMenu"
+              #startTrigger="matMenuTrigger"
+            />
+            <button mat-icon-button class="date-icon-btn" (click)="startTrigger.openMenu()" aria-label="Open start date time">
+              <mat-icon>calendar_today</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="date-field">
+          <label class="date-field-label">End Date</label>
+          <div class="date-input-shell">
+            <input
+              type="text"
+              [value]="getEndDisplay()"
+              readonly
+              [matMenuTriggerFor]="endMenu"
+              #endTrigger="matMenuTrigger"
+            />
+            <button mat-icon-button class="date-icon-btn" (click)="endTrigger.openMenu()" aria-label="Open end date time">
+              <mat-icon>calendar_today</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="date-filter-actions">
+          <button type="button" class="btn btn-ghost" (click)="resetDateFilters()" [disabled]="!dateFilterActive" title="Reset date filter">
+            <span class="material-icons">restart_alt</span>
+          </button>
+          <button type="button" class="btn btn-primary" (click)="applyDateFilter()">
+            <span class="material-icons">search</span>
+            Apply Date Filter
+          </button>
+        </div>
+      </div>
+
+      <mat-menu #startMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
+        <div class="date-time-menu-content" (click)="$event.stopPropagation()">
+          <mat-calendar
+            [selected]="startDate"
+            [maxDate]="maxDate"
+            (selectedChange)="onStartDateSelected($event)">
+          </mat-calendar>
+          <div class="time-controls">
+            <div class="time-column">
+              <div class="time-col-title">Hours</div>
+              <div class="time-list">
+                <button
+                  type="button"
+                  class="time-item"
+                  *ngFor="let h of hours"
+                  [class.time-item--active]="h === startHour"
+                  (click)="startHour = h">
+                  {{ h }}
+                </button>
+              </div>
+            </div>
+            <div class="time-column">
+              <div class="time-col-title">Minutes</div>
+              <div class="time-list">
+                <button
+                  type="button"
+                  class="time-item"
+                  *ngFor="let m of minutes"
+                  [class.time-item--active]="m === startMinute"
+                  (click)="startMinute = m">
+                  {{ m }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-menu>
+
+      <mat-menu #endMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
+        <div class="date-time-menu-content" (click)="$event.stopPropagation()">
+          <mat-calendar
+            [selected]="endDate"
+            [minDate]="minEndDate"
+            [maxDate]="maxDate"
+            (selectedChange)="onEndDateSelected($event)">
+          </mat-calendar>
+          <div class="time-controls">
+            <div class="time-column">
+              <div class="time-col-title">Hours</div>
+              <div class="time-list">
+                <button
+                  type="button"
+                  class="time-item"
+                  *ngFor="let h of hours"
+                  [class.time-item--active]="h === endHour"
+                  (click)="endHour = h">
+                  {{ h }}
+                </button>
+              </div>
+            </div>
+            <div class="time-column">
+              <div class="time-col-title">Minutes</div>
+              <div class="time-list">
+                <button
+                  type="button"
+                  class="time-item"
+                  *ngFor="let m of minutes"
+                  [class.time-item--active]="m === endMinute"
+                  (click)="endMinute = m">
+                  {{ m }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-menu>
+    </section>
+
+    <section class="panel table-panel">
+      <app-data-table
+        [rows]="displayRows"
+        [columns]="tableColumns"
+        [actions]="tableActions"
+        [isActionVisible]="isRowActionVisible"
+        [rowKey]="trackByRowKey"
+        emptyMessage="No purchase records found. Create your first purchase record."
+        (rowAction)="onRowAction($event)">
+      </app-data-table>
+
+      <div class="pagination-bar" *ngIf="tableRows.length">
+        <div class="page-size">
+          <label>Rows:</label>
+          <select [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+            <option *ngFor="let size of pageSizeOptions" [ngValue]="size">{{ size }}</option>
+          </select>
+        </div>
+
+        <div class="page-controls">
+          <button type="button" class="icon-btn" [disabled]="currentPage === 0" (click)="previousPage()">
+            <span class="material-icons">chevron_left</span>
+          </button>
+          <span>Page {{ currentPage + 1 }} of {{ totalPages }}</span>
+          <button type="button" class="icon-btn" [disabled]="currentPage >= totalPages - 1" (click)="nextPage()">
+            <span class="material-icons">chevron_right</span>
+          </button>
+        </div>
+
+        <div class="total-records">Showing {{ rangeStart }} to {{ rangeEnd }} of {{ tableRows.length }} entries</div>
+      </div>
+    </section>
+  </main>
+</div>

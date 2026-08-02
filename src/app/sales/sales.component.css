@@ -1,89 +1,370 @@
-@keyframes blob {
-  0%, 100% { 
-    transform: translate(0, 0) scale(1); 
-  }
-  33% { 
-    transform: translate(30px, -50px) scale(1.1); 
-  }
-  66% { 
-    transform: translate(-20px, 20px) scale(0.9); 
-  }
+﻿/* ================================================================
+   Sales & Invoicing Management — redesigned list page
+   Matches screenshot: clean white card layout
+   ================================================================ */
+
+/* ── Page Shell ─────────────────────────────────────────────── */
+.si-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
 }
 
-.animate-blob {
-  animation: blob 7s infinite;
-}
-
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-
-.animation-delay-4000 {
-  animation-delay: 4s;
-}
-
-mat-form-field {
-  width: 100%;
-}
-
-button[mat-mini-fab],
-button[mat-fab] {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
+/* page-shell + main-content provided by books-inventory pattern */
+.page-shell {
+  display: flex;
+  height: 100vh;
   overflow: hidden;
+  background: var(--color-bg-page);
 }
 
-/* Table contrast overrides to ensure dark glass background shows through */
-:host ::ng-deep table.mat-table,
-:host ::ng-deep .mat-table,
-:host ::ng-deep table {
-  background: transparent !important;
-  color: rgba(255,255,255,0.92) !important;
-}
-
-:host ::ng-deep th.mat-header-cell,
-:host ::ng-deep td.mat-cell,
-:host ::ng-deep tr.mat-row {
-  background: transparent !important;
-  color: inherit !important;
-}
-
-:host ::ng-deep .mat-header-row { background: rgba(255,255,255,0.02) !important; }
-:host ::ng-deep .mat-row:hover { background: rgba(255,255,255,0.02) !important; }
-:host ::ng-deep .mat-cell, :host ::ng-deep .mat-header-cell { border-color: rgba(255,255,255,0.06) !important; }
-
-/* Date-time menu styles */
-::ng-deep .date-time-menu .mat-mdc-menu-panel {
-  padding: 0;
-  max-width: 600px;
-  overflow: hidden;
-}
-
-::ng-deep .cdk-overlay-pane .date-time-menu {
-  max-width: 600px;
+.main-content {
+  flex: 1;
+  height: 100vh;
+  padding: 24px 28px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
   overflow-x: hidden;
 }
 
+.si-header-card,
+.si-filter-card {
+  flex-shrink: 0;
+}
+
+/* ── Card Base ──────────────────────────────────────────────── */
+.si-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Header Card ────────────────────────────────────────────── */
+.si-header-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.si-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.si-header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.si-header-icon mat-icon {
+  color: var(--color-text-inverse);
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.si-title {
+  margin: 0 0 4px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.si-meta {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.si-meta strong {
+  color: var(--color-text);
+}
+
+.si-meta-returns {
+  color: var(--color-violet-600);
+}
+
+.si-meta-returns strong {
+  color: var(--color-violet-600);
+}
+
+/* ── Header Action Buttons ──────────────────────────────────── */
+.si-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.si-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+}
+
+.si-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.si-btn--primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  box-shadow: var(--btn-primary-shadow);
+}
+
+.si-btn--primary:hover {
+  opacity: 0.9;
+}
+
+.si-btn--return {
+  background: var(--color-warning-bg-soft);
+  color: var(--color-warning-hover);
+  border: 1px solid var(--color-amber-200);
+}
+
+.si-btn--return:hover {
+  background: var(--color-warning-bg-soft);
+}
+
+.si-btn--ghost {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
+  border: 1px solid var(--btn-secondary-border);
+}
+
+.si-btn--ghost:hover {
+  background: var(--btn-secondary-bg-hover);
+}
+
+.si-btn--back {
+  background: transparent;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  padding: 9px 12px;
+}
+
+.si-btn--back:hover {
+  background: var(--color-surface-hover);
+}
+
+/* ── Filter Card ────────────────────────────────────────────── */
+.si-filter-card {
+  padding: 16px 20px;
+}
+
+.si-filter-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.si-filter-title mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.si-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Search box */
+.si-search-wrap {
+  position: relative;
+  flex: 1 1 260px;
+  min-width: 220px;
+}
+
+.si-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-subtle);
+  pointer-events: none;
+}
+
+.si-search-input {
+  width: 100%;
+  padding: 9px 12px 9px 36px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.si-search-input:focus {
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+/* Selects */
+.si-select {
+  flex: 0 1 200px;
+  min-width: 160px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  outline: none;
+  cursor: pointer;
+  appearance: auto;
+  transition: border-color 0.15s;
+}
+
+.si-select:focus {
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+/* Amount inputs */
+.si-amount-input {
+  flex: 0 1 120px;
+  min-width: 100px;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.si-amount-input:focus {
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+.si-range-sep {
+  color: var(--color-text-subtle);
+  font-weight: 600;
+}
+
+.si-filters-cols {
+  margin-top: 12px;
+  align-items: flex-end;
+}
+
+/* Date/time trigger fields */
+.si-date-field {
+  position: relative;
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.si-date-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.si-date-input-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.si-date-input {
+  width: 100%;
+  padding: 9px 40px 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.si-date-input:focus {
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+.si-date-icon-btn {
+  position: absolute;
+  right: 2px;
+  width: 34px;
+  height: 34px;
+  color: var(--color-accent);
+}
+
+.si-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.si-date-error {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* ── Date-time picker popover (Material-internal styling is global, see src/styles.css) ── */
 .date-time-menu-content {
   display: flex;
   gap: 8px;
   padding: 12px;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   width: 480px;
   box-sizing: border-box;
   align-items: flex-start;
   overflow-x: hidden;
-}
-
-::ng-deep .date-time-menu .mat-calendar {
-  width: 300px;
-  max-width: 300px;
 }
 
 .time-controls {
@@ -103,7 +384,7 @@ button[mat-fab] {
 .time-col-title {
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text);
 }
 
 .time-list {
@@ -114,22 +395,13 @@ button[mat-fab] {
   overflow-y: auto;
   padding-right: 6px;
   scrollbar-width: thin;
-  scrollbar-color: #cbd5f5 transparent;
+  scrollbar-color: var(--color-indigo-200) transparent;
   scroll-behavior: smooth;
 }
 
-.time-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.time-list::-webkit-scrollbar-thumb {
-  background: #cbd5f5;
-  border-radius: 6px;
-}
-
-.time-list::-webkit-scrollbar-track {
-  background: transparent;
-}
+.time-list::-webkit-scrollbar { width: 6px; }
+.time-list::-webkit-scrollbar-thumb { background: var(--color-indigo-200); border-radius: 6px; }
+.time-list::-webkit-scrollbar-track { background: transparent; }
 
 .time-item {
   border: none;
@@ -141,28 +413,340 @@ button[mat-fab] {
   align-items: center;
   justify-content: center;
   background: transparent;
-  color: #111827;
+  color: var(--color-text);
   font-weight: 400;
   font-size: 14px;
   cursor: pointer;
 }
 
 .time-item--active {
-  background: #93c5fd;
-  color: #0f172a;
+  background: var(--color-info-border);
+  color: var(--color-text);
   font-weight: 600;
 }
 
-.time-item:hover {
-  background: rgba(147, 197, 253, 0.35);
+.time-item:hover { background: rgba(147, 197, 253, 0.35); }
+
+/* ── Table Card ─────────────────────────────────────────────── */
+.si-table-card {
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-::ng-deep .date-time-menu .mat-calendar-body-selected,
-::ng-deep .date-time-menu .mat-calendar-body-cell-content.mat-calendar-body-selected {
-  background-color: #93c5fd !important;
-  color: #0f172a !important;
+.si-table-scroll {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
 }
 
-.date-time-icon mat-icon {
-  color: rgb(254, 205, 211);
+.si-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
 }
+
+.si-table thead tr {
+  background: var(--color-surface-muted);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.si-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.si-th-num,
+.si-td-num {
+  text-align: right;
+}
+
+.si-table td {
+  padding: 13px 16px;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border-light);
+  vertical-align: middle;
+}
+
+.si-table tbody tr:hover {
+  background: var(--color-surface-hover);
+}
+
+.si-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Return rows — subtle tint */
+.si-row-return td {
+  background: var(--color-purple-bg);
+}
+
+.si-row-return:hover td {
+  background: var(--color-purple-bg) !important;
+}
+
+/* Invoice number cell */
+.si-inv-no {
+  font-weight: 600;
+  color: var(--color-info-hover);
+  margin-right: 6px;
+}
+
+/* Doc type badge */
+.si-doc-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  vertical-align: middle;
+  text-transform: uppercase;
+}
+
+.si-doc-badge--return {
+  background: var(--color-purple-bg);
+  color: var(--color-purple-text);
+  border: 1px solid var(--color-violet-200);
+}
+
+/* Grand total cell */
+.si-td-num {
+  font-weight: 700;
+  color: var(--color-sky-700);
+}
+
+.si-nil {
+  color: var(--color-text-subtle);
+  font-weight: 400;
+}
+
+/* Status badges */
+.si-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.si-badge--paid {
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.si-badge--partial {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
+}
+
+.si-badge--unpaid {
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+}
+
+.si-badge--return {
+  background: var(--color-purple-bg);
+  color: var(--color-purple-text);
+}
+
+/* Row actions */
+.si-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.si-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--color-info-bg);
+  background: var(--color-sky-50);
+  color: var(--color-sky-700);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  padding: 0;
+}
+
+.si-icon-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.si-icon-btn:hover {
+  background: var(--color-sky-100);
+}
+
+.si-pay-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-info-bg);
+  background: var(--color-sky-50);
+  color: var(--color-sky-900);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.si-pay-btn mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.si-pay-btn:hover {
+  background: var(--color-sky-100);
+}
+
+.si-return-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--color-violet-600);
+  font-style: italic;
+}
+
+.si-return-ref mat-icon {
+  font-size: 15px;
+  width: 15px;
+  height: 15px;
+}
+
+/* Empty row */
+.si-empty-cell {
+  text-align: center;
+  padding: 52px 20px;
+  color: var(--color-text-subtle);
+  font-size: 0.9rem;
+}
+
+/* ── Pagination ─────────────────────────────────────────────── */
+.si-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-surface-muted);
+  flex-shrink: 0;
+}
+
+.si-pg-info {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.si-pg-info strong {
+  color: var(--color-text);
+}
+
+.si-pg-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.si-pg-size select {
+  padding: 5px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  cursor: pointer;
+  outline: none;
+}
+
+.si-pg-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.si-pg-nav button {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.si-pg-nav button:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.si-pg-nav button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.si-pg-current {
+  background: var(--gradient-primary) !important;
+  color: var(--color-text-inverse) !important;
+  border-color: transparent !important;
+  font-weight: 700;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .si-filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .si-search-wrap,
+  .si-select,
+  .si-amount-input,
+  .si-date-field {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+  }
+  .si-range-sep {
+    display: none;
+  }
+  .si-filter-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  .si-filter-actions .si-btn {
+    flex: 1;
+    justify-content: center;
+  }
+  .si-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

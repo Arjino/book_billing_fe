@@ -1,0 +1,127 @@
+<div class="dashboard-shell">
+  <app-sidebar-nav [items]="navItems()" (quickAdd)="onSidebarQuickAdd($event)"></app-sidebar-nav>
+
+  <main class="dashboard-main">
+    <header class="dashboard-header">
+      <div>
+        <h1>Dashboard Overview</h1>
+        <p>Billing &amp; revenue hub</p>
+      </div>
+      <div class="dashboard-header-actions">
+        <span class="last-updated">Last updated: {{ lastUpdatedDisplay() }}</span>
+        <button type="button" class="account-btn" [matMenuTriggerFor]="accountMenu" aria-label="Account menu">
+          <mat-icon>account_circle</mat-icon>
+        </button>
+        <mat-menu #accountMenu="matMenu">
+          <button mat-menu-item (click)="copyAccessToken()">
+            <mat-icon>content_copy</mat-icon>
+            <span>Copy Access Token</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+      </div>
+    </header>
+
+    <ng-container *ngIf="overview() as data; else loadingState">
+      <section class="stat-grid">
+        <app-stat-card
+          title="Total Billed Revenue"
+          [value]="formatCurrency(data.revenue.totalBilledRevenue)"
+          icon="trending_up"
+          iconVariant="primary"
+          [badge]="{ text: data.revenue.billsCount + ' Bills', variant: 'primary' }"
+          [footnote]="{ text: '↗ ' + formatCurrency(data.revenue.cashReceivedAmount) + ' Cash Received', variant: 'success' }"
+        ></app-stat-card>
+
+        <app-stat-card
+          title="Parties Outstanding Debt"
+          [value]="formatCurrency(data.outstandingDebt.totalOutstandingDebt)"
+          icon="groups"
+          iconVariant="warning"
+          [badge]="{ text: data.outstandingDebt.activePartiesCount + ' Active', variant: 'warning' }"
+          [footnote]="{ text: 'Manage client ledgers & credits' }"
+        ></app-stat-card>
+
+        <app-stat-card
+          title="Total Books Stock Units"
+          [value]="formatUnitLabel(data.stock.totalStockUnits, 'Pc', 'Pcs')"
+          icon="menu_book"
+          iconVariant="info"
+          [badge]="{ text: data.stock.totalTitlesCount + ' Titles', variant: 'info' }"
+          [footnote]="
+            data.stock.lowStockTitlesCount
+              ? { text: data.stock.lowStockTitlesCount + ' titles below stock alert', variant: 'danger' }
+              : null
+          "
+        ></app-stat-card>
+
+        <app-stat-card
+          title="Payments Recorded"
+          [value]="formatUnitLabel(data.cashbook.receiptsCount, 'Receipt', 'Receipts')"
+          icon="account_balance_wallet"
+          iconVariant="success"
+          [badge]="{ text: 'Cashbook', variant: 'success' }"
+          [footnote]="{ text: 'Cash, UPI & Bank Settlements' }"
+        ></app-stat-card>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="panel invoices-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Recent Sales Invoices</h2>
+              <p>Latest billing transactions issued to clients</p>
+            </div>
+            <a routerLink="/sales" class="view-all-link">View All <mat-icon>chevron_right</mat-icon></a>
+          </div>
+          <app-data-table
+            [columns]="invoiceColumns"
+            [rows]="data.recentInvoices"
+            [actions]="invoiceActions"
+            [statusStyles]="invoiceStatusStyles"
+            emptyMessage="No sales invoices recorded yet."
+            (rowAction)="onInvoiceRowAction($event)"
+          ></app-data-table>
+        </div>
+
+        <div class="side-panels">
+          <div class="panel alert-panel" *ngIf="data.lowStockAlerts.length">
+            <div class="alert-panel-header">
+              <mat-icon>error</mat-icon>
+              <h2>Low Stock Inventory Alert</h2>
+            </div>
+            <p class="alert-panel-subtitle">The following book titles need restocking:</p>
+            <div class="alert-item" *ngFor="let item of data.lowStockAlerts">
+              <div class="alert-item-info">
+                <p class="alert-item-title">{{ item.title }}</p>
+                <p class="alert-item-meta">SKU: {{ item.sku }} &bull; MRP &#8377;{{ item.mrp }}</p>
+              </div>
+              <span class="alert-item-badge">{{ item.unitsLeft }} left</span>
+            </div>
+          </div>
+
+          <div class="panel ledger-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Party Ledger Quick Search</h2>
+                <p>Directly view ledger statements for book depots and publishers.</p>
+              </div>
+            </div>
+            <a routerLink="/ledger" class="ledger-panel-button">
+              Open Party Statement Ledger
+              <mat-icon>open_in_new</mat-icon>
+            </a>
+          </div>
+        </div>
+      </section>
+    </ng-container>
+
+    <ng-template #loadingState>
+      <div class="dashboard-loading">Loading dashboard…</div>
+    </ng-template>
+  </main>
+</div>

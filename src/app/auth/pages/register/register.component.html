@@ -1,106 +1,156 @@
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center p-4">
-  <!-- Decorative Elements -->
-  <div class="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-    <div class="absolute top-10 left-10 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-    <div class="absolute top-40 right-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000"></div>
-    <div class="absolute -bottom-8 left-1/2 w-72 h-72 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
-  </div>
-
-  <mat-card class="w-full max-w-md relative z-10 shadow-2xl rounded-2xl overflow-hidden">
-    <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white">
-      <h1 class="text-3xl font-bold">Create Account</h1>
-      <p class="text-blue-100 mt-2">Join us today and get started</p>
+<div class="auth-shell">
+  <!-- Brand panel (hidden on small screens) -->
+  <aside class="auth-aside">
+    <div class="auth-brand">
+      <span class="auth-brand-icon"><span class="material-icons">menu_book</span></span>
+      <div>
+        <div class="auth-brand-row">
+          <span class="auth-brand-title">Maa Kalika</span>
+          <span class="auth-brand-badge">ERP</span>
+        </div>
+        <div class="auth-brand-subtitle">Publishing &amp; Billing Suite</div>
+      </div>
     </div>
 
-    <mat-card-content class="p-8">
-      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
-        <!-- Username Field -->
-        <div class="space-y-2 mt-2">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Email</mat-label>
-            <mat-icon matPrefix class="mr-2">email</mat-icon>
+    <div class="auth-hero">
+      <h2>Set up your workspace in under a minute.</h2>
+      <p>Create an account to start billing, tracking stock and managing party ledgers today.</p>
+    </div>
+
+    <ul class="auth-feature-list">
+      <li>
+        <span class="auth-feature-icon"><span class="material-icons">receipt_long</span></span>
+        <div>
+          <strong>Sales &amp; Purchase Billing</strong>
+          <span>Create GST-ready invoices in seconds</span>
+        </div>
+      </li>
+      <li>
+        <span class="auth-feature-icon"><span class="material-icons">account_balance_wallet</span></span>
+        <div>
+          <strong>Party Ledger</strong>
+          <span>Track dues and payments per party</span>
+        </div>
+      </li>
+      <li>
+        <span class="auth-feature-icon"><span class="material-icons">inventory_2</span></span>
+        <div>
+          <strong>Stock &amp; Inventory</strong>
+          <span>Live stock visibility across every title</span>
+        </div>
+      </li>
+    </ul>
+
+    <div class="auth-aside-footer">&copy; 2026 Maa Kalika Publication</div>
+  </aside>
+
+  <!-- Form panel -->
+  <main class="auth-main">
+    <div class="auth-card">
+      <div class="auth-brand auth-brand--mobile">
+        <span class="auth-brand-icon"><span class="material-icons">menu_book</span></span>
+        <div>
+          <div class="auth-brand-row">
+            <span class="auth-brand-title">Maa Kalika</span>
+            <span class="auth-brand-badge">ERP</span>
+          </div>
+          <div class="auth-brand-subtitle">Publishing &amp; Billing Suite</div>
+        </div>
+      </div>
+
+      <div class="auth-heading">
+        <h1>Create your account</h1>
+        <p>Join us today and get started</p>
+      </div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
+        <!-- Email Field -->
+        <div class="field">
+          <label for="email">Email</label>
+          <div class="input-wrap">
+            <span class="material-icons input-icon">email</span>
             <input
-              matInput
+              id="email"
               formControlName="email"
               type="email"
               autocomplete="email"
+              placeholder="you@example.com"
+              [class.invalid]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched"
             />
-            @if (registerForm.get('email')?.hasError('required') && registerForm.get('email')?.touched) {
-              <mat-error>Email is required</mat-error>
-            }
-            @if (registerForm.get('email')?.hasError('email') && registerForm.get('email')?.touched) {
-              <mat-error>Enter a valid email</mat-error>
-            }
-          </mat-form-field>
+          </div>
+          @if (registerForm.get('email')?.hasError('required') && registerForm.get('email')?.touched) {
+            <span class="field-error">Email is required</span>
+          }
+          @if (registerForm.get('email')?.hasError('email') && registerForm.get('email')?.touched) {
+            <span class="field-error">Enter a valid email</span>
+          }
         </div>
 
         <!-- Username Field -->
-        <div class="space-y-2 mt-2">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Username</mat-label>
-            <mat-icon matPrefix class="mr-2">person</mat-icon>
+        <div class="field">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <span class="material-icons input-icon">person</span>
             <input
-              matInput
+              id="username"
               formControlName="username"
               type="text"
               autocomplete="username"
+              placeholder="Choose a username"
+              [class.invalid]="registerForm.get('username')?.invalid && registerForm.get('username')?.touched"
             />
-            @if (registerForm.get('username')?.hasError('required') && registerForm.get('username')?.touched) {
-              <mat-error>Username is required</mat-error>
-            }
-            @if (registerForm.get('username')?.hasError('minlength') && registerForm.get('username')?.touched) {
-              <mat-error>Username must be at least 3 characters</mat-error>
-            }
-          </mat-form-field>
+          </div>
+          @if (registerForm.get('username')?.hasError('required') && registerForm.get('username')?.touched) {
+            <span class="field-error">Username is required</span>
+          }
+          @if (registerForm.get('username')?.hasError('minlength') && registerForm.get('username')?.touched) {
+            <span class="field-error">Username must be at least 3 characters</span>
+          }
         </div>
 
         <!-- Password Field -->
-        <div class="space-y-3">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Password</mat-label>
-            <mat-icon matPrefix class="mr-2">lock</mat-icon>
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-wrap has-toggle">
+            <span class="material-icons input-icon">lock</span>
             <input
-              matInput
+              id="password"
               formControlName="password"
               [type]="hidePassword() ? 'password' : 'text'"
               autocomplete="new-password"
+              placeholder="Create a password"
+              [class.invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched"
             />
             <button
-              mat-icon-button
-              matSuffix
-              (click)="togglePasswordVisibility()"
               type="button"
-              class="text-gray-500"
+              class="toggle-visibility"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="hidePassword() ? 'Show password' : 'Hide password'"
             >
-              <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              <span class="material-icons">{{ hidePassword() ? 'visibility_off' : 'visibility' }}</span>
             </button>
-            @if (registerForm.get('password')?.hasError('required') && registerForm.get('password')?.touched) {
-              <mat-error>Password is required</mat-error>
-            }
-            @if (registerForm.get('password')?.hasError('minlength') && registerForm.get('password')?.touched) {
-              <mat-error>Password must be at least 6 characters</mat-error>
-            }
-          </mat-form-field>
+          </div>
+          @if (registerForm.get('password')?.hasError('required') && registerForm.get('password')?.touched) {
+            <span class="field-error">Password is required</span>
+          }
+          @if (registerForm.get('password')?.hasError('minlength') && registerForm.get('password')?.touched) {
+            <span class="field-error">Password must be at least 6 characters</span>
+          }
 
           <!-- Password Strength Indicator -->
           @if (registerForm.get('password')?.value) {
-            <div class="space-y-2">
-              <div class="flex justify-between items-center">
-                <span class="text-xs text-gray-600">Password Strength</span>
-                <span class="text-xs font-semibold" [ngClass]="{
-                  'text-red-500': passwordStrength() === 'weak',
-                  'text-yellow-500': passwordStrength() === 'fair',
-                  'text-blue-500': passwordStrength() === 'good',
-                  'text-green-500': passwordStrength() === 'strong'
-                }">
+            <div class="strength-meter">
+              <div class="strength-meter-row">
+                <span class="strength-meter-label">Password strength</span>
+                <span class="strength-meter-value" [ngClass]="'strength-meter-value--' + passwordStrength()">
                   {{ getPasswordStrengthText() }}
                 </span>
               </div>
-              <div class="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+              <div class="strength-track">
                 <div
-                  [ngClass]="getPasswordStrengthColor()"
+                  class="strength-fill"
+                  [ngClass]="'strength-fill--' + passwordStrength()"
                   [style.width.%]="((['weak', 'fair', 'good', 'strong'].indexOf(passwordStrength()) + 1) * 25)"
-                  class="h-full transition-all duration-300"
                 ></div>
               </div>
             </div>
@@ -108,71 +158,56 @@
         </div>
 
         <!-- Confirm Password Field -->
-        <div class="space-y-2">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Confirm Password</mat-label>
-            <mat-icon matPrefix class="mr-2">lock_outline</mat-icon>
+        <div class="field">
+          <label for="confirmPassword">Confirm Password</label>
+          <div class="input-wrap has-toggle">
+            <span class="material-icons input-icon">lock_outline</span>
             <input
-              matInput
+              id="confirmPassword"
               formControlName="confirmPassword"
               [type]="hideConfirmPassword() ? 'password' : 'text'"
               autocomplete="new-password"
+              placeholder="Re-enter your password"
+              [class.invalid]="registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched"
             />
             <button
-              mat-icon-button
-              matSuffix
-              (click)="toggleConfirmPasswordVisibility()"
               type="button"
-              class="text-gray-500"
+              class="toggle-visibility"
+              (click)="toggleConfirmPasswordVisibility()"
+              [attr.aria-label]="hideConfirmPassword() ? 'Show password' : 'Hide password'"
             >
-              <mat-icon>{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+              <span class="material-icons">{{ hideConfirmPassword() ? 'visibility_off' : 'visibility' }}</span>
             </button>
-            @if (registerForm.get('confirmPassword')?.hasError('required') && registerForm.get('confirmPassword')?.touched) {
-              <mat-error>Please confirm your password</mat-error>
-            }
-            @if (registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched) {
-              <mat-error>Passwords do not match</mat-error>
-            }
-          </mat-form-field>
+          </div>
+          @if (registerForm.get('confirmPassword')?.hasError('required') && registerForm.get('confirmPassword')?.touched) {
+            <span class="field-error">Please confirm your password</span>
+          }
+          @if (registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched) {
+            <span class="field-error">Passwords do not match</span>
+          }
         </div>
 
         <!-- Terms Checkbox -->
-        <div class="flex items-start space-x-2">
-          <mat-checkbox formControlName="agreeToTerms" class="mt-1"></mat-checkbox>
-          <label class="text-sm text-gray-600 pt-0.5">
-            I agree to the <a href="#" class="text-blue-600 hover:underline">Terms of Service</a> and
-            <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>
+        <div class="terms-row">
+          <input id="agreeToTerms" type="checkbox" formControlName="agreeToTerms" />
+          <label for="agreeToTerms">
+            I agree to the <a href="#">Terms of Service</a> and
+            <a href="#">Privacy Policy</a>
           </label>
         </div>
         @if (registerForm.get('agreeToTerms')?.hasError('required') && registerForm.get('agreeToTerms')?.touched) {
-          <div class="text-red-500 text-sm">You must agree to the terms</div>
+          <span class="field-error">You must agree to the terms</span>
         }
 
         <!-- Sign Up Button -->
-        <button
-          mat-raised-button
-          color="primary"
-          class="w-full !bg-gradient-to-r !from-blue-600 !to-purple-600 !text-white !py-3 !text-lg !font-semibold hover:shadow-lg transition-all duration-200"
-          [disabled]="registerForm.invalid"
-        >
+        <button type="submit" class="btn-submit" [disabled]="registerForm.invalid">
           Create Account
         </button>
       </form>
 
-      <!-- Divider -->
-      <div class="flex items-center mt-6 mb-6">
-        <div class="flex-1 border-t border-gray-300"></div>
-        <span class="px-3 text-gray-500 text-sm">Already have an account?</span>
-        <div class="flex-1 border-t border-gray-300"></div>
-      </div>
-
-      <!-- Sign In Link -->
-      <a
-        routerLink="/auth/login"
-        class="block w-full text-center py-3 px-4 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-colors duration-200"
-      >
-        Sign In Instead
-      </a>
-    </mat-card-content>
-  </mat-card>
+      <p class="auth-switch">
+        Already have an account? <a routerLink="/auth/login" class="link">Sign in</a>
+      </p>
+    </div>
+  </main>
 </div>

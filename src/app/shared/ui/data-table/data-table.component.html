@@ -1,0 +1,43 @@
+<div class="table-wrapper" *ngIf="rows.length; else emptyState">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th *ngFor="let column of columns" [class]="'align-' + (column.align || 'left')">
+          {{ column.header }}
+        </th>
+        <th class="align-left" *ngIf="actions.length">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of rows; trackBy: trackByRow">
+        <td *ngFor="let column of columns" [class]="'align-' + (column.align || 'left')">
+          <app-status-badge
+            *ngIf="column.type === 'badge'; else plainCell"
+            [status]="getStatusValue(row, column)"
+            [tone]="column.badgeTone">
+          </app-status-badge>
+          <ng-template #plainCell>{{ getFormattedValue(row, column) }}</ng-template>
+        </td>
+        <td class="align-left actions-cell" *ngIf="actions.length">
+          <button
+            *ngFor="let action of actions"
+            type="button"
+            class="row-action"
+            [class]="'tone-' + (action.tone || 'default')"
+            [title]="action.label"
+            [hidden]="!isVisible(row, action.id)"
+            (click)="onActionClick(row, action.id)">
+            <span class="material-icons">{{ action.icon }}</span>
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<ng-template #emptyState>
+  <div class="empty-state">
+    <span class="material-icons empty-icon">inbox</span>
+    <p>{{ emptyMessage }}</p>
+  </div>
+</ng-template>

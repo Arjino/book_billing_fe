@@ -1,36 +1,33 @@
 import { Component, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { BookDialogComponent } from './book-dialog.component';
 import { BulkImportDialogComponent } from './bulk-import-dialog.component';
 import { DataStoreService } from '../services/data-store.service';
 import { BooksService } from '../services/books.service';
 import { LoadingService } from '../services/loading.service';
-import { Book } from '../interface/book';
-import { BookDialogData } from '../interface/book-dialog-data';
+import { Book } from '../shared/models/book.model';
 import { BOOKING_CONSTANTS } from '../constants/booking.constants';
 import { firstValueFrom } from 'rxjs';
-import { StockSummary } from '../interface/stock-summary';
-import { StockLedgerEntry } from '../interface/stock-ledger-entry';
-import { StockReconciliationReport } from '../interface/stock-reconciliation-report';
+import { StockSummary, StockLedgerEntry, StockReconciliationReport } from '../shared/models/stock.model';
 import { extractHttpErrorMessage } from '../utils/http.utils';
+import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
+import { buildAppNavItems } from '../shared/nav-items';
+import { NavBadgeCountsService } from '../shared/nav-badge-counts.service';
+import { NavItem } from '../shared/models/common.models';
 
 @Component({
   selector: 'app-booking',
   templateUrl: './booking.component.html',
   styleUrls: ['./booking.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatIconModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSnackBarModule]
+  imports: [CommonModule, MatButtonModule, MatIconModule, FormsModule, MatSnackBarModule, SidebarNavComponent]
 })
 export class BookingComponent implements OnInit {
   books: Book[] = [];
@@ -62,6 +59,10 @@ export class BookingComponent implements OnInit {
   reconciliationRunning = false;
   reconciliationResult: StockReconciliationReport | null = null;
 
+  readonly LOW_STOCK_THRESHOLD = 20;
+
+  navItems: ReadonlyArray<NavItem> = buildAppNavItems();
+
   constructor(
     private dialog: MatDialog,
     private router: Router,
@@ -69,8 +70,13 @@ export class BookingComponent implements OnInit {
     private store: DataStoreService,
     private booksService: BooksService,
     private snackBar: MatSnackBar,
-    private loadingService: LoadingService
-  ) {}
+    private loadingService: LoadingService,
+    private navBadgeCounts: NavBadgeCountsService
+  ) {
+    this.navBadgeCounts.counts$.pipe(takeUntilDestroyed()).subscribe((counts) => {
+      this.navItems = buildAppNavItems(counts, ['books-inventory']);
+    });
+  }
 
   ngOnInit() {
     this.route?.queryParamMap?.subscribe(params => {
@@ -128,7 +134,7 @@ export class BookingComponent implements OnInit {
   }
 
   openSupplierBookMapping() {
-    this.router.navigate(['/supplier-book-mapping']);
+    this.router.navigate(['/booking/supplier-mapping']);
   }
 
   sortBy(column: string) {
@@ -148,10 +154,6 @@ export class BookingComponent implements OnInit {
     this.loadBooksByStatus();
   }
 
-  applySorting() {
-    // Sorting now handled by backend
-  }
-
   goBack() {
     this.router.navigate(['/dashboard']);
   }
@@ -161,47 +163,13 @@ export class BookingComponent implements OnInit {
   }
 
   addBook() {
-    const dialogRef = this.dialog.open(BookDialogComponent, {
-      width: BOOKING_CONSTANTS.DIALOG_WIDTH,
-      data: {
-        id: 0,
-        sku: '',
-        title: '',
-        publisher: '',
-        hsn: '',
-        mrp: 0,
-        stock: 0
-      } as BookDialogData
-    });
-
-    dialogRef.afterClosed().subscribe((result: BookDialogData) => {
-      if (result) {
-        this.loadingService.show('Adding book...');
-        this.booksService.createBook(result as any).subscribe({
-          next: () => {
-            this.loadingService.hide();
-            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', {
-              duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
-              panelClass: ['success-snackbar']
-            });
-            this.loadBooks(true);
-          },
-          error: (err) => {
-            this.loadingService.hide();
-            const errorMessage = err?.error?.message || err?.message || BOOKING_CONSTANTS.MESSAGES.ADD_ERROR;
-            this.snackBar.open(errorMessage, 'Close', {
-              duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
-              panelClass: ['error-snackbar']
-            });
-          }
-        });
-      }
-    });
+    this.router.navigate(['/booking/new']);
   }
 
   async bulkImport() {
     const dialogRef = this.dialog.open(BulkImportDialogComponent, {
-      width: '600px',
+      width: '900px',
+      maxWidth: '95vw',
       maxHeight: '90vh',
       data: null
     });
@@ -257,34 +225,7 @@ export class BookingComponent implements OnInit {
     }
   }
   editBook(book: Book) {
-    const dialogRef = this.dialog.open(BookDialogComponent, {
-      width: BOOKING_CONSTANTS.DIALOG_WIDTH,
-      data: { ...book } as BookDialogData
-    });
-
-    dialogRef.afterClosed().subscribe((result: BookDialogData) => {
-      if (result) {
-        this.loadingService.show('Updating book...');
-        this.store.updateBook(result.id, result as Book).subscribe({
-          next: () => {
-            this.loadingService.hide();
-            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.UPDATE_SUCCESS, 'Close', {
-              duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
-              panelClass: ['success-snackbar']
-            });
-            this.store?.loadBooks(true);
-            this.loadBooks();
-          },
-          error: (err) => {
-            this.loadingService.hide();
-            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.UPDATE_ERROR, 'Close', {
-              duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
-              panelClass: ['error-snackbar']
-            });
-          }
-        });
-      }
-    });
+    this.router.navigate(['/booking/edit', book.id]);
   }
 
   deleteBook(book: Book) {
@@ -487,11 +428,34 @@ export class BookingComponent implements OnInit {
   movementTypeClass(movementType: string): string {
     const type = (movementType || '').toUpperCase();
     if (type === 'IN' || type === 'RELEASED') {
-      return 'bg-green-500/20 text-green-300';
+      return 'movement-chip movement-chip--in';
     }
     if (type === 'OUT' || type === 'RESERVED') {
-      return 'bg-red-500/20 text-red-300';
+      return 'movement-chip movement-chip--out';
     }
-    return 'bg-yellow-500/20 text-yellow-300';
+    return 'movement-chip movement-chip--neutral';
+  }
+
+  onSidebarQuickAdd(itemId: string): void {
+    if (itemId === 'books-inventory') {
+      this.addBook();
+      return;
+    }
+    const target = this.navItems.find((item) => item.id === itemId);
+    if (target?.route) this.router.navigate([target.route]);
+  }
+
+  stockStatusLabel(book: Book): string {
+    const stock = Number(book?.stock) || 0;
+    if (stock <= 0) return 'Out of Stock';
+    if (stock <= this.LOW_STOCK_THRESHOLD) return 'Low Alert';
+    return 'In Stock';
+  }
+
+  stockStatusClass(book: Book): string {
+    const stock = Number(book?.stock) || 0;
+    if (stock <= 0) return 'stock-chip stock-chip--danger';
+    if (stock <= this.LOW_STOCK_THRESHOLD) return 'stock-chip stock-chip--warning';
+    return 'stock-chip stock-chip--success';
   }
 }

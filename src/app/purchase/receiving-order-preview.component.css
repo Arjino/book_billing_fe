@@ -1,6 +1,6 @@
 :host {
   display: block;
-  color: #d1fae5;
+  color: var(--color-emerald-100);
 }
 
 iframe {

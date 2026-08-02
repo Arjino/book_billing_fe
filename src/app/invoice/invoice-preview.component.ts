@@ -14,7 +14,7 @@ import { INVOICE_CONSTANTS } from '../constants/invoice.constants';
   templateUrl: './invoice-preview.component.html',
   styleUrls: ['./invoice-preview.component.css']
 })
-export class InvoicePreviewComponent implements OnInit {
+export class InvoicePreviewComponent implements OnInit, OnDestroy {
   @Input() salesId?: string;
   invoiceType: 'sale' | 'purchase' = 'sale';
   pdfUrl?: SafeResourceUrl;
@@ -73,7 +73,7 @@ export class InvoicePreviewComponent implements OnInit {
           this.openInNewTab();
         }
       },
-      error: (err) => {
+      error: () => {
         this.error = INVOICE_CONSTANTS.MESSAGES.LOAD_ERROR;
         this.loading = false;
       }

@@ -1,54 +1,251 @@
-
-/* Make form controls readable on translucent dialog backgrounds */
-input, textarea, select {
-  background: rgba(255,255,255,0.03);
-  color: rgba(255,255,255,0.95);
-  border: 1px solid rgba(179,71,233,0.95);
-  border-radius: 6px;
+:host {
+  display: block;
 }
 
-input::placeholder, textarea::placeholder {
-  color: rgba(255,255,255,0.6);
+.book-dialog-shell {
+  width: min(720px, 92vw);
+  border-radius: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
 }
 
-/* make buttons stand out inside dialogs */
-button[mat-raised-button] {
-  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+.dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-border);
 }
 
-/* Make native selects and options dark so text is visible */
-select, option {
-  background: rgba(10,10,10,0.96);
-  color: rgba(255,255,255,0.95);
+.header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-select:focus {
+.title-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.dialog-header p {
+  margin: 4px 0 0;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--icon-btn-border);
+  background: var(--icon-btn-bg);
+  color: var(--icon-btn-color);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.close-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+.dialog-content {
+  padding: 16px 20px;
+}
+
+.book-form {
+  display: grid;
+  gap: 14px;
+}
+
+.form-row label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.three-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+
+input {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+input:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(179,71,233,0.12);
+  border-color: var(--color-indigo-500);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
-[mat-dialog-actions] {
-  background: rgba(179, 71, 233, 0.6);
+input:disabled,
+input[readonly] {
+  background: var(--color-primary-soft);
+  color: var(--color-indigo-500);
+  font-weight: 700;
 }
 
-/* Make mat-form-field outline color stronger so borders look bold */
-:host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline {
-  stroke: rgba(179,71,233,0.95) !important;
-}
-:host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline .mat-form-field-outline-gap {
-  stroke: rgba(179,71,233,0.95) !important;
+.sku-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* Spinning animation for refresh button */
+.sku-field input {
+  flex: 1;
+}
+
+.sku-refresh-btn {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  color: var(--color-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sku-refresh-btn:hover {
+  background: var(--color-primary-soft);
+}
+
+.sku-refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .spinning {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  from {
-    transform: rotate(0deg);
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.hint {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-text-subtle);
+  font-size: 11px;
+}
+
+.error {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-danger);
+  font-size: 11px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.primary-btn,
+.secondary-btn {
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.primary-btn {
+  color: var(--btn-primary-text);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
+}
+
+.primary-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  color: var(--btn-secondary-text);
+  background: var(--btn-secondary-bg);
+  border-color: var(--btn-secondary-border);
+}
+
+.primary-btn mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+@media (max-width: 720px) {
+  .book-dialog-shell {
+    width: 96vw;
   }
-  to {
-    transform: rotate(360deg);
+
+  .two-col,
+  .three-col {
+    grid-template-columns: 1fr;
+  }
+
+  .dialog-header h2 {
+    font-size: 18px;
+  }
+
+  .dialog-actions {
+    flex-direction: column;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

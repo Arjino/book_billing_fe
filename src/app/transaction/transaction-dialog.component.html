@@ -1,81 +1,124 @@
-<div class="modern-dialog max-w-lg text-white" >
-  <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#06B6D4,#7C3AED);">
-    <div class="flex items-center gap-3">
-      <mat-icon>payment</mat-icon>
-      <h2 class="text-lg font-semibold">Add Transaction</h2>
+<div class="tx-dialog-shell">
+  <div class="tx-dialog-header">
+    <div class="tx-dialog-header-left">
+      <span class="tx-dialog-icon"><mat-icon>credit_card</mat-icon></span>
+      <div>
+        <h2>Record Payment Entry</h2>
+        <p>{{ data.transactionType === 'PURCHASE' ? 'Payment made to supplier / publisher' : 'Payment received from customer / book depot' }}</p>
+      </div>
     </div>
-    <button mat-icon-button aria-label="close" (click)="onCancel()"><mat-icon>close</mat-icon></button>
+    <button type="button" class="tx-dialog-close" (click)="onCancel()" aria-label="Close">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
 
-  <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
+  <div mat-dialog-content class="tx-dialog-content">
     <form #transactionForm="ngForm">
-      <div class="grid grid-cols-1 gap-3">
-        <mat-form-field *ngIf="data.transactionType === 'PURCHASE' && !isPartyLocked" appearance="outline" class="w-full">
-          <mat-label>Party</mat-label>
-          <mat-select
-            [(ngModel)]="data.party"
-            name="party"
-            (selectionChange)="onPartyChange()"
-            required
-            #partyModel="ngModel">
-            <mat-option *ngFor="let party of supplierParties" [value]="party">{{ party.name }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="partyModel.invalid && (partyModel.dirty || partyModel.touched)">
-            <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
-          </mat-error>
-        </mat-form-field>
+      <div class="tx-form-grid">
 
-        <mat-form-field *ngIf="data.transactionType === 'PURCHASE' && isPartyLocked" appearance="outline" class="w-full">
-          <mat-label>Party</mat-label>
-          <input matInput [value]="(data.party && data.party.name) ? data.party.name : ''" [disabled]="true" />
-        </mat-form-field>
+        <!-- Party / Client -->
+        <div class="tx-form-row tx-full">
+          <mat-form-field *ngIf="data.transactionType === 'PURCHASE' && !isPartyLocked" appearance="outline" class="tx-field">
+            <mat-label>Party / Supplier</mat-label>
+            <mat-select
+              [(ngModel)]="data.party"
+              name="party"
+              (selectionChange)="onPartyChange()"
+              required
+              #partyModel="ngModel">
+              <mat-option *ngFor="let party of supplierParties" [value]="party">{{ party.name }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="partyModel.invalid && (partyModel.dirty || partyModel.touched)">
+              <span *ngIf="partyModel.errors?.['required']">Party is required.</span>
+            </mat-error>
+          </mat-form-field>
 
-        <mat-form-field *ngIf="data.transactionType !== 'PURCHASE'" appearance="outline" class="w-full">
-          <mat-label>Party</mat-label>
-          <input matInput [value]="(data.party && data.party.name) ? data.party.name : ''" [disabled]="true" />
-        </mat-form-field>
+          <mat-form-field *ngIf="data.transactionType === 'PURCHASE' && isPartyLocked" appearance="outline" class="tx-field">
+            <mat-label>Party / Supplier</mat-label>
+            <input matInput [value]="(data.party && data.party.name) ? data.party.name : ''" [disabled]="true" />
+          </mat-form-field>
 
-        <mat-form-field *ngIf="data.transactionType === 'SALE'" appearance="outline" class="w-full">
-          <mat-label>{{ referenceLabel }}</mat-label>
-          <mat-select [(ngModel)]="data.invoiceNo" name="referenceNo" required #referenceModel="ngModel" (selectionChange)="fetchDetails()">
-            <mat-option *ngIf="isLoadingSaleInvoices" [value]="''" disabled>Loading...</mat-option>
-            <mat-option *ngFor="let invoice of saleInvoices" [value]="invoice">{{ invoice }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="referenceModel.invalid && (referenceModel.dirty || referenceModel.touched)">
-            <span *ngIf="referenceModel.errors?.['required']">Sale invoice is required.</span>
-          </mat-error>
-          <mat-hint *ngIf="!isLoadingSaleInvoices && !saleInvoices.length">No unpaid/partial invoices found.</mat-hint>
-        </mat-form-field>
+          <mat-form-field *ngIf="data.transactionType !== 'PURCHASE'" appearance="outline" class="tx-field">
+            <mat-label>Party / Client</mat-label>
+            <input matInput [value]="(data.party && data.party.name) ? data.party.name : ''" [disabled]="true" />
+          </mat-form-field>
+        </div>
 
-        <mat-form-field *ngIf="data.transactionType === 'PURCHASE'" appearance="outline" class="w-full">
-          <mat-label>{{ referenceLabel }}</mat-label>
-          <mat-select
-            [(ngModel)]="data.invoiceNo"
-            name="referenceNo"
-            [disabled]="isPartyLocked"
-            required
-            #referenceModel="ngModel"
-            (selectionChange)="fetchDetails()">
-            <mat-option *ngIf="isLoadingInvoices" [value]="''" disabled>Loading...</mat-option>
-            <mat-option *ngFor="let invoice of purchaseInvoices" [value]="invoice">{{ invoice }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="referenceModel.invalid && (referenceModel.dirty || referenceModel.touched)">
-            <span *ngIf="referenceModel.errors?.['required']">Purchase number is required.</span>
-          </mat-error>
-          <mat-hint *ngIf="!isLoadingInvoices && !purchaseInvoices.length">No unpaid/partial invoices found.</mat-hint>
-        </mat-form-field>
+        <!-- Reference / Invoice -->
+        <div class="tx-form-row tx-full">
+          <mat-form-field *ngIf="data.transactionType === 'SALE'" appearance="outline" class="tx-field">
+            <mat-label>{{ referenceLabel }}</mat-label>
+            <mat-select [(ngModel)]="data.invoiceNo" name="referenceNo" required #referenceModel="ngModel" (selectionChange)="fetchDetails()">
+              <mat-option *ngIf="isLoadingSaleInvoices" [value]="''" disabled>Loading...</mat-option>
+              <mat-option *ngFor="let invoice of saleInvoices" [value]="invoice">{{ invoice }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="referenceModel.invalid && (referenceModel.dirty || referenceModel.touched)">
+              <span *ngIf="referenceModel.errors?.['required']">Sale invoice is required.</span>
+            </mat-error>
+            <mat-hint *ngIf="!isLoadingSaleInvoices && !saleInvoices.length">No unpaid/partial invoices found.</mat-hint>
+          </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full text-white">
-          <mat-label>Transaction Date</mat-label>
-          <input matInput readonly class="text-white cursor-pointer" [value]="getPaymentDisplay()" [matMenuTriggerFor]="paymentMenu" #paymentTrigger="matMenuTrigger" />
-          <input type="hidden" [(ngModel)]="paymentDateTime" name="paymentDateTime" required #paymentDateModel="ngModel" />
-          <button matSuffix mat-icon-button type="button" (click)="paymentMenuTrigger?.openMenu()">
-            <mat-icon class="text-blue-400">calendar_today</mat-icon>
-          </button>
-          <mat-error *ngIf="paymentDateModel.invalid && (paymentDateModel.dirty || paymentDateModel.touched)">
-            <span *ngIf="paymentDateModel.errors?.['required']">Transaction date is required.</span>
-          </mat-error>
-        </mat-form-field>
+          <mat-form-field *ngIf="data.transactionType === 'PURCHASE'" appearance="outline" class="tx-field">
+            <mat-label>{{ referenceLabel }}</mat-label>
+            <mat-select
+              [(ngModel)]="data.invoiceNo"
+              name="referenceNo"
+              [disabled]="isPartyLocked"
+              required
+              #referenceModel="ngModel"
+              (selectionChange)="fetchDetails()">
+              <mat-option *ngIf="isLoadingInvoices" [value]="''" disabled>Loading...</mat-option>
+              <mat-option *ngFor="let invoice of purchaseInvoices" [value]="invoice">{{ invoice }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="referenceModel.invalid && (referenceModel.dirty || referenceModel.touched)">
+              <span *ngIf="referenceModel.errors?.['required']">Purchase number is required.</span>
+            </mat-error>
+            <mat-hint *ngIf="!isLoadingInvoices && !purchaseInvoices.length">No unpaid/partial invoices found.</mat-hint>
+          </mat-form-field>
+        </div>
+
+        <!-- Due Balance | Amount Received -->
+        <div class="tx-form-row tx-two-col">
+          <mat-form-field appearance="outline" class="tx-field">
+            <mat-label>Due Balance (₹)</mat-label>
+            <input matInput type="number" [(ngModel)]="data.dueAmount" name="dueAmount" [disabled]="true" #dueAmountModel="ngModel" (ngModelChange)="dueAmountModel.control.markAsTouched()" />
+            <mat-hint>Balance can be negative.</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="tx-field">
+            <mat-label>Amount Received (₹)</mat-label>
+            <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
+            <mat-error *ngIf="paidAmountModel.invalid && (paidAmountModel.dirty || paidAmountModel.touched)">
+              <span *ngIf="paidAmountModel.errors?.['required']">Amount received is required.</span>
+            </mat-error>
+            <mat-error *ngIf="isOverpay()">Amount cannot be greater than balance.</mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Payment Method | Date & Time -->
+        <div class="tx-form-row tx-two-col">
+          <mat-form-field appearance="outline" class="tx-field">
+            <mat-label>Payment Method</mat-label>
+            <mat-select [(ngModel)]="data.paymentMode" name="paymentMethod" required #paymentModeModel="ngModel">
+              <mat-option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="paymentModeModel.invalid && (paymentModeModel.dirty || paymentModeModel.touched)">
+              <span *ngIf="paymentModeModel.errors?.['required']">Payment method is required.</span>
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="tx-field">
+            <mat-label>Date &amp; Time</mat-label>
+            <input matInput readonly class="tx-date-trigger" [value]="getPaymentDisplay()" [matMenuTriggerFor]="paymentMenu" #paymentTrigger="matMenuTrigger" />
+            <input type="hidden" [(ngModel)]="paymentDateTime" name="paymentDateTime" required #paymentDateModel="ngModel" />
+            <button matSuffix mat-icon-button type="button" (click)="paymentMenuTrigger?.openMenu()">
+              <mat-icon class="tx-calendar-icon">calendar_today</mat-icon>
+            </button>
+            <mat-error *ngIf="paymentDateModel.invalid && (paymentDateModel.dirty || paymentDateModel.touched)">
+              <span *ngIf="paymentDateModel.errors?.['required']">Transaction date is required.</span>
+            </mat-error>
+          </mat-form-field>
+        </div>
 
         <mat-menu #paymentMenu="matMenu" class="date-time-menu">
           <div class="date-time-menu-content" (click)="$event.stopPropagation()">
@@ -101,41 +144,23 @@
           </div>
         </mat-menu>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Last Amount</mat-label>
-          <input matInput type="number" [(ngModel)]="data.dueAmount" name="dueAmount" [disabled]="true" #dueAmountModel="ngModel" (ngModelChange)="dueAmountModel.control.markAsTouched()" />
-          <mat-hint>Balance can be negative.</mat-hint>
-        </mat-form-field>
+        <!-- Notes -->
+        <div class="tx-form-row tx-full">
+          <mat-form-field appearance="outline" class="tx-field">
+            <mat-label>Payment Remarks / Notes</mat-label>
+            <textarea matInput [(ngModel)]="data.remarks" name="notes" rows="3" placeholder="e.g. Payment received via Google Pay"></textarea>
+          </mat-form-field>
+        </div>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Pay Amount</mat-label>
-          <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
-          <mat-error *ngIf="paidAmountModel.invalid && (paidAmountModel.dirty || paidAmountModel.touched)">
-            <span *ngIf="paidAmountModel.errors?.['required']">Pay amount is required.</span>
-          </mat-error>
-          <mat-error *ngIf="isOverpay()">Pay amount cannot be greater than balance.</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Payment Method</mat-label>
-          <mat-select [(ngModel)]="data.paymentMode" name="paymentMethod" required #paymentModeModel="ngModel">
-            <mat-option *ngFor="let method of paymentMethods" [value]="method">{{ method }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="paymentModeModel.invalid && (paymentModeModel.dirty || paymentModeModel.touched)">
-            <span *ngIf="paymentModeModel.errors?.['required']">Payment method is required.</span>
-          </mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Notes</mat-label>
-          <textarea matInput [(ngModel)]="data.remarks" name="notes" rows="3"></textarea>
-        </mat-form-field>
       </div>
     </form>
   </div>
 
-  <div mat-dialog-actions class="flex justify-end gap-2 p-3 bg-[rgba(179,71,233,0.6)] rounded-b-lg">
-    <button mat-button (click)="onCancel()">Cancel</button>
-    <button mat-raised-button color="primary" (click)="onSave()" [disabled]="transactionForm.invalid || isOverpay()">Save Transaction</button>
+  <div mat-dialog-actions class="tx-dialog-actions">
+    <button type="button" class="tx-btn-secondary" (click)="onCancel()">Cancel</button>
+    <button type="button" class="tx-btn-primary" (click)="onSave()" [disabled]="transactionForm.invalid || isOverpay()">
+      <mat-icon>credit_card</mat-icon>
+      Record Payment
+    </button>
   </div>
 </div>

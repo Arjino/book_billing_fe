@@ -1,254 +1,297 @@
-<div class="min-h-screen pt-20 pb-12 bg-gradient-to-br from-slate-950 via-indigo-900/20 to-slate-950 relative overflow-hidden">
-  <div class="max-w-5xl mx-auto px-6 relative z-10">
-    <div class="mb-8 flex items-center justify-between">
-      <div>
-        <h1 class="text-4xl font-extrabold mb-2">
-          <span class="bg-gradient-to-r from-indigo-400 to-sky-400 bg-clip-text text-transparent">Ledger</span>
-        </h1>
-        <p class="text-indigo-200">Party ledger and statements</p>
+﻿<div class="page-shell">
+  <app-sidebar-nav [items]="navItems"></app-sidebar-nav>
+
+  <main class="main-content">
+
+    <!-- ── Header card ───────────────────────────────────────── -->
+    <div class="ld-card ld-header-card">
+      <div class="ld-header-left">
+        <div class="ld-header-icon">
+          <mat-icon>description</mat-icon>
+        </div>
+        <div>
+          <h1 class="ld-title">Party Ledger Statements &amp; Audit Trail</h1>
+          <p class="ld-subtitle">Audit party debits, credits, running balance ledgers &amp; export printable statements</p>
+        </div>
       </div>
-      <div class="flex items-center">
-        <button mat-icon-button aria-label="back" (click)="goBack()" class="text-indigo-200 hover:text-white">
-          <mat-icon>arrow_back</mat-icon>
-        </button>
-      </div>
+      <button class="ld-btn ld-btn--export" (click)="downloadLedgerPDF()" [disabled]="!results.length">
+        <mat-icon>file_download</mat-icon>
+        Export PDF Statement
+      </button>
     </div>
 
-    <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-indigo-500/30 rounded-2xl p-6 backdrop-blur-xl text-white">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-        <div class="ledger-party-dropdown w-full" *ngIf="partyState as state">
-          <label class="text-white text-sm mb-2 block">Party</label>
-          <div class="book-input-shell">
-            <input
-              type="text"
-              class="book-input"
-              name="ledgerPartySearch"
-              [ngModel]="state.search"
-              (ngModelChange)="onPartySearchInput($event)"
-              (focus)="openPartyDropdown()"
-              (click)="openPartyDropdown()"
-              (keydown)="onPartyInputKeydown($event)"
-              placeholder="Search parties by name, phone, or GST"
-              autocomplete="off"
-              spellcheck="false"
-            />
-            <button type="button" class="toggle-button" (click)="state.open ? closePartyDropdown() : openPartyDropdown()" aria-label="Toggle parties list">
-              <span class="toggle-caret" [class.toggle-caret--open]="state.open">▾</span>
-            </button>
-          </div>
+    <!-- ── Filters card ──────────────────────────────────────── -->
+    <div class="ld-card ld-filters-card">
+      <div class="ld-filters-row">
 
-          <div class="book-panel" *ngIf="state.open">
-            <div class="book-options" id="ledger-party-options">
+        <!-- Party selector -->
+        <div class="ld-filter-col ld-filter-col--party">
+          <label class="ld-filter-label">SELECT CLIENT / BOOK DEPOT:</label>
+          <div class="ledger-party-dropdown ld-party-wrap" *ngIf="partyState as state">
+            <div class="ld-party-input-shell">
+              <input
+                type="text"
+                class="ld-party-input"
+                name="ledgerPartySearch"
+                [ngModel]="state.search"
+                (ngModelChange)="onPartySearchInput($event)"
+                (focus)="openPartyDropdown()"
+                (click)="openPartyDropdown()"
+                (keydown)="onPartyInputKeydown($event)"
+                placeholder="Search parties by name, phone, or GST..."
+                autocomplete="off"
+                spellcheck="false"
+              />
+              <span class="ld-party-caret" (click)="state.open ? closePartyDropdown() : openPartyDropdown()">▾</span>
+            </div>
+
+            <div class="ld-party-panel" *ngIf="state.open">
               <button
                 type="button"
-                class="book-option"
+                class="ld-party-option"
                 *ngFor="let p of state.options || []; let idx = index; trackBy: trackByPartyId"
-                [class.book-option--active]="idx === state.activeIndex"
-                [class.book-option--selected]="partyId === p.id"
+                [class.ld-party-option--active]="idx === state.activeIndex"
+                [class.ld-party-option--selected]="partyId === p.id"
                 [attr.data-option-index]="idx"
                 (click)="onPartyOptionClicked(p)"
               >
-                <div class="book-option-title" [innerHTML]="highlightPartyMatch(p.name)"></div>
-                <div class="book-option-meta">
+                <span class="ld-po-name" [innerHTML]="highlightPartyMatch(p.name)"></span>
+                <span class="ld-po-meta">
                   <span [innerHTML]="highlightPartyMatch(p.phone)"></span>
-                  <span class="meta-dot">•</span>
+                  <span class="ld-dot">•</span>
                   <span [innerHTML]="highlightPartyMatch(p?.gstin)"></span>
-                </div>
+                </span>
               </button>
 
-              <div class="book-empty" *ngIf="!state.loading && !(state.options.length)">
+              <div class="ld-party-empty" *ngIf="!state.loading && !state.options.length">
                 No parties found
               </div>
-
-              <div class="book-loading" *ngIf="state.loading">
-                <span class="spinner" aria-hidden="true"></span>
-                Loading parties...
+              <div class="ld-party-loading" *ngIf="state.loading">
+                Loading...
               </div>
-
-              <div class="book-sentinel" id="ledger-party-sentinel" [class.book-sentinel--hidden]="state.last || state.loading"></div>
+              <div id="ledger-party-sentinel" [class.ld-sentinel--hidden]="state.last || state.loading"></div>
             </div>
           </div>
         </div>
 
-        <mat-form-field appearance="outline" class="w-full text-white" [style.color]="'white'">
-          <mat-label class="text-white">Type</mat-label>
-          <mat-select class="text-white" [style.color]="'white'" [(ngModel)]="transactionType">
-            <mat-option value="All">All</mat-option>
-            <mat-option value="Sale">Sale</mat-option>
-            <mat-option value="Purchase">Purchase</mat-option>
-          </mat-select>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="w-full text-white">
-          <mat-label class="text-white">Start Date</mat-label>
-          <input
-            matInput
-            [value]="getStartDisplay()"
-            readonly
-            class="text-white placeholder-white"
-            [style.color]="'white'"
-            [matMenuTriggerFor]="startMenu"
-            #startTrigger="matMenuTrigger"
-          />
-          <button mat-icon-button matSuffix class="date-time-icon" (click)="startTrigger.openMenu()" aria-label="Open start date time">
-            <mat-icon>calendar_today</mat-icon>
-          </button>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="w-full text-white">
-          <mat-label class="text-white">End Date</mat-label>
-          <input
-            matInput
-            [value]="getEndDisplay()"
-            readonly
-            class="text-white placeholder-white"
-            [style.color]="'white'"
-            [matMenuTriggerFor]="endMenu"
-            #endTrigger="matMenuTrigger"
-          />
-          <button mat-icon-button matSuffix class="date-time-icon" (click)="endTrigger.openMenu()" aria-label="Open end date time">
-            <mat-icon>calendar_today</mat-icon>
-          </button>
-        </mat-form-field>
-      </div>
-
-      <div class="flex items-center gap-2 mb-4 flex-wrap">
-        <button mat-raised-button color="primary" (click)="applyFilters()" class="flex items-center gap-2">
-          <mat-icon>filter_list</mat-icon>
-          Apply Filters
-        </button>
-        <button mat-stroked-button (click)="resetFilters()" class="flex items-center gap-2">
-          <mat-icon>refresh</mat-icon>
-          Refresh
-        </button>
-        <button mat-raised-button color="accent" (click)="downloadLedgerPDF()" class="flex items-center gap-2" [disabled]="!results.length">
-          <mat-icon>download</mat-icon>
-          Download PDF
-
-              <mat-menu #startMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
-                <div class="date-time-menu-content" (click)="$event.stopPropagation()">
-                  <mat-calendar
-                    [selected]="startDate"
-                    [maxDate]="maxDate"
-                    (selectedChange)="onStartDateSelected($event)">
-                  </mat-calendar>
-                  <div class="time-controls">
-                    <div class="time-column">
-                      <div class="time-col-title">Hours</div>
-                      <div class="time-list">
-                        <button
-                          type="button"
-                          class="time-item"
-                          *ngFor="let h of hours"
-                          [class.time-item--active]="h === startHour"
-                          (click)="startHour = h">
-                          {{ h }}
-                        </button>
-                      </div>
-                    </div>
-                    <div class="time-column">
-                      <div class="time-col-title">Minutes</div>
-                      <div class="time-list">
-                        <button
-                          type="button"
-                          class="time-item"
-                          *ngFor="let m of minutes"
-                          [class.time-item--active]="m === startMinute"
-                          (click)="startMinute = m">
-                          {{ m }}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </mat-menu>
-
-              <mat-menu #endMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
-                <div class="date-time-menu-content" (click)="$event.stopPropagation()">
-                  <mat-calendar
-                    [selected]="endDate"
-                    [minDate]="minEndDate"
-                    [maxDate]="maxDate"
-                    (selectedChange)="onEndDateSelected($event)">
-                  </mat-calendar>
-                  <div class="time-controls">
-                    <div class="time-column">
-                      <div class="time-col-title">Hours</div>
-                      <div class="time-list">
-                        <button
-                          type="button"
-                          class="time-item"
-                          *ngFor="let h of hours"
-                          [class.time-item--active]="h === endHour"
-                          (click)="endHour = h">
-                          {{ h }}
-                        </button>
-                      </div>
-                    </div>
-                    <div class="time-column">
-                      <div class="time-col-title">Minutes</div>
-                      <div class="time-list">
-                        <button
-                          type="button"
-                          class="time-item"
-                          *ngFor="let m of minutes"
-                          [class.time-item--active]="m === endMinute"
-                          (click)="endMinute = m">
-                          {{ m }}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </mat-menu>
-        </button>
-      </div>
-
-      <div class="overflow-x-auto bg-[rgba(255,255,255,0.02)] rounded p-4">
-        <div class="mb-4 flex items-center justify-between">
-          <div class="text-indigo-200">Last Balance: <span class="font-semibold text-white">{{ lastBalance | currency:'INR':'symbol':'1.2-2' }}</span></div>
-          <div class="text-indigo-200">Total Amount: <span class="font-semibold text-white">{{ totalAmount | currency:'INR':'symbol':'1.2-2' }}</span></div>
+        <!-- Entry type filter -->
+        <div class="ld-filter-col">
+          <label class="ld-filter-label">ENTRY TYPE FILTER:</label>
+          <select class="ld-select" [(ngModel)]="transactionType" (change)="onEntryTypeChange()">
+            <option *ngFor="let opt of entryTypeOptions" [value]="opt.value">{{ opt.label }}</option>
+          </select>
         </div>
-        <table class="w-full text-white results-table">
+
+        <!-- Start date -->
+        <div class="ld-filter-col ld-date-field">
+          <label class="ld-filter-label">START DATE</label>
+          <div class="ld-date-input-shell">
+            <input
+              type="text"
+              class="ld-date-input"
+              [value]="getStartDisplay()"
+              readonly
+              [matMenuTriggerFor]="startMenu"
+              #startTrigger="matMenuTrigger"
+            />
+            <button mat-icon-button class="ld-date-icon-btn" (click)="startTrigger.openMenu()" aria-label="Open start date time">
+              <mat-icon>calendar_today</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- End date -->
+        <div class="ld-filter-col ld-date-field">
+          <label class="ld-filter-label">END DATE</label>
+          <div class="ld-date-input-shell">
+            <input
+              type="text"
+              class="ld-date-input"
+              [value]="getEndDisplay()"
+              readonly
+              [matMenuTriggerFor]="endMenu"
+              #endTrigger="matMenuTrigger"
+            />
+            <button mat-icon-button class="ld-date-icon-btn" (click)="endTrigger.openMenu()" aria-label="Open end date time">
+              <mat-icon>calendar_today</mat-icon>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter actions -->
+        <div class="ld-filter-actions">
+          <button type="button" class="ld-btn ld-btn--apply" (click)="applyFilters()" [disabled]="!partyId">
+            <mat-icon>filter_list</mat-icon>
+            Apply Filters
+          </button>
+          <button type="button" class="ld-btn ld-btn--refresh" (click)="resetFilters()" [disabled]="!partyId">
+            <mat-icon>refresh</mat-icon>
+            Refresh
+          </button>
+        </div>
+
+      </div>
+
+      <mat-menu #startMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
+        <div class="date-time-menu-content" (click)="$event.stopPropagation()">
+          <mat-calendar
+            [selected]="startDate"
+            [maxDate]="maxDate"
+            (selectedChange)="onStartDateSelected($event)">
+          </mat-calendar>
+          <div class="time-controls">
+            <div class="time-column">
+              <div class="time-col-title">Hours</div>
+              <div class="time-list">
+                <button
+                  type="button"
+                  class="time-item"
+                  *ngFor="let h of hours"
+                  [class.time-item--active]="h === startHour"
+                  (click)="startHour = h">
+                  {{ h }}
+                </button>
+              </div>
+            </div>
+            <div class="time-column">
+              <div class="time-col-title">Minutes</div>
+              <div class="time-list">
+                <button
+                  type="button"
+                  class="time-item"
+                  *ngFor="let m of minutes"
+                  [class.time-item--active]="m === startMinute"
+                  (click)="startMinute = m">
+                  {{ m }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-menu>
+
+      <mat-menu #endMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
+        <div class="date-time-menu-content" (click)="$event.stopPropagation()">
+          <mat-calendar
+            [selected]="endDate"
+            [minDate]="minEndDate"
+            [maxDate]="maxDate"
+            (selectedChange)="onEndDateSelected($event)">
+          </mat-calendar>
+          <div class="time-controls">
+            <div class="time-column">
+              <div class="time-col-title">Hours</div>
+              <div class="time-list">
+                <button
+                  type="button"
+                  class="time-item"
+                  *ngFor="let h of hours"
+                  [class.time-item--active]="h === endHour"
+                  (click)="endHour = h">
+                  {{ h }}
+                </button>
+              </div>
+            </div>
+            <div class="time-column">
+              <div class="time-col-title">Minutes</div>
+              <div class="time-list">
+                <button
+                  type="button"
+                  class="time-item"
+                  *ngFor="let m of minutes"
+                  [class.time-item--active]="m === endMinute"
+                  (click)="endMinute = m">
+                  {{ m }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-menu>
+    </div>
+
+    <!-- ── Table card ────────────────────────────────────────── -->
+    <div class="ld-card ld-table-card">
+      <div class="ld-summary-bar" *ngIf="partyId">
+        <span class="ld-summary-item">Last Balance: <strong>₹{{ lastBalance | number:'1.2-2' }}</strong></span>
+        <span class="ld-summary-item">Total Amount: <strong>₹{{ totalAmount | number:'1.2-2' }}</strong></span>
+      </div>
+      <div class="ld-table-scroll">
+        <table class="ld-table">
           <thead>
-            <tr class="text-sm text-indigo-300">
-              <th class="py-2 px-3 text-left">Date Time</th>
-              <th class="py-2 px-3 text-left">Ref Type</th>
-              <th class="py-2 px-3 text-left">Ref No / Invoice</th>
-              <th class="py-2 px-3 text-right">Debit (₹)</th>
-              <th class="py-2 px-3 text-right">Credit (₹)</th>
-              <th class="py-2 px-3 text-right">Balance (₹)</th>
-              <th class="py-2 px-3 text-left">Remarks</th>
-              <th class="py-2 px-3 text-left">Actions</th>
+            <tr>
+              <th>DATE TIME</th>
+              <th>REF TYPE</th>
+              <th>REF NO / INVOICE</th>
+              <th class="ld-th-num">DEBIT (₹)</th>
+              <th class="ld-th-num">CREDIT (₹)</th>
+              <th class="ld-th-num">RUNNING BALANCE (₹)</th>
+              <th>REMARKS</th>
+              <th>ACTIONS</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let r of results" class="border-t border-indigo-500/10">
-              <td class="py-3 px-3">{{ getLedgerDateTime(r) | date:'dd/MM/yyyy hh:mm a' }}</td>
-              <td class="py-3 px-3">{{ r.refType }}</td>
-              <td class="py-3 px-3">
-                <span>{{ r.refId || '-' }}</span>
+            <tr *ngFor="let r of pagedResults">
+              <td>{{ getLedgerDateTime(r) | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td>
+                <span class="ld-ref-badge" [ngClass]="getRefBadgeClass(r.refType)">
+                  {{ r.refType }}
+                </span>
               </td>
-              <td class="py-3 px-3 text-right text-emerald-300">{{ r.debit ? (r.debit ) : '-' }}</td>
-              <td class="py-3 px-3 text-right text-emerald-300">{{ r.credit ? (r.credit) : '-' }}</td>
-              <td class="py-3 px-3 text-right font-semibold">{{ r.balance }}</td>
-              <td class="py-3 px-3">{{ r.remarks || '' }}</td>
-              <td class="py-3 px-3">
-                <div class="flex items-center gap-2">
-                  <button mat-icon-button (click)="openInvoicePreview(r)" class="text-sky-300 hover:text-sky-200" title="Preview PDF">
+              <td><strong class="ld-ref-id">{{ r.refId || '—' }}</strong></td>
+              <td class="ld-td-num ld-debit">
+                <span *ngIf="r.debit">₹{{ r.debit }}</span>
+                <span *ngIf="!r.debit" class="ld-nil">—</span>
+              </td>
+              <td class="ld-td-num ld-credit">
+                <span *ngIf="r.credit">₹{{ r.credit }}</span>
+                <span *ngIf="!r.credit" class="ld-nil">—</span>
+              </td>
+              <td class="ld-td-num ld-balance">₹{{ r.balance }}</td>
+              <td class="ld-remarks">{{ r.remarks || '' }}</td>
+              <td>
+                <div class="ld-row-actions">
+                  <button class="ld-icon-btn" (click)="openInvoicePreview(r)" title="Preview PDF">
                     <mat-icon>picture_as_pdf</mat-icon>
                   </button>
-                  <button mat-icon-button (click)="downloadInvoice(r)" class="text-emerald-300 hover:text-emerald-200" title="Download PDF">
+                  <button class="ld-icon-btn" (click)="downloadInvoice(r)" title="Download PDF">
                     <mat-icon>download</mat-icon>
                   </button>
                 </div>
               </td>
             </tr>
-            <tr *ngIf="!results.length">
-              <td colspan="9" class="py-6 text-center text-indigo-300/60">No ledger entries found for selected filters.</td>
+
+            <tr *ngIf="!pagedResults.length">
+              <td colspan="8" class="ld-empty-cell">
+                <ng-container *ngIf="!partyId">Select a client to view ledger entries.</ng-container>
+                <ng-container *ngIf="partyId">No ledger entries found for the selected filters.</ng-container>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
+
+      <!-- Pagination -->
+      <div class="ld-pagination">
+        <span class="ld-pg-info">
+          Showing <strong>{{ showingStart }}</strong> to <strong>{{ showingEnd }}</strong>
+          of <strong>{{ filteredResults.length }}</strong> entries
+        </span>
+        <div class="ld-pg-size">
+          Rows:
+          <select [(ngModel)]="pageSize" (change)="currentPage = 0">
+            <option *ngFor="let s of pageSizeOptions" [ngValue]="s">{{ s }}</option>
+          </select>
+        </div>
+        <div class="ld-pg-nav">
+          <button (click)="goToPage(0)"              [disabled]="currentPage === 0">«</button>
+          <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 0">‹</button>
+          <button class="ld-pg-current">{{ currentPage + 1 }}</button>
+          <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages - 1">›</button>
+          <button (click)="goToPage(totalPages - 1)"  [disabled]="currentPage >= totalPages - 1">»</button>
+        </div>
+      </div>
     </div>
-  </div>
+
+  </main>
 </div>

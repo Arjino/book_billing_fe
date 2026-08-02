@@ -1,0 +1,146 @@
+<div class="page-shell">
+  <app-sidebar-nav [items]="navItems"></app-sidebar-nav>
+
+  <main class="main-content">
+    <div class="form-header">
+      <div class="heading">
+        <div class="heading-icon">
+          <mat-icon>menu_book</mat-icon>
+        </div>
+        <div>
+          <h1>{{ isEditMode ? 'Edit Book Title' : 'Add New Book Title' }}</h1>
+          <p>Catalog &amp; stock entry for publishers &amp; distributors</p>
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost" (click)="onCancel()">
+        <mat-icon>close</mat-icon>
+        Back to Books
+      </button>
+    </div>
+
+    <section class="panel">
+      <form #bookForm="ngForm" class="book-form">
+        <div class="form-row full-width">
+          <label for="bookTitle">Book Title *</label>
+          <input
+            id="bookTitle"
+            [(ngModel)]="data.title"
+            name="title"
+            required
+            pattern="^[A-Za-z0-9 ]+$"
+            #titleModel="ngModel"
+            placeholder="e.g. Hindi - 8 (Bhasha Rachna)"
+          />
+          <small class="error" *ngIf="titleModel.invalid && (titleModel.dirty || titleModel.touched)">
+            <span *ngIf="titleModel.errors?.['required']">Title is required.</span>
+            <span *ngIf="titleModel.errors?.['pattern']">Only letters, numbers, and spaces are allowed.</span>
+          </small>
+        </div>
+
+        <div class="form-row two-col">
+          <div>
+            <label for="bookPublisher">Publisher *</label>
+            <input
+              id="bookPublisher"
+              [(ngModel)]="data.publisher"
+              name="publisher"
+              required
+              pattern="^[A-Za-z ]+$"
+              #publisherModel="ngModel"
+              placeholder="e.g. Bright Path"
+            />
+            <small class="error" *ngIf="publisherModel.invalid && (publisherModel.dirty || publisherModel.touched)">
+              <span *ngIf="publisherModel.errors?.['required']">Publisher is required.</span>
+              <span *ngIf="publisherModel.errors?.['pattern']">Only alphabets and spaces are allowed.</span>
+            </small>
+          </div>
+
+          <div>
+            <label for="bookHsn">HSN Code</label>
+            <input
+              id="bookHsn"
+              type="number"
+              [(ngModel)]="data.hsn"
+              name="hsn"
+              inputmode="numeric"
+              min="100000"
+              max="9999999999"
+              #hsnModel="ngModel"
+              placeholder="e.g. 490110"
+            />
+            <small class="hint">Numeric; normally 6 digits (can be 6-10 digits).</small>
+            <small class="error" *ngIf="hsnModel.invalid && (hsnModel.dirty || hsnModel.touched)">
+              <span *ngIf="hsnModel.errors?.['min']">HSN must be at least 6 digits.</span>
+              <span *ngIf="hsnModel.errors?.['max']">HSN cannot exceed 10 digits.</span>
+            </small>
+          </div>
+        </div>
+
+        <div class="form-row three-col">
+          <div>
+            <label for="bookMrp">MRP (&#8377;) *</label>
+            <input
+              id="bookMrp"
+              type="number"
+              [(ngModel)]="data.mrp"
+              name="mrp"
+              required
+              min="0.01"
+              #mrpModel="ngModel"
+              placeholder="300"
+            />
+            <small class="error" *ngIf="mrpModel.invalid && (mrpModel.dirty || mrpModel.touched)">
+              <span *ngIf="mrpModel.errors?.['required']">MRP is required.</span>
+              <span *ngIf="mrpModel.errors?.['min']">MRP must be greater than zero.</span>
+            </small>
+          </div>
+
+          <div>
+            <label for="bookStock">Stock *</label>
+            <input
+              id="bookStock"
+              type="number"
+              [(ngModel)]="data.stock"
+              name="stock"
+              required
+              min="0"
+              step="1"
+              #stockModel="ngModel"
+              placeholder="100"
+            />
+            <small class="error" *ngIf="stockModel.invalid && (stockModel.dirty || stockModel.touched)">
+              <span *ngIf="stockModel.errors?.['required']">Stock is required.</span>
+              <span *ngIf="stockModel.errors?.['min']">Stock cannot be negative.</span>
+            </small>
+          </div>
+
+          <div>
+            <label for="bookSku">SKU Code *</label>
+            <div class="sku-field">
+              <input id="bookSku" [(ngModel)]="data.sku" name="sku" required readonly #skuModel="ngModel" />
+              <button
+                type="button"
+                class="sku-refresh-btn"
+                (click)="fetchSku()"
+                [disabled]="isEditMode || isFetchingSku"
+                title="Refresh SKU"
+              >
+                <mat-icon [class.spinning]="isFetchingSku">refresh</mat-icon>
+              </button>
+            </div>
+            <small class="hint" *ngIf="!isEditMode">Auto-generated. Click refresh to regenerate.</small>
+            <small class="hint" *ngIf="isEditMode">SKU cannot be changed in edit mode.</small>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" (click)="onCancel()">Cancel</button>
+          <button type="button" class="btn btn-primary" (click)="onSave()" [disabled]="bookForm.invalid || saving">
+            <mat-icon>save</mat-icon>
+            {{ isEditMode ? 'Save Changes' : 'Save Book Title' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </main>
+</div>

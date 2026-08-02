@@ -3,12 +3,12 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { Sale } from '../interface/Sale';
-import { SaleReturn } from '../interface/sale-return';
-import { SpringPage } from '../interface/spring-page';
+import { Sale } from '../shared/models/sale.model';
+import { SaleReturn } from '../sales/sales.models';
+import { SpringPage } from '../shared/models/spring-page.model';
 import { enviort } from '../../environments/environment';
-import { normalizeUTCDatePayload, toUTCDateTimePlus00 } from '../utils/date.utils';
-import { ReturnRequest } from '../interface/return-request';
+import { toUTCDateTimePlus00 } from '../utils/date.utils';
+import { ReturnRequest } from '../shared/models/return-request.model';
 
 @Injectable({ providedIn: 'root' })
 export class SalesService {

@@ -1,73 +1,116 @@
-<div class="modern-dialog w-full max-w-lg text-white">
-  <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#FF7A59,#FF3CAC);">
-    <div class="flex items-center gap-3">
-      <mat-icon>people</mat-icon>
-      <h2 class="text-lg font-semibold">Add Party</h2>
+<div class="party-dialog-shell">
+  <div class="dialog-header">
+    <div class="header-title-wrap">
+      <span class="title-icon"><mat-icon>groups</mat-icon></span>
+      <div>
+        <h2>{{ isEditMode ? 'Edit Party Profile' : 'Add Party / Client Profile' }}</h2>
+        <p>{{ isEditMode ? 'Update customer depot or supplier publisher contact details' : 'Customer book depot or supplier publisher account' }}</p>
+      </div>
     </div>
-    <button mat-icon-button aria-label="close" (click)="onCancel()"><mat-icon>close</mat-icon></button>
+    <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
 
-  <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
-    <form #partyForm="ngForm">
-      <div class="grid grid-cols-1 gap-3">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Name</mat-label>
-          <input matInput [(ngModel)]="data.name" name="name" required pattern="^[A-Za-z ]+$" #nameModel="ngModel" (ngModelChange)="nameModel.control.markAsTouched()" />
-          <mat-error *ngIf="nameModel.invalid && (nameModel.dirty || nameModel.touched)">
-            <span *ngIf="nameModel.errors?.['required']">Name is required.</span>
-            <span *ngIf="nameModel.errors?.['pattern']">Only alphabets and spaces are allowed.</span>
-          </mat-error>
-        </mat-form-field>
+  <div mat-dialog-content class="dialog-content">
+    <form #partyForm="ngForm" class="party-form">
+      <div class="form-row full-width">
+        <label for="partyName">Party / Business Name *</label>
+        <input
+          id="partyName"
+          [(ngModel)]="data.name"
+          name="name"
+          required
+          pattern="^[A-Za-z0-9 .&()-]+$"
+          #nameModel="ngModel"
+          placeholder="e.g. Sanskar Book Depot"
+        />
+        <small class="error" *ngIf="nameModel.invalid && (nameModel.dirty || nameModel.touched)">
+          Enter a valid party name.
+        </small>
+      </div>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Type</mat-label>
-          <mat-select [(ngModel)]="data.type" name="type" required #typeModel="ngModel">
-            <mat-option value="Consumer">Consumer</mat-option>
-            <mat-option value="Supplier">Supplier</mat-option>
-          </mat-select>
-          <mat-error *ngIf="typeModel.invalid && (typeModel.dirty || typeModel.touched)">
-            <span *ngIf="typeModel.errors?.['required']">Type is required.</span>
-          </mat-error>
-        </mat-form-field>
+      <div class="form-row two-col">
+        <div>
+          <label for="partyType">Party Type *</label>
+          <select id="partyType" [(ngModel)]="data.type" name="type" required #typeModel="ngModel">
+            <option value="Consumer">Customer / Book Depot</option>
+            <option value="Supplier">Supplier / Publisher</option>
+            <option value="Distributor">Distributor</option>
+            <option value="Retailer">Retailer</option>
+            <option value="Customer">Customer</option>
+          </select>
+          <small class="error" *ngIf="typeModel.invalid && (typeModel.dirty || typeModel.touched)">
+            Select a party type.
+          </small>
+        </div>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Phone</mat-label>
-          <input matInput type="tel" [(ngModel)]="data.phone" name="phone" required pattern="^[6-9][0-9]{9}$" maxlength="10" inputmode="numeric" #phoneModel="ngModel" (input)="onPhoneInput($event)" (ngModelChange)="phoneModel.control.markAsTouched()" />
-          <mat-hint>10-digit Indian phone number (starts with 6-9)</mat-hint>
-          <mat-error *ngIf="phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)">
-            <span *ngIf="phoneModel.errors?.['required']">Phone is required.</span>
-            <span *ngIf="phoneModel.errors?.['pattern']">Phone must be 10 digits starting with 6,7, 8, or 9.</span>
-          </mat-error>
-        </mat-form-field>
+        <div>
+          <label for="partyPhone">Phone Number *</label>
+          <input
+            id="partyPhone"
+            type="tel"
+            [(ngModel)]="data.phone"
+            name="phone"
+            required
+            pattern="^[6-9][0-9]{9}$"
+            maxlength="10"
+            inputmode="numeric"
+            #phoneModel="ngModel"
+            (input)="onPhoneInput($event)"
+            placeholder="e.g. 9879123456"
+          />
+          <small class="error" *ngIf="phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)">
+            Phone must be 10 digits starting with 6-9.
+          </small>
+        </div>
+      </div>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Address</mat-label>
-          <textarea matInput [(ngModel)]="data.address" name="address" required rows="3" #addrModel="ngModel"></textarea>
-          <mat-error *ngIf="addrModel.invalid && (addrModel.dirty || addrModel.touched)">
-            <span *ngIf="addrModel.errors?.['required']">Address is required.</span>
-          </mat-error>
-        </mat-form-field>
+      <div class="form-row two-col">
+        <div>
+          <label for="partyGstin">GSTIN Number</label>
+          <input
+            id="partyGstin"
+            [(ngModel)]="data.gstin"
+            name="gstin"
+            pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$"
+            #gstModel="ngModel"
+            placeholder="e.g. 07AABC1234A1Z5"
+          />
+          <small class="error" *ngIf="gstModel.invalid && (gstModel.dirty || gstModel.touched)">
+            Invalid GSTIN format.
+          </small>
+        </div>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>GSTIN</mat-label>
-          <input matInput [(ngModel)]="data.gstin" name="gstin" pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$" #gstModel="ngModel" />
-          <mat-hint>Format: 15 characters (e.g. 27ABCDE1234F1Z5).</mat-hint>
-          <mat-error *ngIf="gstModel.invalid && (gstModel.dirty || gstModel.touched)">
-            <span *ngIf="gstModel.errors?.['pattern']">Invalid GSTIN format.</span>
-          </mat-error>
-        </mat-form-field>
+        <div>
+          <label for="partyBalance">{{ isEditMode ? 'Current Balance (₹)' : 'Opening Balance (₹)' }}</label>
+          <input id="partyBalance" value="0" disabled />
+        </div>
+      </div>
+
+      <div class="form-row full-width">
+        <label for="partyAddress">Billing Address *</label>
+        <textarea
+          id="partyAddress"
+          [(ngModel)]="data.address"
+          name="address"
+          required
+          rows="3"
+          #addrModel="ngModel"
+          placeholder="e.g. Shop 14, Main Market, Meerut"
+        ></textarea>
+        <small class="error" *ngIf="addrModel.invalid && (addrModel.dirty || addrModel.touched)">
+          Address is required.
+        </small>
       </div>
     </form>
   </div>
 
-    <div mat-dialog-actions class="flex flex-col md:flex-row md:justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
-    <button mat-button class="w-full md:w-auto" (click)="onCancel()" aria-label="Back">
-      <mat-icon class="inline sm:hidden mr-2">arrow_back</mat-icon>
-      <span class="hidden sm:inline">Cancel</span>
-    </button>
-    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="partyForm.invalid" aria-label="Save">
-      <mat-icon class="inline sm:hidden mr-2">add</mat-icon>
-      <span class="hidden sm:inline">Save</span>
+  <div mat-dialog-actions class="dialog-actions">
+    <button type="button" class="secondary-btn" (click)="onCancel()">Cancel</button>
+    <button type="button" class="primary-btn" (click)="onSave()" [disabled]="partyForm.invalid">
+      <mat-icon>save</mat-icon>
+      {{ isEditMode ? 'Save Changes' : 'Save Party Profile' }}
     </button>
   </div>
 </div>

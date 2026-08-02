@@ -2,13 +2,12 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
-import { MatIconModule, MatIcon } from '@angular/material/icon';
+import { MatIcon } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -20,10 +19,14 @@ import { PurchaseService } from '../services/purchase.service';
 import { SalesService } from '../services/sales.service';
 import { TransactionsService } from '../services/transactions.service';
 import { LoadingService } from '../services/loading.service';
-import { Party } from '../interface/party';
-import { Transaction } from '../interface/Transaction';
-import { buildUTCDateTime, parseLocalDate, formatDateForUTC, toISODateTimeUTC } from '../utils/date.utils';
+import { Transaction } from '../shared/models/transaction.model';
+import { buildUTCDateTime, parseLocalDate, toISODateTimeUTC } from '../utils/date.utils';
 import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
+import { buildAppNavItems } from '../shared/nav-items';
+import { NavBadgeCountsService } from '../shared/nav-badge-counts.service';
+import { NavItem } from '../shared/models/common.models';
 
 
 @Component({
@@ -31,11 +34,14 @@ import { TRANSACTION_CONSTANTS } from '../constants/transaction.constants';
   templateUrl: './transaction.component.html',
   styleUrls: ['./transaction.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon, MatDatepickerModule, MatNativeDateModule, MatTooltipModule, MatSnackBarModule, MatMenuModule]
+  imports: [CommonModule, MatButtonModule, MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule, FormsModule, MatIcon, MatDatepickerModule, MatNativeDateModule, MatTooltipModule, MatSnackBarModule, MatMenuModule, SidebarNavComponent, TransactionDialogComponent]
 })
 export class TransactionComponent implements OnInit {
     @ViewChild('startTrigger') startMenuTrigger?: MatMenuTrigger;
     @ViewChild('endTrigger') endMenuTrigger?: MatMenuTrigger;
+
+  navItems: ReadonlyArray<NavItem> = buildAppNavItems();
+
   transactions: Transaction[] = [];
   startDate: Date | null = null;
   endDate: Date | null = null;
@@ -46,11 +52,26 @@ export class TransactionComponent implements OnInit {
   hours: string[] = [];
   minutes: string[] = [];
   filteredTransactions: Transaction[] = [];
-  displayedColumns = ['id', 'party', 'paymentDateTime', 'amount', 'paymentMethod', 'referenceNo', 'notes', 'actions'];
   maxDate = new Date(); // Today as maximum date
   minEndDate: Date | null = null; // Minimum date for end date picker
   selectedTransactionType: 'SALE' | 'PURCHASE' = 'SALE';
   private hasAutoOpenedPaymentDialog = false;
+
+  // ── Inline "Record Payment Entry" form (rendered on page, not a popup) ──
+  showPaymentForm = false;
+  paymentFormData: Transaction | null = null;
+
+  // ── Extra list filters (search / payment method / amount range) ─────
+  searchText = '';
+  paymentMethodFilter = 'ALL';
+  minAmount: number | null = null;
+  maxAmount: number | null = null;
+  readonly paymentMethodOptions = ['Cash', 'Cheque', 'Bank Transfer', 'Card', 'UPI', 'Other'];
+
+  // ── Pagination ────────────────────────────────────────────────────
+  pageSize = 10;
+  currentPage = 0;
+  readonly pageSizeOptions = [10, 25, 50, 100];
 
   constructor(
     private dialog: MatDialog,
@@ -60,8 +81,22 @@ export class TransactionComponent implements OnInit {
     private salesService: SalesService,
     private transactionsService: TransactionsService,
     private loadingService: LoadingService,
-    private snackBar: MatSnackBar
-  ) {}
+    private snackBar: MatSnackBar,
+    private navBadgeCounts: NavBadgeCountsService
+  ) {
+    this.navBadgeCounts.counts$.pipe(takeUntilDestroyed()).subscribe((counts) => {
+      this.navItems = buildAppNavItems(counts, ['transactions-cashbook']);
+    });
+  }
+
+  onSidebarQuickAdd(itemId: string): void {
+    if (itemId === 'transactions-cashbook') {
+      this.addTransaction();
+      return;
+    }
+    const target = this.navItems.find((item) => item.id === itemId);
+    if (target?.route) this.router.navigate([target.route]);
+  }
 
   ngOnInit() {
     const today = new Date();
@@ -102,6 +137,7 @@ export class TransactionComponent implements OnInit {
       data => {
         this.transactions = data || [];
         this.filteredTransactions = this.transactions;
+        this.currentPage = 0;
         this.loadingService.hide();
       },
       error => {
@@ -141,154 +177,160 @@ export class TransactionComponent implements OnInit {
       filtered = filtered.filter(t => (t.transactionType || '').toUpperCase() === type);
     }
     this.filteredTransactions = filtered;
+    this.currentPage = 0;
   }
 
   addTransaction(purchaseId?: number) {
-    const dialogRef = this.dialog.open(TransactionDialogComponent, {
-      width: '500px',
-      data: {
-        id: 0,
-        party: null,
-        paymentDate: new Date(),
-        paidAmount: 0,
-        paymentMode: 'Cash',
-        remarks: '',
-        totalAmount: 0,
-        invoiceNo: purchaseId,
-        dueAmount: 0,
-        purchaseId,
-        transactionType: this.selectedTransactionType
-      } as unknown as Transaction,
-      disableClose: false
-    });
-    dialogRef.afterClosed().subscribe((result: Transaction) => {
-      if (!result) return;
+    this.paymentFormData = {
+      id: 0,
+      party: null,
+      paymentDate: new Date(),
+      paidAmount: 0,
+      paymentMode: 'Cash',
+      remarks: '',
+      totalAmount: 0,
+      invoiceNo: purchaseId,
+      dueAmount: 0,
+      purchaseId,
+      transactionType: this.selectedTransactionType
+    } as unknown as Transaction;
+    this.showPaymentForm = true;
+  }
 
-      const payload = {
-        createdAt: typeof result.paymentDate === 'string' ? result.paymentDate : new Date(result.paymentDate as any).toISOString(),
-        paidAmount: result.paidAmount,
-        paymentMode: result.paymentMode,
-        remarks: result.remarks
-      };
+  onPaymentFormCancelled(): void {
+    this.showPaymentForm = false;
+    this.paymentFormData = null;
+  }
 
-      if (result.transactionType === 'PURCHASE') {
-        const purchaseId = result.purchaseId;
-        if (!purchaseId) {
-          this.snackBar.open('Purchase ID not found. Please reselect the invoice.', 'Close', {
-            duration: 4000,
-            panelClass: ['error-snackbar']
-          });
-          return;
-        }
+  onPaymentFormSaved(result: Transaction) {
+    this.showPaymentForm = false;
+    this.paymentFormData = null;
+    if (!result) return;
 
-        this.loadingService.show('Adding transaction...');
-        this.purchaseService.createPurchasePayment(purchaseId, payload).subscribe({
-          next: () => {
-            this.purchaseService.getPurchaseById(purchaseId).subscribe({
-              next: () => {
-                this.loadingService.hide();
-                this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', {
-                  duration: 3000,
-                  panelClass: ['success-snackbar']
-                });
-                this.loadTransactions();
-              },
-              error: (error) => {
-                this.loadingService.hide();
-                console.error('Failed to reload purchase details:', error);
-                this.snackBar.open('Payment saved, but failed to reload invoice details.', 'Close', {
-                  duration: 4000,
-                  panelClass: ['error-snackbar']
-                });
-                this.loadTransactions();
-              }
-            });
-          },
-          error: (error) => {
-            this.loadingService.hide();
-            console.error('Failed to add transaction:', error);
-            this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
-              duration: 5000,
-              panelClass: ['error-snackbar']
-            });
-          }
+    const payload = {
+      createdAt: typeof result.paymentDate === 'string' ? result.paymentDate : new Date(result.paymentDate as any).toISOString(),
+      paidAmount: result.paidAmount,
+      paymentMode: result.paymentMode,
+      remarks: result.remarks
+    };
+
+    if (result.transactionType === 'PURCHASE') {
+      const purchaseId = result.purchaseId;
+      if (!purchaseId) {
+        this.snackBar.open('Purchase ID not found. Please reselect the invoice.', 'Close', {
+          duration: 4000,
+          panelClass: ['error-snackbar']
         });
-
         return;
       }
 
-      if (result.transactionType === 'SALE') {
-        const invoiceNo = result.invoiceNo;
-        if (!invoiceNo) {
-          this.snackBar.open('Sale invoice number not found. Please reselect the invoice.', 'Close', {
-            duration: 4000,
-            panelClass: ['error-snackbar']
-          });
-          return;
-        }
-
-        this.loadingService.show('Adding transaction...');
-        this.salesService.getSaleByInvoiceNumber(String(invoiceNo)).subscribe({
-          next: (sale) => {
-            const saleId = (sale as any)?.id;
-            if (!saleId) {
+      this.loadingService.show('Adding transaction...');
+      this.purchaseService.createPurchasePayment(purchaseId, payload).subscribe({
+        next: () => {
+          this.purchaseService.getPurchaseById(purchaseId).subscribe({
+            next: () => {
               this.loadingService.hide();
-              this.snackBar.open('Sale not found. Please reselect the invoice.', 'Close', {
+              this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', {
+                duration: 3000,
+                panelClass: ['success-snackbar']
+              });
+              this.loadTransactions();
+            },
+            error: (error) => {
+              this.loadingService.hide();
+              console.error('Failed to reload purchase details:', error);
+              this.snackBar.open('Payment saved, but failed to reload invoice details.', 'Close', {
                 duration: 4000,
                 panelClass: ['error-snackbar']
               });
-              return;
+              this.loadTransactions();
             }
+          });
+        },
+        error: (error) => {
+          this.loadingService.hide();
+          console.error('Failed to add transaction:', error);
+          this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+        }
+      });
 
-            this.salesService.createSalePayment(saleId, payload).subscribe({
-              next: () => {
-                this.salesService.getSaleByInvoiceNumber(String(invoiceNo)).subscribe({
-                  next: () => {
-                    this.loadingService.hide();
-                    this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', {
-                      duration: 3000,
-                      panelClass: ['success-snackbar']
-                    });
-                    this.loadTransactions();
-                  },
-                  error: () => {
-                    this.loadingService.hide();
-                    this.snackBar.open('Payment saved, but failed to reload invoice details.', 'Close', {
-                      duration: 4000,
-                      panelClass: ['error-snackbar']
-                    });
-                    this.loadTransactions();
-                  }
-                });
-              },
-              error: (error) => {
-                this.loadingService.hide();
-                console.error('Failed to add transaction:', error);
-                this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
-                  duration: 5000,
-                  panelClass: ['error-snackbar']
-                });
-              }
-            });
-          },
-          error: (error) => {
+      return;
+    }
+
+    if (result.transactionType === 'SALE') {
+      const invoiceNo = result.invoiceNo;
+      if (!invoiceNo) {
+        this.snackBar.open('Sale invoice number not found. Please reselect the invoice.', 'Close', {
+          duration: 4000,
+          panelClass: ['error-snackbar']
+        });
+        return;
+      }
+
+      this.loadingService.show('Adding transaction...');
+      this.salesService.getSaleByInvoiceNumber(String(invoiceNo)).subscribe({
+        next: (sale) => {
+          const saleId = (sale as any)?.id;
+          if (!saleId) {
             this.loadingService.hide();
-            console.error('Failed to load sale by invoice:', error);
             this.snackBar.open('Sale not found. Please reselect the invoice.', 'Close', {
               duration: 4000,
               panelClass: ['error-snackbar']
             });
+            return;
           }
-        });
 
-        return;
-      }
-
-      // Fallback for unsupported transaction types
-      this.snackBar.open('Unsupported transaction type for payment.', 'Close', {
-        duration: 3000,
-        panelClass: ['error-snackbar']
+          this.salesService.createSalePayment(saleId, payload).subscribe({
+            next: () => {
+              this.salesService.getSaleByInvoiceNumber(String(invoiceNo)).subscribe({
+                next: () => {
+                  this.loadingService.hide();
+                  this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Transaction added successfully!', 'Close', {
+                    duration: 3000,
+                    panelClass: ['success-snackbar']
+                  });
+                  this.loadTransactions();
+                },
+                error: () => {
+                  this.loadingService.hide();
+                  this.snackBar.open('Payment saved, but failed to reload invoice details.', 'Close', {
+                    duration: 4000,
+                    panelClass: ['error-snackbar']
+                  });
+                  this.loadTransactions();
+                }
+              });
+            },
+            error: (error) => {
+              this.loadingService.hide();
+              console.error('Failed to add transaction:', error);
+              this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
+                duration: 5000,
+                panelClass: ['error-snackbar']
+              });
+            }
+          });
+        },
+        error: (error) => {
+          this.loadingService.hide();
+          console.error('Failed to load sale by invoice:', error);
+          this.snackBar.open('Sale not found. Please reselect the invoice.', 'Close', {
+            duration: 4000,
+            panelClass: ['error-snackbar']
+          });
+        }
       });
+
+      return;
+    }
+
+    // Fallback for unsupported transaction types
+    this.snackBar.open('Unsupported transaction type for payment.', 'Close', {
+      duration: 3000,
+      panelClass: ['error-snackbar']
     });
   }
 
@@ -312,6 +354,7 @@ export class TransactionComponent implements OnInit {
       data => {
         this.transactions = data || [];
         this.filteredTransactions = this.transactions;
+        this.currentPage = 0;
         this.loadingService.hide();
       },
       error => {
@@ -319,10 +362,6 @@ export class TransactionComponent implements OnInit {
         this.loadingService.hide();
       }
     );
-  }
-
-  formatDate(date: any): string {
-    return formatDateForUTC(date);
   }
 
   getPaymentDateTime(t: Transaction): Date | null {
@@ -376,7 +415,7 @@ export class TransactionComponent implements OnInit {
         link.download = `Payment_Receipt_${referenceNumber}.pdf`;
         link.click();
         window.URL.revokeObjectURL(url);
-        this.snackBar.open('Receipt downloaded successfully!', 'Close', { 
+        this.snackBar.open('Receipt downloaded successfully!', 'Close', {
           duration: 3000,
           panelClass: ['success-snackbar']
         });
@@ -384,7 +423,7 @@ export class TransactionComponent implements OnInit {
       error: (error: any) => {
         this.loadingService.hide();
         console.error('Failed to download receipt:', error);
-        this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.DOWNLOAD_ERROR, 'Close', { 
+        this.snackBar.open(TRANSACTION_CONSTANTS.MESSAGES.DOWNLOAD_ERROR, 'Close', {
           duration: 5000,
           panelClass: ['error-snackbar']
         });
@@ -436,5 +475,95 @@ export class TransactionComponent implements OnInit {
 
   private buildMinuteOptions(): string[] {
     return Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+  }
+
+  // ── Extra list filters (search / payment method / amount range) ─────
+  getPaymentMethodValue(t: Transaction): string {
+    return t.paymentMode || t.paymentMethod || '';
+  }
+
+  getPaymentMethodClass(method: string): string {
+    const m = (method || '').toUpperCase();
+    if (m.includes('UPI')) return 'tx-badge--upi';
+    if (m.includes('CASH')) return 'tx-badge--cash';
+    if (m.includes('BANK')) return 'tx-badge--bank';
+    if (m.includes('CARD')) return 'tx-badge--card';
+    if (m.includes('CHEQUE')) return 'tx-badge--cheque';
+    return 'tx-badge--other';
+  }
+
+  get displayedTransactions(): Transaction[] {
+    let list = this.filteredTransactions;
+
+    const q = (this.searchText || '').trim().toLowerCase();
+    if (q) {
+      list = list.filter(t =>
+        (t.party?.name || '').toLowerCase().includes(q) ||
+        String(t.referenceNumber || t.referenceNo || t.invoiceNo || '').toLowerCase().includes(q) ||
+        (t.notes || t.remarks || '').toLowerCase().includes(q)
+      );
+    }
+
+    if (this.paymentMethodFilter && this.paymentMethodFilter !== 'ALL') {
+      list = list.filter(t => this.getPaymentMethodValue(t) === this.paymentMethodFilter);
+    }
+
+    if (this.minAmount !== null && this.minAmount !== undefined && `${this.minAmount}` !== '') {
+      const min = Number(this.minAmount);
+      list = list.filter(t => Number(t.paidAmount ?? t.totalAmount ?? 0) >= min);
+    }
+
+    if (this.maxAmount !== null && this.maxAmount !== undefined && `${this.maxAmount}` !== '') {
+      const max = Number(this.maxAmount);
+      list = list.filter(t => Number(t.paidAmount ?? t.totalAmount ?? 0) <= max);
+    }
+
+    return list;
+  }
+
+  get totalSettled(): number {
+    return this.filteredTransactions.reduce((sum, t) => sum + Number(t.paidAmount ?? t.totalAmount ?? 0), 0);
+  }
+
+  get totalFilteredCount(): number {
+    return this.displayedTransactions.length;
+  }
+
+  get totalPages(): number {
+    return Math.max(1, Math.ceil(this.totalFilteredCount / this.pageSize));
+  }
+
+  get pagedTransactions(): Transaction[] {
+    const start = this.currentPage * this.pageSize;
+    return this.displayedTransactions.slice(start, start + this.pageSize);
+  }
+
+  get showingStart(): number {
+    return this.totalFilteredCount === 0 ? 0 : this.currentPage * this.pageSize + 1;
+  }
+
+  get showingEnd(): number {
+    return Math.min(this.totalFilteredCount, (this.currentPage + 1) * this.pageSize);
+  }
+
+  onExtraFilterChange(): void {
+    this.currentPage = 0;
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 0;
+  }
+
+  goToPage(page: number): void {
+    if (page < 0 || page >= this.totalPages) return;
+    this.currentPage = page;
+  }
+
+  clearExtraFilters(): void {
+    this.searchText = '';
+    this.paymentMethodFilter = 'ALL';
+    this.minAmount = null;
+    this.maxAmount = null;
+    this.currentPage = 0;
   }
 }

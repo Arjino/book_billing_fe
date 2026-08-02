@@ -1,137 +1,141 @@
-<div class="min-h-screen pt-20 pb-12 bg-gradient-to-br from-slate-950 via-cyan-900/20 to-slate-950 relative overflow-hidden">
-  <div class="fixed inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-20 left-10 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl animate-blob"></div>
-    <div class="absolute bottom-20 right-10 w-72 h-72 bg-teal-500/10 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-  </div>
+<div class="page-shell">
+  <app-sidebar-nav [items]="navItems"></app-sidebar-nav>
 
-  <div class="max-w-7xl mx-auto px-6 relative z-10">
-    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-      <div>
-        <h1 class="text-4xl font-extrabold mb-2">
-          <span class="bg-gradient-to-r from-cyan-400 to-teal-400 bg-clip-text text-transparent">Supplier Publisher Mapping</span>
-        </h1>
-        <p class="text-cyan-200">Manage publisher-level discounts for each supplier</p>
+  <main class="main-content">
+    <div class="form-header">
+      <div class="heading">
+        <div class="heading-icon">
+          <span class="material-icons">percent</span>
+        </div>
+        <div>
+          <h1>Supplier Publisher Mapping</h1>
+          <p>Manage publisher-level discounts for each supplier</p>
+        </div>
       </div>
-      <div class="flex justify-end">
-        <button mat-icon-button (click)="goBack()" class="bg-slate-800/50 hover:bg-slate-700/50 text-cyan-300 rounded-lg border border-cyan-500/30" title="Back to Books">
-          <mat-icon>arrow_back</mat-icon>
+      <button type="button" class="btn btn-ghost" (click)="goBack()">
+        <span class="material-icons">arrow_back</span>
+        Back to Books
+      </button>
+    </div>
+
+    <section class="panel">
+      <div class="panel-title">
+        <span class="material-icons">tune</span>
+        {{ selectedDiscountId ? 'Edit Publisher Discount' : 'Add Publisher Discount' }}
+      </div>
+
+      <div class="mapping-fields">
+        <div class="field">
+          <label>Supplier *</label>
+          <select [(ngModel)]="selectedSupplierId" (ngModelChange)="onSupplierChange($event)">
+            <option [ngValue]="null">Select Supplier</option>
+            <option *ngFor="let supplier of suppliers" [ngValue]="supplier.id">{{ supplier.name }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Publisher *</label>
+          <select
+            [(ngModel)]="selectedPublisher"
+            (ngModelChange)="onPublisherSelectionChange($event)"
+            [disabled]="!selectedSupplierId"
+          >
+            <option [ngValue]="null">Select Publisher</option>
+            <option *ngFor="let publisher of publishers" [ngValue]="publisher">{{ publisher }}</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Discount % *</label>
+          <input
+            type="number"
+            [(ngModel)]="discountPercent"
+            min="0"
+            max="100"
+            step="0.01"
+            placeholder="0.00"
+            [disabled]="!selectedSupplierId || !selectedPublisher"
+          />
+        </div>
+
+        <div class="field">
+          <label>Effective From</label>
+          <input type="date" [(ngModel)]="effectiveFrom" [disabled]="!selectedSupplierId || !selectedPublisher" />
+        </div>
+
+        <div class="field">
+          <label>Effective To</label>
+          <input type="date" [(ngModel)]="effectiveTo" [disabled]="!selectedSupplierId || !selectedPublisher" />
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" *ngIf="selectedDiscountId" (click)="cancelEdit()">
+          <span class="material-icons">close</span>
+          Cancel Edit
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="saveSupplierPublisher()"
+          [disabled]="!selectedSupplierId || !selectedPublisher || discountPercent === null"
+        >
+          <span class="material-icons">{{ selectedDiscountId ? 'save' : 'add' }}</span>
+          {{ selectedDiscountId ? 'Update Discount' : 'Save Publisher Discount' }}
         </button>
       </div>
-    </div>
+    </section>
 
-    <div class="mb-6 bg-gradient-to-br from-slate-900/90 to-slate-950 border border-cyan-500/30 rounded-2xl backdrop-blur-xl p-6 text-white">
-      <form [formGroup]="form" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-        <mat-form-field appearance="outline" class="w-full md:col-span-1">
-          <mat-label>Supplier</mat-label>
-          <mat-select formControlName="supplierId" required>
-            <mat-option [value]="null">Select Supplier</mat-option>
-            <mat-option *ngFor="let supplier of suppliers" [value]="supplier.id">
-              {{ supplier.name }}
-            </mat-option>
-          </mat-select>
-          <mat-error *ngIf="form.get('supplierId')?.touched && form.get('supplierId')?.invalid">
-            Supplier is required.
-          </mat-error>
-        </mat-form-field>
+    <section class="panel table-panel">
+      <div class="panel-title">
+        <span class="material-icons">library_books</span>
+        Mapped Publishers
+        <span class="count-pill" *ngIf="selectedSupplierId">{{ rows.length }}</span>
+      </div>
 
-        <mat-form-field appearance="outline" class="w-full md:col-span-1">
-          <mat-label>Publisher</mat-label>
-          <mat-select formControlName="publisher" [disabled]="!selectedSupplierId" required>
-            <mat-option [value]="null">Select Publisher</mat-option>
-            <mat-option *ngFor="let publisher of publishers" [value]="publisher">
-              {{ publisher }}
-            </mat-option>
-          </mat-select>
-          <mat-error *ngIf="form.get('publisher')?.touched && form.get('publisher')?.invalid">
-            Publisher is required.
-          </mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="w-full md:col-span-1">
-          <mat-label>Discount %</mat-label>
-          <input matInput type="number" formControlName="discountPercent" min="0" max="100" step="0.01" [disabled]="!selectedSupplierId || !form.get('publisher')?.value" />
-          <mat-error *ngIf="form.get('discountPercent')?.hasError('required')">Discount is required.</mat-error>
-          <mat-error *ngIf="form.get('discountPercent')?.hasError('min')">Minimum is 0.</mat-error>
-          <mat-error *ngIf="form.get('discountPercent')?.hasError('max')">Maximum is 100.</mat-error>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="w-full md:col-span-1">
-          <mat-label>Effective From</mat-label>
-          <input matInput [matDatepicker]="effectiveFromPicker" formControlName="effectiveFrom" [disabled]="!selectedSupplierId || !form.get('publisher')?.value" />
-          <mat-datepicker-toggle matIconSuffix [for]="effectiveFromPicker"></mat-datepicker-toggle>
-          <mat-datepicker #effectiveFromPicker></mat-datepicker>
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="w-full md:col-span-1">
-          <mat-label>Effective To</mat-label>
-          <input matInput [matDatepicker]="effectiveToPicker" formControlName="effectiveTo" [disabled]="!selectedSupplierId || !form.get('publisher')?.value" />
-          <mat-datepicker-toggle matIconSuffix [for]="effectiveToPicker"></mat-datepicker-toggle>
-          <mat-datepicker #effectiveToPicker></mat-datepicker>
-        </mat-form-field>
-
-        <div class="flex gap-2 justify-center items-center md:col-span-5">
-          <button mat-raised-button color="primary" type="button" (click)="saveSupplierPublisher()" [disabled]="!selectedSupplierId || form.get('publisher')?.invalid || form.get('discountPercent')?.invalid">
-            <mat-icon>add</mat-icon>
-            Save Publisher Discount
-          </button>
-        </div>
-      </form>
-    </div>
-
-    <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-cyan-500/30 rounded-2xl backdrop-blur-xl overflow-hidden text-white">
-      <div class="overflow-x-auto">
-        <table mat-table [dataSource]="dataSource" matSort class="w-full bg-transparent table-fixed" *ngIf="dataSource.data.length">
-          <ng-container matColumnDef="publisher">
-            <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-cyan-300 font-bold py-4 px-6 text-left">Publisher</th>
-            <td mat-cell *matCellDef="let row" class="py-4 px-6 border-t border-cyan-500/20">{{ row.publisher || '-' }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="effectiveFrom">
-            <th mat-header-cell *matHeaderCellDef class="text-cyan-300 font-bold py-4 px-6 text-left">Effective From</th>
-            <td mat-cell *matCellDef="let row" class="py-4 px-6 border-t border-cyan-500/20">{{ row.effectiveFrom ? (row.effectiveFrom | date:'yyyy-MM-dd') : '-' }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="effectiveTo">
-            <th mat-header-cell *matHeaderCellDef class="text-cyan-300 font-bold py-4 px-6 text-left">Effective To</th>
-            <td mat-cell *matCellDef="let row" class="py-4 px-6 border-t border-cyan-500/20">{{ row.effectiveTo ? (row.effectiveTo | date:'yyyy-MM-dd') : '-' }}</td>
-          </ng-container>
-
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="text-cyan-300 font-bold py-4 px-6 text-left">Action</th>
-            <td mat-cell *matCellDef="let row" class="py-4 px-6 border-t border-cyan-500/20">
-              <div class="flex items-center gap-2">
-                <button
-                  mat-icon-button
-                  (click)="deleteDiscount(row)"
-                  class="text-red-400 hover:text-red-300"
-                  title="Delete Mapping"
-                >
-                  <mat-icon>delete</mat-icon>
-                </button>
-              </div>
-            </td>
-          </ng-container>
-
-          <ng-container matColumnDef="discountPercent">
-            <th mat-header-cell *matHeaderCellDef class="text-cyan-300 font-bold py-4 px-6 text-left">Discount (%)</th>
-            <td mat-cell *matCellDef="let row" class="py-4 px-6 border-t border-cyan-500/20 align-middle">
-              <div class="flex justify-center items-center">
-              <mat-form-field appearance="outline" class="w-28">
-                <input matInput type="number" [ngModel]="row.discountPercent" [ngModelOptions]="{ standalone: true }" min="0" max="100" step="0.01" readonly />
-              </mat-form-field>
-              </div>
-            </td>
-          </ng-container>
-
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-cyan-500/10 transition-colors"></tr>
+      <div class="table-scroll" *ngIf="rows.length">
+        <table>
+          <thead>
+            <tr>
+              <th>Publisher</th>
+              <th>Discount</th>
+              <th>Effective From</th>
+              <th>Effective To</th>
+              <th class="align-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of rows" [class.row-active]="row.id === selectedDiscountId">
+              <td class="row-title">{{ row.publisher }}</td>
+              <td><span class="discount-chip">{{ row.discountPercent ?? '-' }}%</span></td>
+              <td>{{ row.effectiveFrom ? (row.effectiveFrom | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>{{ row.effectiveTo ? (row.effectiveTo | date:'dd/MM/yyyy') : '—' }}</td>
+              <td>
+                <div class="actions-wrap">
+                  <button type="button" class="icon-btn" (click)="editMapping(row)" title="Edit mapping" aria-label="Edit mapping">
+                    <span class="material-icons">edit</span>
+                  </button>
+                  <button type="button" class="icon-btn danger" (click)="deleteDiscount(row)" title="Delete mapping" aria-label="Delete mapping">
+                    <span class="material-icons">delete</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
 
-      <div *ngIf="!dataSource.data.length" class="p-8 text-center">
-        <mat-icon class="text-6xl text-cyan-500/30 mb-4">library_books</mat-icon>
-        <p class="text-cyan-200/70">Select a supplier to view mapped publishers.</p>
+      <div class="empty-state" *ngIf="!rows.length">
+        <span class="material-icons">library_books</span>
+        <ng-container *ngIf="!selectedSupplierId; else noMappings">
+          <h3>Select a supplier</h3>
+          <p>Choose a supplier above to view and manage their mapped publishers.</p>
+        </ng-container>
+        <ng-template #noMappings>
+          <h3>No publisher mappings yet</h3>
+          <p>Add a publisher discount using the form above to get started.</p>
+        </ng-template>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 </div>

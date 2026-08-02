@@ -1,40 +1,154 @@
+/* ── Dialog shell ───────────────────────────────────────────── */
+.fd-dialog {
+  width: 520px;
+  max-width: 100%;
+  background: var(--color-surface);
+  border-radius: 14px;
+  overflow: hidden;
+  font-family: 'Roboto', 'Segoe UI', sans-serif;
+}
 
-/* Make form controls readable on translucent dialog backgrounds */
-input, textarea, select {
-  background: rgba(255,255,255,0.03);
-  color: rgba(255,255,255,0.95);
-  border: 1px solid rgba(179,71,233,0.95);
+/* ── Header ─────────────────────────────────────────────────── */
+.fd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.fd-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.fd-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: none;
+  font-size: 1.3rem;
+  color: var(--color-text-subtle);
+  cursor: pointer;
   border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
 }
 
-input::placeholder, textarea::placeholder {
-  color: rgba(255,255,255,0.6);
+.fd-close:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
 }
 
-/* make buttons stand out inside dialogs */
-button[mat-raised-button] {
-  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+/* ── Body ───────────────────────────────────────────────────── */
+.fd-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-/* Make native selects and options dark so text is visible */
-select, option {
-  background: rgba(10,10,10,0.96);
-  color: rgba(255,255,255,0.95);
+.fd-row {
+  display: flex;
+  gap: 14px;
 }
 
-select:focus {
+.fd-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.fd-field--half {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.fd-label {
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: var(--color-gray-700);
+}
+
+.fd-input,
+.fd-select,
+.fd-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
   outline: none;
-  box-shadow: 0 0 0 3px rgba(179,71,233,0.12);
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.15s;
 }
 
-[mat-dialog-actions] {
-  background: rgba(179, 71, 233, 0.6);
+.fd-input:focus,
+.fd-select:focus,
+.fd-textarea:focus {
+  border-color: var(--color-border-focus);
+  background: var(--color-surface);
 }
 
-/* Make mat-form-field outline color stronger so borders look bold */
-:host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline {
-  stroke: rgba(179,71,233,0.95) !important;
+.fd-textarea {
+  resize: vertical;
+  min-height: 110px;
 }
-:host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline .mat-form-field-outline-gap {
-  stroke: rgba(179,71,233,0.95) !important;
+
+.fd-select--stars {
+  /* keep yellow star emoji readable */
+  font-size: 0.85rem;
+}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.fd-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 24px 20px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.fd-btn {
+  padding: 9px 22px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+  border: none;
+}
+
+.fd-btn--cancel {
+  background: var(--color-gray-100);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.fd-btn--cancel:hover {
+  background: var(--color-gray-200);
+}
+
+.fd-btn--submit {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  box-shadow: var(--btn-primary-shadow);
+}
+
+.fd-btn--submit:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.fd-btn--submit:disabled {
+  opacity: 0.45;
+  cursor: default;
 }

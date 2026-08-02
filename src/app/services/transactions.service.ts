@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { Transaction } from '../interface/Transaction';
+import { Transaction } from '../shared/models/transaction.model';
 import { enviort } from '../../environments/environment';
 import { normalizeUTCDatePayload } from '../utils/date.utils';
 

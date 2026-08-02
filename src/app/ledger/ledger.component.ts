@@ -15,7 +15,7 @@ import { RouterModule } from '@angular/router';
 import { DataStoreService } from '../services/data-store.service';
 import { LedgerService } from '../services/ledger.service';
 import { InvoicesService } from '../services/invoices.service';
-import { buildUTCDateTime, parseLocalDate, formatDateForAPI,formatDateForUTC, toISODateTimeUTC } from '../utils/date.utils';
+import { buildUTCDateTime, formatDateForAPI, toISODateTimeUTC } from '../utils/date.utils';
 import { LoadingService } from '../services/loading.service';
 import { take } from 'rxjs/operators';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
@@ -29,6 +29,11 @@ import { AuthService } from '../services/auth.service';
 import { baseUrl } from '../../environments/environment';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
+import { buildAppNavItems } from '../shared/nav-items';
+import { NavBadgeCountsService } from '../shared/nav-badge-counts.service';
+import { NavItem } from '../shared/models/common.models';
 
 interface PartiesDropdownPageResponse {
   content: any[];
@@ -55,19 +60,78 @@ interface PartyDropdownState {
 @Component({
   selector: 'app-ledger',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatDatepickerModule, MatNativeDateModule, RouterModule, MatDialogModule, MatSnackBarModule, MatMenuModule, MatTooltipModule],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, MatDatepickerModule, MatNativeDateModule, RouterModule, MatDialogModule, MatSnackBarModule, MatMenuModule, MatTooltipModule, SidebarNavComponent],
   templateUrl: './ledger.component.html',
   styleUrls: ['./ledger.component.css']
 })
 export class LedgerComponent implements OnInit, OnDestroy {
   @ViewChild('startTrigger') startMenuTrigger?: MatMenuTrigger;
   @ViewChild('endTrigger') endMenuTrigger?: MatMenuTrigger;
+
+  navItems: ReadonlyArray<NavItem> = buildAppNavItems();
+
+  /** Entry type options matching screenshot labels */
+  readonly entryTypeOptions = [
+    { value: 'All',          label: 'All Transaction Types' },
+    { value: 'SALE_INVOICE', label: 'SALE INVOICES' },
+    { value: 'SALE_RETURN',  label: 'SALE RETURNS' },
+    { value: 'PAYMENT',      label: 'PAYMENT RECEIPTS' }
+  ];
+
+  // ── Pagination ──────────────────────────────────────────────
+  pageSize    = 10;
+  currentPage = 0;
+  readonly pageSizeOptions = [10, 25, 50];
+
+  get filteredResults(): any[] {
+    // client-side entry-type filter on top of whatever the server returned
+    if (!this.results.length) return [];
+    const chosen = (this.transactionType || 'All').toLowerCase();
+    if (chosen === 'all') return this.results;
+    return this.results.filter(r => {
+      const ref = (r.refType || '').toLowerCase();
+      if (chosen === 'sale_invoice')  return ref.includes('sale') && !ref.includes('return') && !ref.includes('payment');
+      if (chosen === 'sale_return')   return ref.includes('return');
+      if (chosen === 'payment')       return ref.includes('payment');
+      return ref.includes(chosen);
+    });
+  }
+
+  get pagedResults(): any[] {
+    const start = this.currentPage * this.pageSize;
+    return this.filteredResults.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number  { return Math.max(1, Math.ceil(this.filteredResults.length / this.pageSize)); }
+  get showingStart(): number { return this.filteredResults.length === 0 ? 0 : this.currentPage * this.pageSize + 1; }
+  get showingEnd(): number   { return Math.min((this.currentPage + 1) * this.pageSize, this.filteredResults.length); }
+
+  goToPage(page: number) { this.currentPage = Math.max(0, Math.min(page, this.totalPages - 1)); }
+
+  onEntryTypeChange() { this.currentPage = 0; }
+
+  get selectedParty(): any {
+    if (!this.partyId) return null;
+    return this.parties.find((p: any) => Number(p.id) === Number(this.partyId)) || null;
+  }
+
+  getRefBadgeClass(refType: string): Record<string, boolean> {
+    const r = (refType || '').toLowerCase();
+    return {
+      'ld-badge--payment':  r.includes('payment'),
+      'ld-badge--return':   r.includes('return'),
+      'ld-badge--purchase': r.includes('purchase'),
+      'ld-badge--sale':     r.includes('sale') && !r.includes('return') && !r.includes('payment') && !r.includes('purchase'),
+      'ld-badge--default':  !r.includes('payment') && !r.includes('return') && !r.includes('purchase') && !r.includes('sale')
+    };
+  }
+
   partyId: any = null;
   parties: any[] = [];
   partyState: PartyDropdownState | null = null;
   authToken = '';
   private readonly dropdownBaseUrl = baseUrl.replace(/\/api$/, '');
-  private readonly pageSize = 50;
+  private readonly dropdownPageSize = 50;
 
   // Filters
   startDate: Date | null = null;
@@ -97,8 +161,13 @@ export class LedgerComponent implements OnInit, OnDestroy {
     private loadingService: LoadingService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
-    private transactionsService: TransactionsService
-  ) {}
+    private transactionsService: TransactionsService,
+    private navBadgeCounts: NavBadgeCountsService
+  ) {
+    this.navBadgeCounts.counts$.pipe(takeUntilDestroyed()).subscribe((counts) => {
+      this.navItems = buildAppNavItems(counts);
+    });
+  }
 
   ngOnInit(): void {
     this.authToken = this.auth.getAccessToken() || '';
@@ -349,7 +418,7 @@ export class LedgerComponent implements OnInit, OnDestroy {
     const params = new HttpParams()
       .set('q', query || '')
       .set('page', String(page))
-      .set('size', String(this.pageSize));
+      .set('size', String(this.dropdownPageSize));
 
     state.requestSub = this.http
       .get<PartiesDropdownPageResponse>(`${this.dropdownBaseUrl}/api/parties/dropdown`, { headers, params })
@@ -423,7 +492,7 @@ export class LedgerComponent implements OnInit, OnDestroy {
     const params: any = { partyId: partyId };
     
     this.loadingService.show('Loading ledger...');
-    this.ledgerService.getLedgerForPartyByDateRange(partyId, params).subscribe(data => {
+    this.ledgerService.getLedgerForPartyByDateRange(params).subscribe(data => {
       this.results = data || [];
       // Server returns entries ordered by date desc; last updated balance is first item's balance
       this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
@@ -463,7 +532,7 @@ export class LedgerComponent implements OnInit, OnDestroy {
     }
     
     this.loadingService.show('Filtering ledger...');
-    this.ledgerService.getLedgerForPartyByDateRange(this.partyId, params).subscribe(data => {
+    this.ledgerService.getLedgerForPartyByDateRange(params).subscribe(data => {
       this.results = data || [];
       // Calculate last balance from results
       this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
@@ -541,43 +610,6 @@ export class LedgerComponent implements OnInit, OnDestroy {
         this.loadingService.hide();
       }
     );
-  }
-
-  private formatDateForAPI(date: string | Date): string {
-    return formatDateForUTC(date);
-  }
-
-  private filterResults(input: any[]): any[] {
-    if (!input || !input.length) return [];
-
-    // Normalize chosen transaction type
-    const chosen = (this.transactionType || 'All').toString().trim().toLowerCase();
-
-    const start = this.startDate ? parseLocalDate(this.startDate) : null;
-    const end = this.endDate ? parseLocalDate(this.endDate) : null;
-
-    return input.filter(r => {
-      // transactionType filter: compare refType case-insensitive and be resilient to small typos like 'pruchase'
-      if (chosen && chosen !== 'all') {
-        const ref = (r.refType || '').toString().toLowerCase();
-        if (chosen === 'sale') {
-          if (!ref.includes('sale')) return false;
-        } else if (chosen === 'purchase') {
-          if (!(ref.includes('purchase') || ref.includes('pruchase'))) return false;
-        } else {
-          if (!ref.includes(chosen)) return false;
-        }
-      }
-
-      // date filters (assume r.date is ISO or parseable)
-      if (start || end) {
-        const d = r.date ? parseLocalDate(r.date) : null;
-        if (start && d && d < start) return false;
-        if (end && d && d > end) return false;
-      }
-
-      return true;
-    });
   }
 
   getLedgerDateTime(entry: any): Date | null {
@@ -716,16 +748,6 @@ export class LedgerComponent implements OnInit, OnDestroy {
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const yyyy = date.getFullYear();
     return `${dd}/${mm}/${yyyy} ${hour}:${minute}`;
-  }
-
-  private combineDateTime(date: Date | string | null, hour: string, minute: string): Date | null {
-    if (!date) return null;
-    const base = date instanceof Date ? new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0) : new Date(date);
-    if (isNaN(base.getTime())) return null;
-    const h = Number(hour);
-    const m = Number(minute);
-    base.setHours(isNaN(h) ? 0 : h, isNaN(m) ? 0 : m, 0, 0);
-    return base;
   }
 
   private toApiDateTime(date: Date | null, hour: string, minute: string): string {

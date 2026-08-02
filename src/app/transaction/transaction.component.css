@@ -1,53 +1,616 @@
-@keyframes blob {
-  0%, 100% { 
-    transform: translate(0, 0) scale(1); 
-  }
-  33% { 
-    transform: translate(30px, -50px) scale(1.1); 
-  }
-  66% { 
-    transform: translate(-20px, 20px) scale(0.9); 
-  }
+/* ================================================================
+   Transactions Management — redesigned list page
+   Clean white card layout, matches Sales / Ledger design system
+   ================================================================ */
+
+.tx-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
 }
 
-.animate-blob {
-  animation: blob 7s infinite;
-}
-
-.animation-delay-2000 {
-  animation-delay: 2s;
-}
-
-.animation-delay-4000 {
-  animation-delay: 4s;
-}
-
-/* Date-time picker styles */
-::ng-deep .date-time-menu .mat-mdc-menu-panel {
-  padding: 0;
-  max-width: 600px;
+.page-shell {
+  display: flex;
+  height: 100vh;
   overflow: hidden;
+  background: var(--color-bg-page);
 }
 
-::ng-deep .cdk-overlay-pane .date-time-menu {
-  max-width: 600px;
+.main-content {
+  flex: 1;
+  height: 100vh;
+  padding: 24px 28px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-y: auto;
   overflow-x: hidden;
 }
 
+.tx-header-card,
+.tx-filter-card {
+  flex-shrink: 0;
+}
+
+/* ── Card Base ──────────────────────────────────────────────── */
+.tx-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+}
+
+/* ── Header Card ────────────────────────────────────────────── */
+.tx-header-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tx-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tx-header-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: var(--gradient-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tx-header-icon mat-icon {
+  color: var(--color-text-inverse);
+  font-size: 24px;
+  width: 24px;
+  height: 24px;
+}
+
+.tx-title {
+  margin: 0 0 4px;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--color-text);
+  line-height: 1.2;
+}
+
+.tx-meta {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.tx-meta strong {
+  color: var(--color-text);
+}
+
+.tx-meta-settled {
+  color: var(--color-success);
+}
+
+.tx-meta-settled strong {
+  color: var(--color-success);
+}
+
+.tx-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.tx-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s, box-shadow 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.tx-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.tx-btn--primary {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: var(--color-text-inverse);
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.35);
+}
+
+.tx-btn--primary:hover {
+  opacity: 0.9;
+}
+
+.tx-btn--ghost {
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.tx-btn--ghost:hover {
+  background: var(--color-surface-hover);
+}
+
+/* ── Filter Card ────────────────────────────────────────────── */
+.tx-filter-card {
+  padding: 16px 20px;
+}
+
+.tx-filter-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-accent);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.tx-filter-title mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.tx-filters-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Search box */
+.tx-search-wrap {
+  position: relative;
+  flex: 1 1 180px;
+  min-width: 150px;
+}
+
+.tx-search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-subtle);
+  pointer-events: none;
+}
+
+.tx-search-input {
+  width: 100%;
+  padding: 7px 10px 7px 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.tx-search-input:focus {
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+/* Selects */
+.tx-select {
+  flex: 0 1 140px;
+  min-width: 110px;
+  padding: 7px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  outline: none;
+  cursor: pointer;
+  appearance: auto;
+  transition: border-color 0.15s;
+}
+
+.tx-select:focus {
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+/* Amount inputs */
+.tx-amount-input {
+  flex: 0 1 100px;
+  min-width: 80px;
+  padding: 7px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.tx-amount-input:focus {
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+.tx-range-sep {
+  color: var(--color-text-subtle);
+  font-weight: 600;
+}
+
+.tx-filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* Date/time trigger fields (existing calendar-menu functionality) */
+.tx-date-field {
+  position: relative;
+  flex: 1 1 150px;
+  min-width: 130px;
+}
+
+.tx-date-label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.tx-date-input-shell {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tx-date-input {
+  width: 100%;
+  padding: 7px 32px 7px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--color-text);
+  background: var(--color-surface-muted);
+  outline: none;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.tx-date-input:focus {
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+.tx-date-icon-btn {
+  position: absolute;
+  right: 1px;
+  width: 28px;
+  height: 28px;
+  color: var(--color-accent);
+}
+
+.tx-date-icon-btn mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Table Card ─────────────────────────────────────────────── */
+.tx-table-card {
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tx-table-scroll {
+  overflow: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.tx-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.tx-table thead tr {
+  background: var(--color-surface-muted);
+  border-bottom: 2px solid var(--color-border);
+}
+
+.tx-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tx-th-num,
+.tx-td-num {
+  text-align: right;
+}
+
+.tx-th-center,
+.tx-td-center {
+  text-align: center;
+}
+
+.tx-table td {
+  padding: 13px 16px;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border-light);
+  vertical-align: middle;
+}
+
+.tx-table tbody tr:hover {
+  background: var(--color-surface-muted);
+}
+
+.tx-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tx-id-cell {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.tx-party-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.tx-amount-cell {
+  font-weight: 700;
+  color: var(--color-success);
+}
+
+.tx-ref-no {
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  color: var(--color-gray-700);
+}
+
+.tx-nil {
+  color: var(--color-text-subtle);
+  font-weight: 400;
+}
+
+/* Payment method badges */
+.tx-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tx-badge--cash {
+  background: var(--color-success-bg);
+  color: var(--color-green-800);
+}
+
+.tx-badge--upi {
+  background: var(--color-indigo-100);
+  color: var(--color-indigo-800);
+}
+
+.tx-badge--bank {
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
+}
+
+.tx-badge--card {
+  background: var(--color-warning-bg);
+  color: var(--color-warning-hover);
+}
+
+.tx-badge--cheque {
+  background: var(--color-purple-bg);
+  color: #86198f;
+}
+
+.tx-badge--other {
+  background: var(--color-neutral-bg);
+  color: var(--color-neutral-text);
+}
+
+/* Row actions */
+.tx-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tx-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--color-info-bg);
+  background: var(--color-sky-50);
+  color: var(--color-sky-700);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s;
+  padding: 0;
+}
+
+.tx-icon-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+}
+
+.tx-icon-btn:hover {
+  background: var(--color-sky-100);
+}
+
+.tx-icon-btn--download {
+  border-color: var(--color-green-200);
+  background: var(--color-success-bg-soft);
+  color: var(--color-success);
+}
+
+.tx-icon-btn--download:hover {
+  background: var(--color-success-bg);
+}
+
+.tx-icon-btn--clear {
+  border-color: var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+}
+
+.tx-icon-btn--clear:hover {
+  background: var(--color-surface-hover);
+}
+
+/* Empty row */
+.tx-empty-cell {
+  text-align: center;
+  padding: 52px 20px;
+  color: var(--color-text-subtle);
+  font-size: 0.9rem;
+}
+
+.tx-empty-cell mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: var(--color-gray-300);
+  margin-bottom: 8px;
+}
+
+/* ── Pagination ─────────────────────────────────────────────── */
+.tx-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-surface-muted);
+  flex-shrink: 0;
+}
+
+.tx-pg-info {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.tx-pg-info strong {
+  color: var(--color-text);
+}
+
+.tx-pg-size {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+
+.tx-pg-size select {
+  padding: 5px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  background: var(--color-surface);
+  cursor: pointer;
+  outline: none;
+}
+
+.tx-pg-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tx-pg-nav button {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tx-pg-nav button:hover:not(:disabled) {
+  background: var(--color-surface-hover);
+}
+
+.tx-pg-nav button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.tx-pg-current {
+  background: var(--gradient-primary) !important;
+  color: var(--color-text-inverse) !important;
+  border-color: transparent !important;
+  font-weight: 700;
+}
+
+/* ── Date-time picker popover (Material-internal styling is global, see src/styles.css) ── */
 .date-time-menu-content {
   display: flex;
   gap: 8px;
   padding: 12px;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   width: 480px;
   box-sizing: border-box;
   align-items: flex-start;
   overflow-x: hidden;
-}
-
-::ng-deep .date-time-menu .mat-calendar {
-  width: 300px;
-  max-width: 300px;
 }
 
 .time-controls {
@@ -67,7 +630,7 @@
 .time-col-title {
   font-size: 14px;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text);
 }
 
 .time-list {
@@ -78,7 +641,7 @@
   overflow-y: auto;
   padding-right: 6px;
   scrollbar-width: thin;
-  scrollbar-color: #cbd5f5 transparent;
+  scrollbar-color: var(--color-indigo-200) transparent;
   scroll-behavior: smooth;
 }
 
@@ -87,7 +650,7 @@
 }
 
 .time-list::-webkit-scrollbar-thumb {
-  background: #cbd5f5;
+  background: var(--color-indigo-200);
   border-radius: 6px;
 }
 
@@ -105,15 +668,15 @@
   align-items: center;
   justify-content: center;
   background: transparent;
-  color: #111827;
+  color: var(--color-text);
   font-weight: 400;
   font-size: 14px;
   cursor: pointer;
 }
 
 .time-item--active {
-  background: #93c5fd;
-  color: #0f172a;
+  background: var(--color-info-border);
+  color: var(--color-text);
   font-weight: 600;
 }
 
@@ -121,73 +684,33 @@
   background: rgba(147, 197, 253, 0.35);
 }
 
-::ng-deep .date-time-menu .mat-calendar-body-selected,
-::ng-deep .date-time-menu .mat-calendar-body-cell-content.mat-calendar-body-selected {
-  background-color: #93c5fd !important;
-  color: #0f172a !important;
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .tx-filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tx-search-wrap,
+  .tx-select,
+  .tx-amount-input,
+  .tx-date-field {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+  }
+  .tx-range-sep {
+    display: none;
+  }
+  .tx-filter-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+  .tx-filter-actions .tx-btn {
+    flex: 1;
+    justify-content: center;
+  }
+  .tx-header-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
-
-::ng-deep .date-time-menu .mat-mdc-select-arrow,
-::ng-deep .date-time-menu .mat-mdc-form-field-label,
-::ng-deep .date-time-menu .mat-mdc-select-value {
-  color: #111827 !important;
-}
-
-::ng-deep .date-time-menu .mat-calendar-period-button {
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-::ng-deep .date-time-menu .mat-calendar-header {
-  padding: 0 8px 8px;
-}
-
-::ng-deep .date-time-menu .mat-calendar-body-label {
-  visibility: hidden;
-}
-
-::ng-deep .date-time-menu .mat-calendar-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.date-time-icon mat-icon {
-  color: rgb(216, 180, 254);
-}
-
-mat-form-field {
-  width: 100%;
-}
-
-button[mat-mini-fab],
-button[mat-fab] {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-/* Table contrast overrides to ensure dark glass background shows through */
-:host ::ng-deep table.mat-table,
-:host ::ng-deep .mat-table,
-:host ::ng-deep table {
-  background: transparent !important;
-  color: rgba(255,255,255,0.92) !important;
-}
-
-:host ::ng-deep th.mat-header-cell,
-:host ::ng-deep td.mat-cell,
-:host ::ng-deep tr.mat-row {
-  background: transparent !important;
-  color: inherit !important;
-}
-
-:host ::ng-deep .mat-header-row { background: rgba(255,255,255,0.02) !important; }
-:host ::ng-deep .mat-row:hover { background: rgba(255,255,255,0.02) !important; }
-:host ::ng-deep .mat-cell, :host ::ng-deep .mat-header-cell { border-color: rgba(255,255,255,0.06) !important; }

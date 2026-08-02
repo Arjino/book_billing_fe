@@ -1,166 +1,183 @@
-<div class="min-h-screen pt-20 pb-12 bg-gradient-to-br from-slate-950 via-orange-900/20 to-slate-950 relative overflow-hidden">
-  <!-- Animated Background Elements -->
-  <div class="fixed inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-20 left-10 w-72 h-72 bg-orange-500/10 rounded-full blur-3xl animate-blob"></div>
-    <div class="absolute bottom-20 right-10 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-  </div>
+<div class="parties-layout">
+  <app-sidebar-nav [items]="navItems" (quickAdd)="onSidebarQuickAdd($event.id)"></app-sidebar-nav>
 
-  <div class="max-w-7xl mx-auto px-6 relative z-10">
-    <!-- Header -->
-    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
+  <main class="parties-main">
+    <section class="page-header card-shell">
       <div>
-        <h1 class="text-4xl font-extrabold mb-2">
-          <span class="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">Parties Management</span>
-        </h1>
-        <p class="text-orange-200">Manage your clients and parties</p>
+        <h1>Parties &amp; Client Management</h1>
+        <p>Total {{ totalRecords || filteredParties.length }} clients • Book depots, publishers &amp; distributors</p>
       </div>
-      <div class="flex gap-3 w-full md:w-auto justify-between md:justify-end mt-4 md:mt-0">
-        <button mat-raised-button color="accent" [disabled]="partyStatus === PARTIES_CONSTANTS.STATUS.OLD" (click)="addParty()" class="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+      <div class="header-actions">
+        <button
+          type="button"
+          class="primary-action"
+          [disabled]="partyStatus === PARTIES_CONSTANTS.STATUS.OLD"
+          (click)="addParty()"
+        >
           <mat-icon>add</mat-icon>
-          Add Party
+          Add Party Profile
         </button>
-        <button mat-raised-button [disabled]="partyStatus === PARTIES_CONSTANTS.STATUS.OLD" (click)="bulkImport()" class="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600">
+        <button
+          type="button"
+          class="secondary-action"
+          [disabled]="partyStatus === PARTIES_CONSTANTS.STATUS.OLD"
+          (click)="bulkImport()"
+        >
           <mat-icon>upload_file</mat-icon>
-          <span class="hidden sm:inline">Bulk Import</span>
-        </button>
-        <button mat-icon-button (click)="goBack()" class="bg-slate-800/50 hover:bg-slate-700/50 text-orange-300 rounded-lg border border-orange-500/30" title="Back to Dashboard">
-          <mat-icon>arrow_back</mat-icon>
+          Bulk Party Import
         </button>
       </div>
-    </div>
+    </section>
 
-    <!-- Filter Section -->
-    <div class="mb-6 bg-gradient-to-br from-slate-900/90 to-slate-950 border border-orange-500/30 rounded-2xl backdrop-blur-xl p-6 text-white">
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end justify-items-stretch">
-        <!-- Filter Dropdown -->
-        <div>
-          <label class="block text-orange-300 font-semibold mb-2">Filter By</label>
-          <select [(ngModel)]="filterBy" class="w-full px-4 py-2 bg-slate-800/50 border border-orange-500/30 rounded-lg text-white focus:outline-none focus:border-orange-400 transition-colors">
-            <option *ngFor="let option of filterOptions" [value]="option.value">
-              {{option.label}}
-            </option>
-          </select>
-        </div>
+    <section class="card-shell filters-card">
+      <div class="section-title">
+        <mat-icon>tune</mat-icon>
+        PARTY FILTERS
+      </div>
 
-        <!-- Filter Input -->
-        <div>
-          <label class="block text-orange-300 font-semibold mb-2">Search Value</label>
-          <input 
-            [(ngModel)]="filterValue" 
+      <div class="filters-grid">
+        <div class="field-wrap search-wrap">
+          <mat-icon>search</mat-icon>
+          <input
+            [(ngModel)]="filterValue"
             (keyup.enter)="applyFilter()"
-            type="text" 
-            placeholder="Enter filter value..." 
-            class="w-full px-4 py-2 bg-slate-800/50 border border-orange-500/30 rounded-lg text-white placeholder-orange-300/40 focus:outline-none focus:border-orange-400 transition-colors"
+            type="text"
+            placeholder="Search Name, Phone, GSTIN..."
           />
         </div>
 
-        <!-- Buttons Group -->
-        <div class="flex flex-col sm:flex-row gap-3 sm:justify-start justify-center sm:col-span-2 md:col-span-1 lg:col-span-2">
-          <button 
-            (click)="applyFilter()" 
-            mat-raised-button 
-            class="w-full sm:w-auto bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-semibold px-6 py-2 rounded-lg transition-all"
-          >
-            <mat-icon class="mr-2">search</mat-icon>
-            Apply Filter
-          </button>
-
-          <button 
-            (click)="clearFilter()" 
-            mat-outlined-button 
-            class="w-full sm:w-auto border border-orange-500/50 text-orange-300 hover:bg-orange-500/10 font-semibold px-6 py-2 rounded-lg transition-all"
-          >
-            <mat-icon class="mr-2">clear</mat-icon>
-            Clear
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Table Container -->
-    <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-orange-500/30 rounded-2xl backdrop-blur-xl overflow-hidden text-white">
-      <div class="overflow-x-auto">
-        <table mat-table [dataSource]="filteredParties" class="w-full bg-transparent text-white" *ngIf="filteredParties.length">
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef class="text-orange-300 font-bold py-4 px-6 text-left">ID</th>
-            <td mat-cell *matCellDef="let p" class="text-orange-300 bg-transparent py-4 px-6 border-t border-orange-500/20">{{p.id}}</td>
-          </ng-container>
-          <ng-container matColumnDef="name">
-            <th mat-header-cell *matHeaderCellDef class="text-orange-300 font-bold py-4 px-6 text-left">Name</th>
-            <td mat-cell *matCellDef="let p" class="text-orange-300 bg-transparent py-4 px-6 border-t border-orange-500/20">{{p.name}}</td>
-          </ng-container>
-          <ng-container matColumnDef="type">
-            <th mat-header-cell *matHeaderCellDef class="text-orange-300 font-bold py-4 px-6 text-left">Type</th>
-            <td mat-cell *matCellDef="let p" class="text-orange-300 bg-transparent py-4 px-6 border-t border-orange-500/20">{{p.type}}</td>
-          </ng-container>
-          <ng-container matColumnDef="phone">
-            <th mat-header-cell *matHeaderCellDef class="text-orange-300 font-bold py-4 px-6 text-left">Phone</th>
-            <td mat-cell *matCellDef="let p" class="text-orange-300 bg-transparent py-4 px-6 border-t border-orange-500/20">{{p.phone}}</td>
-          </ng-container>
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="text-orange-300 font-bold py-4 px-6 text-left">Actions</th>
-            <td mat-cell *matCellDef="let p" class="text-orange-300 bg-transparent py-4 px-6 border-t border-orange-500/20">
-              <button mat-icon-button (click)="editParty(p)" class="text-blue-400 hover:text-blue-300" title="Edit Party">
-                <mat-icon>edit</mat-icon>
-              </button>
-              <button *ngIf="partyStatus === PARTIES_CONSTANTS.STATUS.CURRENT" mat-icon-button (click)="deleteParty(p)" class="text-red-400 hover:text-red-300 ml-2" title="Delete Party">
-                <mat-icon>delete</mat-icon>
-              </button>
-              <button *ngIf="partyStatus === PARTIES_CONSTANTS.STATUS.OLD" mat-icon-button (click)="enableParty(p)" class="text-green-400 hover:text-green-300 ml-2" title="Enable Party">
-                <mat-icon>check_circle</mat-icon>
-              </button>
-            </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="['id','name','type','phone','actions']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['id','name','type','phone','actions'];" class="hover:bg-orange-500/10 transition-colors"></tr>
-        </table>
-      </div>
-
-      <!-- Pagination Section -->
-      <div class="flex flex-col sm:flex-row items-center justify-between p-6 border-t border-orange-500/30 bg-slate-900/50" *ngIf="filteredParties.length">
-        <div class="flex items-center gap-4 mb-4 sm:mb-0">
-          <label class="text-orange-300 font-semibold">Rows per page:</label>
-          <select [(ngModel)]="pageSize" (change)="onPageSizeChange()" class="px-4 py-2 bg-slate-800/50 border border-orange-500/30 rounded-lg text-white focus:outline-none focus:border-orange-400 transition-colors">
-            <option [ngValue]="25">25</option>
-            <option [ngValue]="50">50</option>
-            <option [ngValue]="100">100</option>
+        <div class="field-wrap select-wrap">
+          <select [(ngModel)]="partyStatus" (change)="loadPartiesByStatus()">
+            <option [value]="PARTIES_CONSTANTS.STATUS.CURRENT">Current Parties</option>
+            <option [value]="PARTIES_CONSTANTS.STATUS.OLD">Old Parties</option>
           </select>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button 
-            mat-icon-button 
-            (click)="previousPage()" 
-            [disabled]="currentPage === 0"
-            class="text-orange-300 disabled:text-orange-300/30 disabled:cursor-not-allowed"
-            title="Previous Page">
+        <div class="field-wrap select-wrap">
+          <select [(ngModel)]="selectedPartyType" (change)="onUiFilterChanged()">
+            <option value="all">All Party Types</option>
+            <option *ngFor="let item of partyTypes" [value]="item.value">{{ item.label }}</option>
+          </select>
+        </div>
+
+        <div class="field-wrap select-wrap">
+          <select [(ngModel)]="selectedBalanceType" (change)="onUiFilterChanged()">
+            <option *ngFor="let item of balanceFilterOptions" [value]="item.value">{{ item.label }}</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button type="button" class="icon-btn" (click)="clearFilter()" title="Reset filters" aria-label="Reset filters">
+            <mat-icon>restart_alt</mat-icon>
+          </button>
+          <button type="button" class="primary-action" (click)="applyFilter()">
+            <mat-icon>search</mat-icon>
+            Apply
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card-shell table-card" *ngIf="filteredParties.length; else emptyState">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Party / Business Name</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Phone Contact</th>
+              <th>GSTIN</th>
+              <th class="align-right">Current Balance (₹)</th>
+              <th class="align-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let party of filteredParties">
+              <td class="party-id">#{{ party.id }}</td>
+              <td>
+                <p class="party-name">{{ party.name }}</p>
+                <p class="party-subtitle">{{ getPartySubtitle(party) }}</p>
+              </td>
+              <td>
+                <span [class]="getPartyTypeClass(party.type)">{{ party.type }}</span>
+              </td>
+              <td>
+                <span class="status-chip">{{ partyStatus === PARTIES_CONSTANTS.STATUS.OLD ? 'Old Party' : 'Current Party' }}</span>
+              </td>
+              <td>{{ party.phone || '—' }}</td>
+              <td class="mono">{{ party.gstin || '—' }}</td>
+              <td class="align-right" [class]="getBalanceClass(party)">{{ getBalanceDisplay(party) }}</td>
+              <td>
+                <div class="actions-wrap">
+                  <button type="button" class="table-btn" (click)="openLedger(party)">
+                    <mat-icon>description</mat-icon>
+                    Ledger
+                  </button>
+                  <button type="button" class="table-btn" (click)="editParty(party)">
+                    <mat-icon>edit</mat-icon>
+                    Edit
+                  </button>
+                  <button
+                    *ngIf="partyStatus === PARTIES_CONSTANTS.STATUS.CURRENT"
+                    type="button"
+                    class="icon-btn danger"
+                    (click)="deleteParty(party)"
+                    aria-label="Delete party"
+                    title="Delete"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                  <button
+                    *ngIf="partyStatus === PARTIES_CONSTANTS.STATUS.OLD"
+                    type="button"
+                    class="icon-btn success"
+                    (click)="enableParty(party)"
+                    aria-label="Enable party"
+                    title="Enable"
+                  >
+                    <mat-icon>check_circle</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <p>Showing {{ filteredParties.length }} of {{ totalRecords || filteredParties.length }} entries</p>
+
+        <div class="table-footer-controls">
+          <label>
+            Rows:
+            <select [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+              <option [ngValue]="10">10</option>
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+              <option [ngValue]="100">100</option>
+            </select>
+          </label>
+
+          <button type="button" class="pager" (click)="previousPage()" [disabled]="currentPage === 0">
             <mat-icon>chevron_left</mat-icon>
           </button>
-
-          <span class="text-orange-300 font-semibold px-4">
-            Page {{ currentPage + 1 }} of {{ totalPages || 1 }}
-          </span>
-
-          <button 
-            mat-icon-button 
-            (click)="nextPage()" 
-            [disabled]="currentPage >= totalPages - 1 || totalPages === 0"
-            class="text-orange-300 disabled:text-orange-300/30 disabled:cursor-not-allowed"
-            title="Next Page">
+          <span class="page-indicator">{{ currentPage + 1 }}</span>
+          <button type="button" class="pager" (click)="nextPage()" [disabled]="currentPage >= totalPages - 1 || totalPages === 0">
             <mat-icon>chevron_right</mat-icon>
           </button>
         </div>
-
-        <div class="text-orange-300/60 text-sm mt-4 sm:mt-0">
-          Total Records: {{ totalRecords }}
-        </div>
       </div>
+    </section>
 
-      <div *ngIf="!filteredParties.length" class="p-8 text-center">
-        <mat-icon class="text-6xl text-orange-500/30 mb-4">business</mat-icon>
-        <p class="text-orange-300/60" *ngIf="filterValue">No results found for your filter.</p>
-        <p class="text-orange-300/60" *ngIf="!filterValue">No parties found. Create your first party entry.</p>
-      </div>
-    </div>
-  </div>
+    <ng-template #emptyState>
+      <section class="card-shell empty-state">
+        <mat-icon>groups</mat-icon>
+        <h3>No parties found</h3>
+        <p *ngIf="filterValue">Try adjusting search and filter criteria.</p>
+        <p *ngIf="!filterValue">Create your first party profile to get started.</p>
+      </section>
+    </ng-template>
+  </main>
 </div>

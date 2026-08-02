@@ -1,9 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { baseUrl, enviort } from '../../environments/environment';
-import { AuthRequest, AuthResponse, ForgotPasswordRequest, ForgotPasswordResponse } from '../interface/auth';
+import { enviort } from '../../environments/environment';
+import { AuthRequest, AuthResponse, ForgotPasswordRequest, ForgotPasswordResponse } from '../auth/auth.models';
 
 @Injectable({
   providedIn: 'root'
@@ -12,13 +12,20 @@ export class AuthService {
   private apiUrl = enviort; // contains specific auth URLs (register/login/etc.)
   private accessTokenSubject = new BehaviorSubject<string | null>(null);
   public accessToken$ = this.accessTokenSubject.asObservable();
+  private tokenExpiryIntervalId: number | null = null;
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private ngZone: NgZone
+  ) {
     // Initialize token from localStorage only if available (not on SSR)
     if (typeof localStorage !== 'undefined') {
       const token = localStorage.getItem('accessToken');
       this.accessTokenSubject.next(token);
       this.checkTokenExpiry();
+      if (token) {
+        this.ensureTokenExpiryCheckStarted();
+      }
     }
   }
 
@@ -50,11 +57,25 @@ export class AuthService {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
     }
+    if (this.tokenExpiryIntervalId !== null && typeof window !== 'undefined') {
+      window.clearInterval(this.tokenExpiryIntervalId);
+      this.tokenExpiryIntervalId = null;
+    }
     this.accessTokenSubject.next(null);
   }
 
   isLoggedIn(): boolean {
-    return !!this.getAccessToken();
+    const token = this.getAccessToken();
+    if (!token) {
+      return false;
+    }
+
+    if (this.isTokenExpired(token)) {
+      this.logout();
+      return false;
+    }
+
+    return true;
   }
 
   getAccessToken(): string | null {
@@ -77,15 +98,27 @@ export class AuthService {
       localStorage.setItem('refreshToken', response.refreshToken);
     }
     this.accessTokenSubject.next(response.accessToken);
+    this.ensureTokenExpiryCheckStarted();
   }
 
   private checkTokenExpiry(): void {
-    setInterval(() => {
-      const token = this.getAccessToken();
-      if (token && this.isTokenExpired(token)) {
-        this.logout();
-      }
-    }, 60000); // Check every minute
+    const token = this.getAccessToken();
+    if (token && this.isTokenExpired(token)) {
+      this.logout();
+    }
+  }
+
+  private ensureTokenExpiryCheckStarted(): void {
+    if (this.tokenExpiryIntervalId !== null || typeof window === 'undefined') {
+      return;
+    }
+
+    // Run periodic checks outside Angular so hydration/app stability is not blocked.
+    this.ngZone.runOutsideAngular(() => {
+      this.tokenExpiryIntervalId = window.setInterval(() => {
+        this.checkTokenExpiry();
+      }, 60000);
+    });
   }
 
   private isTokenExpired(token: string): boolean {

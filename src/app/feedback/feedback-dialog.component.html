@@ -1,48 +1,72 @@
-<div class="modern-dialog w-full max-w-lg text-white">
-  <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#7C3AED,#06B6D4);">
-    <div class="flex items-center gap-3">
-      <mat-icon>feedback</mat-icon>
-      <h2 class="text-lg font-semibold">Submit Feedback</h2>
-    </div>
-    <button mat-icon-button aria-label="close" (click)="onCancel()"><mat-icon>close</mat-icon></button>
+<div class="fd-dialog">
+
+  <!-- Header -->
+  <div class="fd-header">
+    <h2 class="fd-title">Submit System Feedback</h2>
+    <button type="button" class="fd-close" (click)="onCancel()" aria-label="Close dialog">&times;</button>
   </div>
 
-  <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
+  <div class="fd-body">
     <form #feedbackForm="ngForm">
-      <div class="grid grid-cols-1 gap-3">
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Category</mat-label>
-          <mat-select [(ngModel)]="feedback.category" name="category" required #categoryModel="ngModel" (ngModelChange)="categoryModel.control.markAsTouched()">
-            <mat-option *ngFor="let category of categories" [value]="category">{{ category }}</mat-option>
-          </mat-select>
-          <mat-error *ngIf="categoryModel.invalid && (categoryModel.dirty || categoryModel.touched)">Category is required.</mat-error>
-        </mat-form-field>
 
-        <mat-form-field appearance="outline" class="w-full">
-          <mat-label>Description</mat-label>
-          <textarea
-            matInput
-            [(ngModel)]="feedback.description"
-            name="description"
-            required
-            rows="5"
-            placeholder="Please describe your feedback in detail..."
-            #descriptionModel="ngModel"
-            (ngModelChange)="descriptionModel.control.markAsTouched()"></textarea>
-          <mat-error *ngIf="descriptionModel.invalid && (descriptionModel.dirty || descriptionModel.touched)">Description is required.</mat-error>
-        </mat-form-field>
+      <!-- Name -->
+      <div class="fd-field">
+        <label class="fd-label">Your Name / Business Name:</label>
+        <input
+          type="text"
+          class="fd-input"
+          [(ngModel)]="feedback.submittedBy"
+          name="submittedBy"
+          placeholder="e.g. Anuj Gupta (Anuj Book Depot)"
+          autocomplete="off"
+        />
       </div>
+
+      <!-- Category + Rating row -->
+      <div class="fd-row">
+        <div class="fd-field fd-field--half">
+          <label class="fd-label">Category:</label>
+          <select class="fd-select" [(ngModel)]="feedback.category" name="category" required>
+            <option value="" disabled>Select category</option>
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
+        <div class="fd-field fd-field--half">
+          <label class="fd-label">Rating Stars:</label>
+          <select class="fd-select fd-select--stars" [(ngModel)]="feedback.rating" name="rating">
+            <option *ngFor="let opt of ratingOptions" [ngValue]="opt.value">{{ opt.label }}</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Message -->
+      <div class="fd-field">
+        <label class="fd-label">Feedback Message:</label>
+        <textarea
+          class="fd-textarea"
+          [(ngModel)]="feedback.description"
+          name="description"
+          required
+          rows="5"
+          placeholder="Describe your suggestion or feedback on the book billing experience..."
+          #descriptionModel="ngModel"
+        ></textarea>
+      </div>
+
     </form>
   </div>
 
-  <div mat-dialog-actions class="flex flex-col md:flex-row md:justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
-    <button mat-button class="w-full md:w-auto" (click)="onCancel()" aria-label="Back">
-      <mat-icon class="inline md:hidden mr-2">arrow_back</mat-icon>
-      <span class="hidden md:inline">Cancel</span>
-    </button>
-    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSubmit()" [disabled]="feedbackForm.invalid" aria-label="Save">
-      <mat-icon class="inline md:hidden mr-2">send</mat-icon>
-      <span class="hidden md:inline">Submit</span>
+  <!-- Footer -->
+  <div class="fd-footer">
+    <button type="button" class="fd-btn fd-btn--cancel" (click)="onCancel()">Cancel</button>
+    <button
+      type="button"
+      class="fd-btn fd-btn--submit"
+      (click)="onSubmit()"
+      [disabled]="!feedback.category || !feedback.description.trim()"
+    >
+      Submit Feedback
     </button>
   </div>
+
 </div>

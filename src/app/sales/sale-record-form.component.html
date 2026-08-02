@@ -1,0 +1,168 @@
+<div class="page-shell">
+  <app-sidebar-nav [items]="navItems"></app-sidebar-nav>
+
+  <main class="main-content">
+  <div class="form-header">
+    <div class="heading">
+      <div class="heading-icon">
+        <span class="material-icons">receipt_long</span>
+      </div>
+      <div>
+        <h1>{{ formTitle }}</h1>
+        <p>High-volume billing &bull; Up to 200 books supported with dual-column grid layout</p>
+      </div>
+    </div>
+    <button type="button" class="btn btn-ghost" (click)="cancel()">
+      <span class="material-icons">close</span>
+      Back to Invoices
+    </button>
+  </div>
+
+  <section class="panel">
+    <div class="top-fields">
+      <div class="field">
+        <label>Document Type *</label>
+        <select [(ngModel)]="documentType" (ngModelChange)="onDocumentTypeChange()">
+          <option *ngFor="let option of docTypeOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Customer / Depot *</label>
+        <select [(ngModel)]="party">
+          <option [ngValue]="null" disabled>Select a customer</option>
+          <option *ngFor="let p of parties" [ngValue]="p">
+            {{ p.name }} ({{ p.phone }})
+          </option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Invoice Date &amp; Time</label>
+        <input type="text" [value]="invoiceDateTime | date:'M/d/yyyy, h:mm:ss a'" readonly />
+      </div>
+    </div>
+
+    <div class="top-fields" *ngIf="isReturn">
+      <div class="field">
+        <label>Original Invoice No *</label>
+        <input type="text" [(ngModel)]="originalInvoiceNo" placeholder="e.g. SINV-20260725-61DDF09B" />
+      </div>
+
+      <div class="field">
+        <label>Return Reason *</label>
+        <input type="text" [(ngModel)]="returnReason" placeholder="e.g. Damaged stock returned by depot" />
+      </div>
+    </div>
+  </section>
+
+  <section class="panel lines-panel">
+    <div class="lines-header">
+      <div class="panel-title">
+        <span class="material-icons">menu_book</span>
+        Itemized Book Lines ({{ totalLines }} lines &bull; {{ totalQty }} Pcs)
+      </div>
+      <div class="lines-actions">
+        <button type="button" class="chip-btn chip-primary" (click)="addLines(1)">
+          <span class="material-icons">add</span> +1 Line
+        </button>
+        <button type="button" class="chip-btn" (click)="addLines(5)">+5 Lines</button>
+        <button type="button" class="chip-btn" (click)="addLines(20)">+20 Lines</button>
+        <button type="button" class="chip-btn chip-success" (click)="addAllBooks()">
+          <span class="material-icons">auto_awesome</span> Add All Books ({{ books.length }})
+        </button>
+        <button type="button" class="chip-btn chip-danger" (click)="clearAllLines()">Clear All</button>
+      </div>
+    </div>
+
+    <div class="lines-grid">
+      <div class="line-card" *ngFor="let line of lines; let i = index">
+        <div class="line-card-head">
+          <span class="line-index">#{{ i + 1 }}</span>
+          <select class="book-select" [ngModel]="line.book?.id ?? null" (ngModelChange)="onBookSelected(line, $event)">
+            <option [ngValue]="null" disabled>Select a book</option>
+            <option *ngFor="let book of books" [ngValue]="book.id">{{ bookLabel(book) }}</option>
+          </select>
+          <button type="button" class="icon-btn danger" (click)="removeLine(i)" title="Remove line">
+            <span class="material-icons">delete</span>
+          </button>
+        </div>
+
+        <div class="line-card-fields">
+          <div class="field">
+            <label>Qty (Pcs)</label>
+            <input type="number" min="0" [(ngModel)]="line.qty" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>MRP (₹)</label>
+            <input type="number" min="0" [(ngModel)]="line.mrp" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Disc %</label>
+            <input type="number" min="0" max="100" [(ngModel)]="line.discPercent" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Amount</label>
+            <div class="line-total">₹{{ lineAmount(line) | number:'1.0-0' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel payment-panel">
+    <div class="payment-fields" *ngIf="!isReturn">
+      <div class="field">
+        <label>Payment Status</label>
+        <select [(ngModel)]="paymentStatus">
+          <option value="UNPAID">UNPAID</option>
+          <option value="PARTIAL">PARTIAL (Part Payment)</option>
+          <option value="PAID">PAID</option>
+        </select>
+      </div>
+
+      <div class="field" *ngIf="paymentStatus === 'PARTIAL'">
+        <label>Received Now (₹)</label>
+        <input type="number" min="0" [(ngModel)]="receivedNow" placeholder="0" />
+        <div class="field-error" *ngIf="isOverpay">Received amount cannot exceed grand total.</div>
+      </div>
+    </div>
+
+    <div class="totals-summary" [class.totals-summary--full]="isReturn">
+      <div class="totals-line">
+        Total Lines: <strong>{{ totalLines }}</strong> | Total Quantity: <strong>{{ totalQty }} Pcs</strong>
+      </div>
+      <div class="totals-line" *ngIf="!isReturn">
+        Discount Total: <strong>₹{{ discountTotal | number:'1.0-2' }}</strong>
+      </div>
+      <div class="totals-line" *ngIf="!isReturn">
+        Estimated Tax ({{ taxRatePercent }}%): <strong>₹{{ estimatedTax | number:'1.0-2' }}</strong>
+      </div>
+      <div class="totals-grand" *ngIf="!isReturn">
+        Grand Total: <strong>₹{{ grandTotal | number:'1.0-2' }}</strong>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="field">
+      <label>Invoice Remarks / Terms</label>
+      <textarea rows="2" [(ngModel)]="remarks" placeholder="e.g. Standard distributor book sale invoice"></textarea>
+    </div>
+  </section>
+
+  <div class="form-footer">
+    <div class="footer-summary">
+      Total Lines: <strong>{{ totalLines }}</strong> &bull; Total Quantity: <strong>{{ totalQty }} Pcs</strong>
+      <span class="footer-amount" *ngIf="!isReturn">Grand Total: <strong>₹{{ grandTotal | number:'1.0-0' }}</strong></span>
+    </div>
+    <div class="footer-actions">
+      <button type="button" class="btn btn-ghost" (click)="cancel()">Cancel</button>
+      <button type="button" class="btn btn-primary" [disabled]="!canSave" (click)="save()">
+        <span class="material-icons">save</span>
+        {{ saving ? 'Saving...' : (isReturn ? 'Submit Sale Return (' + totalLines + ' Lines)' : 'Issue Sale Invoice (' + totalLines + ' Lines)') }}
+      </button>
+    </div>
+  </div>
+  </main>
+</div>

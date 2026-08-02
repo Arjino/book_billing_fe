@@ -1,7 +1,7 @@
 import { HttpHeaders } from '@angular/common/http';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ReturnRequest } from '../interface/return-request';
+import { ReturnRequest } from '../shared/models/return-request.model';
 import { PurchaseService } from './purchase.service';
 import { AuthService } from './auth.service';
 import { enviort } from '../../environments/environment';

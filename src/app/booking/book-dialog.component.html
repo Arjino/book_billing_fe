@@ -1,82 +1,139 @@
-<div class="modern-dialog w-full max-w-lg text-white">
-  <div class="dialog-header flex items-center justify-between p-3 rounded-t-lg" style="background: linear-gradient(90deg,#7C3AED,#06B6D4);">
-    <div class="flex items-center gap-3">
-      <mat-icon>menu_book</mat-icon>
-      <h2 class="text-lg font-semibold">Add Book</h2>
+<div class="book-dialog-shell">
+  <div class="dialog-header">
+    <div class="header-title-wrap">
+      <span class="title-icon"><mat-icon>menu_book</mat-icon></span>
+      <div>
+        <h2>{{ isEditMode ? 'Edit Book Title' : 'Add New Book Title' }}</h2>
+        <p>Catalog &amp; stock entry for publishers &amp; distributors</p>
+      </div>
     </div>
-    <button mat-icon-button aria-label="close" (click)="onCancel()"><mat-icon>close</mat-icon></button>
+    <button type="button" class="close-btn" (click)="onCancel()" aria-label="Close">
+      <mat-icon>close</mat-icon>
+    </button>
   </div>
 
-  <div mat-dialog-content class="p-4 rounded-b-lg" style="background: rgba(179,71,233,0.14); border: 1px solid rgba(179,71,233,0.95); backdrop-filter: blur(6px);">
-    <form #bookForm="ngForm">
-      <div class="grid grid-cols-1 gap-3">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Title</mat-label>
-            <input matInput [(ngModel)]="data.title" name="title" required pattern="^[A-Za-z0-9 ]+$" #titleModel="ngModel" (ngModelChange)="titleModel.control.markAsTouched()" />
-            <mat-error *ngIf="titleModel.invalid && (titleModel.dirty || titleModel.touched)">
-              <span *ngIf="titleModel.errors?.['required']">Title is required.</span>
-              <span *ngIf="titleModel.errors?.['pattern']">Only letters, numbers, and spaces are allowed.</span>
-            </mat-error>
-          </mat-form-field>
+  <div mat-dialog-content class="dialog-content">
+    <form #bookForm="ngForm" class="book-form">
+      <div class="form-row full-width">
+        <label for="bookTitle">Book Title *</label>
+        <input
+          id="bookTitle"
+          [(ngModel)]="data.title"
+          name="title"
+          required
+          pattern="^[A-Za-z0-9 ]+$"
+          #titleModel="ngModel"
+          placeholder="e.g. Hindi - 8 (Bhasha Rachna)"
+        />
+        <small class="error" *ngIf="titleModel.invalid && (titleModel.dirty || titleModel.touched)">
+          <span *ngIf="titleModel.errors?.['required']">Title is required.</span>
+          <span *ngIf="titleModel.errors?.['pattern']">Only letters, numbers, and spaces are allowed.</span>
+        </small>
+      </div>
 
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>SKU</mat-label>
-            <input matInput [(ngModel)]="data.sku" name="sku" required readonly #skuModel="ngModel" />
-            <button mat-icon-button matSuffix type="button" (click)="fetchSku()" [disabled]="isEditMode || isFetchingSku" title="Refresh SKU">
+      <div class="form-row two-col">
+        <div>
+          <label for="bookPublisher">Publisher *</label>
+          <input
+            id="bookPublisher"
+            [(ngModel)]="data.publisher"
+            name="publisher"
+            required
+            pattern="^[A-Za-z ]+$"
+            #publisherModel="ngModel"
+            placeholder="e.g. Bright Path"
+          />
+          <small class="error" *ngIf="publisherModel.invalid && (publisherModel.dirty || publisherModel.touched)">
+            <span *ngIf="publisherModel.errors?.['required']">Publisher is required.</span>
+            <span *ngIf="publisherModel.errors?.['pattern']">Only alphabets and spaces are allowed.</span>
+          </small>
+        </div>
+
+        <div>
+          <label for="bookHsn">HSN Code</label>
+          <input
+            id="bookHsn"
+            type="number"
+            [(ngModel)]="data.hsn"
+            name="hsn"
+            inputmode="numeric"
+            min="100000"
+            max="9999999999"
+            #hsnModel="ngModel"
+            placeholder="e.g. 490110"
+          />
+          <small class="hint">Numeric; normally 6 digits (can be 6-10 digits).</small>
+          <small class="error" *ngIf="hsnModel.invalid && (hsnModel.dirty || hsnModel.touched)">
+            <span *ngIf="hsnModel.errors?.['min']">HSN must be at least 6 digits.</span>
+            <span *ngIf="hsnModel.errors?.['max']">HSN cannot exceed 10 digits.</span>
+          </small>
+        </div>
+      </div>
+
+      <div class="form-row three-col">
+        <div>
+          <label for="bookMrp">MRP (&#8377;) *</label>
+          <input
+            id="bookMrp"
+            type="number"
+            [(ngModel)]="data.mrp"
+            name="mrp"
+            required
+            min="0.01"
+            #mrpModel="ngModel"
+            placeholder="300"
+          />
+          <small class="error" *ngIf="mrpModel.invalid && (mrpModel.dirty || mrpModel.touched)">
+            <span *ngIf="mrpModel.errors?.['required']">MRP is required.</span>
+            <span *ngIf="mrpModel.errors?.['min']">MRP must be greater than zero.</span>
+          </small>
+        </div>
+
+        <div>
+          <label for="bookStock">Stock *</label>
+          <input
+            id="bookStock"
+            type="number"
+            [(ngModel)]="data.stock"
+            name="stock"
+            required
+            min="0"
+            step="1"
+            #stockModel="ngModel"
+            placeholder="100"
+          />
+          <small class="error" *ngIf="stockModel.invalid && (stockModel.dirty || stockModel.touched)">
+            <span *ngIf="stockModel.errors?.['required']">Stock is required.</span>
+            <span *ngIf="stockModel.errors?.['min']">Stock cannot be negative.</span>
+          </small>
+        </div>
+
+        <div>
+          <label for="bookSku">SKU Code *</label>
+          <div class="sku-field">
+            <input id="bookSku" [(ngModel)]="data.sku" name="sku" required readonly #skuModel="ngModel" />
+            <button
+              type="button"
+              class="sku-refresh-btn"
+              (click)="fetchSku()"
+              [disabled]="isEditMode || isFetchingSku"
+              title="Refresh SKU"
+            >
               <mat-icon [class.spinning]="isFetchingSku">refresh</mat-icon>
             </button>
-            <mat-hint *ngIf="!isEditMode">Auto-generated. Click refresh to regenerate.</mat-hint>
-            <mat-hint *ngIf="isEditMode">SKU cannot be changed in edit mode.</mat-hint>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Publisher</mat-label>
-            <input matInput [(ngModel)]="data.publisher" name="publisher" required pattern="^[A-Za-z ]+$" #publisherModel="ngModel" (ngModelChange)="publisherModel.control.markAsTouched()" />
-            <mat-error *ngIf="publisherModel.invalid && (publisherModel.dirty || publisherModel.touched)">
-              <span *ngIf="publisherModel.errors?.['required']">Publisher is required.</span>
-              <span *ngIf="publisherModel.errors?.['pattern']">Only alphabets and spaces are allowed.</span>
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>HSN</mat-label>
-            <input matInput type="number" [(ngModel)]="data.hsn" name="hsn" inputmode="numeric" min="100000" max="9999999999" #hsnModel="ngModel" (ngModelChange)="hsnModel.control.markAsTouched()" />
-            <mat-hint>Numeric; normally 6 digits (can be 6-10 digits).</mat-hint>
-            <mat-error *ngIf="hsnModel.invalid && (hsnModel.dirty || hsnModel.touched)">
-              <span *ngIf="hsnModel.errors?.['min']">HSN must be at least 6 digits.</span>
-              <span *ngIf="hsnModel.errors?.['max']">HSN cannot exceed 10 digits.</span>
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>MRP</mat-label>
-            <input matInput type="number" [(ngModel)]="data.mrp" name="mrp" required min="0.01" #mrpModel="ngModel" (ngModelChange)="mrpModel.control.markAsTouched()" />
-            <mat-error *ngIf="mrpModel.invalid && (mrpModel.dirty || mrpModel.touched)">
-              <span *ngIf="mrpModel.errors?.['required']">MRP is required.</span>
-              <span *ngIf="mrpModel.errors?.['min']">MRP must be greater than zero.</span>
-            </mat-error>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Stock</mat-label>
-            <input matInput type="number" [(ngModel)]="data.stock" name="stock" required min="0" step="1" #stockModel="ngModel" (ngModelChange)="stockModel.control.markAsTouched()" />
-            <mat-error *ngIf="stockModel.invalid && (stockModel.dirty || stockModel.touched)">
-              <span *ngIf="stockModel.errors?.['required']">Stock is required.</span>
-              <span *ngIf="stockModel.errors?.['min']">Stock cannot be negative.</span>
-            </mat-error>
-          </mat-form-field>
+          </div>
+          <small class="hint" *ngIf="!isEditMode">Auto-generated. Click refresh to regenerate.</small>
+          <small class="hint" *ngIf="isEditMode">SKU cannot be changed in edit mode.</small>
         </div>
+      </div>
     </form>
   </div>
 
-  <div mat-dialog-actions class="flex flex-col md:flex-row md:justify-end gap-2 p-3 bg-[rgba(0,0,0,0.6)] rounded-b-lg">
-    <button mat-button class="w-full md:w-auto" (click)="onCancel()" aria-label="Back">
-      <mat-icon class="inline md:hidden mr-2">arrow_back</mat-icon>
-      <span class="hidden md:inline">Cancel</span>
-    </button>
-    <button mat-raised-button color="primary" class="w-full md:w-auto" (click)="onSave()" [disabled]="bookForm.invalid" aria-label="Save">
-      <mat-icon class="inline md:hidden mr-2">add</mat-icon>
-      <span class="hidden md:inline">Save</span>
+  <div mat-dialog-actions class="dialog-actions">
+    <button type="button" class="secondary-btn" (click)="onCancel()">Cancel</button>
+    <button type="button" class="primary-btn" (click)="onSave()" [disabled]="bookForm.invalid">
+      <mat-icon>save</mat-icon>
+      {{ isEditMode ? 'Save Changes' : 'Save Book Title' }}
     </button>
   </div>
 </div>

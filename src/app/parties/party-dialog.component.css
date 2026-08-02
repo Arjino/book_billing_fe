@@ -1,41 +1,204 @@
-
-
-/* Make form controls readable on translucent dialog backgrounds */
-input, textarea, select {
-  background: rgba(255,255,255,0.03);
-  color: rgba(255,255,255,0.95);
-  border: 1px solid rgba(179,71,233,0.95);
-  border-radius: 6px;
+:host {
+  display: block;
 }
 
-input::placeholder, textarea::placeholder {
-  color: rgba(255,255,255,0.6);
+.party-dialog-shell {
+  width: min(760px, 92vw);
+  border-radius: 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-modal);
+  overflow: hidden;
 }
 
-button[mat-raised-button] {
-  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+.dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--color-border);
 }
 
-/* Make native selects and options dark so text is visible */
-select, option {
-  background: rgba(10,10,10,0.96);
-  color: rgba(255,255,255,0.95);
+.header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
+.title-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.dialog-header h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 30px;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.dialog-header p {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
+  font-size: 12px;
+}
+
+.close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.close-btn:hover {
+  background: var(--color-surface-hover);
+}
+
+.dialog-content {
+  padding: 16px 20px;
+}
+
+.party-form {
+  display: grid;
+  gap: 12px;
+}
+
+.form-row label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+textarea {
+  min-height: 78px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+input:focus,
+textarea:focus,
 select:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(179,71,233,0.12);
+  border-color: var(--color-indigo-500);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
-/* Ensure the actions area looks like part of dialog panel when not inlined */
-[mat-dialog-actions] {
-  background: rgba(179, 71, 233, 0.6);
+input:disabled {
+  background: var(--color-gray-100);
+  color: var(--color-indigo-500);
+  font-weight: 700;
 }
 
-/* Make mat-form-field outline color stronger so borders look bold */
-:host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline {
-  stroke: rgba(179,71,233,0.95) !important;
+.error {
+  display: block;
+  margin-top: 4px;
+  color: var(--color-danger);
+  font-size: 11px;
 }
-:host ::ng-deep .mat-form-field-appearance-outline .mat-form-field-outline .mat-form-field-outline-gap {
-  stroke: rgba(179,71,233,0.95) !important;
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--color-border);
+}
+
+.primary-btn,
+.secondary-btn {
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.primary-btn {
+  color: var(--color-text-inverse);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
+}
+
+.primary-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  color: var(--btn-secondary-text);
+  background: var(--btn-secondary-bg);
+  border-color: var(--color-border);
+}
+
+.primary-btn mat-icon {
+  width: 16px;
+  height: 16px;
+  font-size: 16px;
+}
+
+@media (max-width: 720px) {
+  .party-dialog-shell {
+    width: 96vw;
+  }
+
+  .two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .dialog-header h2 {
+    font-size: 22px;
+  }
+
+  .dialog-actions {
+    flex-direction: column;
+  }
+
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+    justify-content: center;
+  }
 }

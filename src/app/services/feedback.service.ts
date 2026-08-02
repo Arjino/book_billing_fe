@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { Feedback } from '../interface/feedback';
+import { Feedback } from '../feedback/feedback.models';
 import { enviort } from '../../environments/environment';
 
 interface FeedbackResponse {

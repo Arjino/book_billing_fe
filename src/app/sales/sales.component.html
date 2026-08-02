@@ -1,215 +1,321 @@
-<div class="min-h-screen pt-20 pb-12 bg-gradient-to-br from-slate-950 via-red-900/20 to-slate-950 relative overflow-hidden">
-  <!-- Animated Background Elements -->
-  <div class="fixed inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-20 left-10 w-72 h-72 bg-red-500/10 rounded-full blur-3xl animate-blob"></div>
-    <div class="absolute bottom-20 right-10 w-72 h-72 bg-rose-500/10 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-  </div>
+<div class="page-shell">
+  <app-sidebar-nav [items]="navItems" (quickAdd)="onSidebarQuickAdd($event.id)"></app-sidebar-nav>
 
-  <div class="max-w-7xl mx-auto px-6 relative z-10">
-    <!-- Header -->
-    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
-      <div>
-        <h1 class="text-4xl font-extrabold mb-2">
-          <span class="bg-gradient-to-r from-red-400 to-rose-400 bg-clip-text text-transparent">{{ getPageTitle() }} Management</span>
-        </h1>
-        <p class="text-red-200">{{ getPageSubtitle() }}</p>
+  <main class="main-content">
+  <div class="si-page">
+
+  <!-- ── Header Card ─────────────────────────────────────────── -->
+  <div class="si-card si-header-card">
+    <div class="si-header-left">
+      <div class="si-header-icon" aria-hidden="true">
+        <mat-icon>receipt_long</mat-icon>
       </div>
-      <div class="flex gap-3 w-full md:w-auto justify-between md:justify-end mt-4 md:mt-0">
-        <button mat-raised-button color="accent" (click)="addSale()" class="bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600">
-          <mat-icon>add</mat-icon>
-          {{ getButtonLabel() }}
-        </button>
-        <button mat-raised-button (click)="bulkImport()" class="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600">
-          <mat-icon>upload_file</mat-icon>
-          <span class="hidden sm:inline">Bulk Import</span>
-        </button>
-        <button mat-icon-button (click)="goBack()" class="bg-slate-800/50 hover:bg-slate-700/50 text-red-300 rounded-lg border border-red-500/30" title="Back to Dashboard">
-          <mat-icon>arrow_back</mat-icon>
-        </button>
+      <div>
+        <h1 class="si-title">Sales &amp; Invoicing Management</h1>
+        <p class="si-meta">
+          Total <strong>{{ sales.length }}</strong> sales invoices
+          &bull; Value: <strong>₹{{ totalSaleValue | number:'1.0-0' }}</strong>
+          <span *ngIf="saleReturns.length" class="si-meta-returns">
+            &nbsp;&bull;&nbsp;<strong>{{ saleReturns.length }}</strong> return(s)
+          </span>
+        </p>
       </div>
     </div>
+    <div class="si-header-actions">
+      <button class="si-btn si-btn--primary" (click)="addSale()">
+        <mat-icon>add</mat-icon>
+        New Sale Invoice
+      </button>
+      <button class="si-btn si-btn--return" (click)="addSaleReturn()">
+        <mat-icon>assignment_return</mat-icon>
+        New Sale Return
+      </button>
+      <button class="si-btn si-btn--ghost" (click)="bulkImport()" title="Bulk Import">
+        <mat-icon>upload_file</mat-icon>
+        Bulk Import
+      </button>
+      <button class="si-btn si-btn--back" (click)="goBack()" title="Back to Dashboard">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+    </div>
+  </div>
 
-    <!-- Date Range Filter -->
-    <div class="mb-8 bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-red-500/30 rounded-2xl p-6 backdrop-blur-xl text-white">
-      <h3 class="text-lg font-bold text-red-300 mb-4 flex items-center gap-2">
-        <mat-icon>calendar_today</mat-icon>
-        Filter by Date Range
-      </h3>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <mat-form-field appearance="outline" class="w-full text-white">
-          <mat-label class="text-white">Start Date</mat-label>
+  <!-- ── Filter Card ─────────────────────────────────────────── -->
+  <div class="si-card si-filter-card">
+    <div class="si-filter-title">
+      <mat-icon>tune</mat-icon>
+      SALES INVOICE FILTERS
+    </div>
+    <div class="si-filters-row">
+
+      <!-- Search -->
+      <div class="si-search-wrap">
+        <mat-icon class="si-search-icon">search</mat-icon>
+        <input
+          type="text"
+          class="si-search-input"
+          placeholder="Search Invoice No, Party, Book..."
+          [(ngModel)]="searchText"
+          (ngModelChange)="onFilterChange()"
+        />
+      </div>
+
+      <!-- Document Type -->
+      <select class="si-select" [(ngModel)]="docTypeFilter" (change)="onFilterChange()">
+        <option value="ALL">All Document Types</option>
+        <option value="SALE">Sale Invoice (SINV)</option>
+        <option value="RETURN">Sale Returns (Credit Note)</option>
+      </select>
+
+      <!-- Payment Status -->
+      <select class="si-select" [(ngModel)]="paymentStatusFilter" (change)="onFilterChange()">
+        <option value="ALL">All Payment Statuses</option>
+        <option value="PAID">Paid</option>
+        <option value="PARTIAL">Partial</option>
+        <option value="UNPAID">Unpaid</option>
+      </select>
+
+      <!-- Bill Range -->
+      <input
+        type="number"
+        class="si-amount-input"
+        placeholder="Min Bill ₹"
+        [(ngModel)]="minBill"
+        (ngModelChange)="onFilterChange()"
+        min="0"
+      />
+      <span class="si-range-sep">–</span>
+      <input
+        type="number"
+        class="si-amount-input"
+        placeholder="Max Bill ₹"
+        [(ngModel)]="maxBill"
+        (ngModelChange)="onFilterChange()"
+        min="0"
+      />
+
+    </div>
+
+    <div class="si-filters-row si-filters-cols">
+      <div class="si-date-field">
+        <label class="si-date-label">Start Date</label>
+        <div class="si-date-input-shell">
           <input
-            matInput
+            type="text"
+            class="si-date-input"
             [value]="getStartDisplay()"
             readonly
-            class="text-white placeholder-white"
-            [style.color]="'white'"
             [matMenuTriggerFor]="startMenu"
             #startTrigger="matMenuTrigger"
           />
-          <button mat-icon-button matSuffix class="date-time-icon" (click)="startTrigger.openMenu()" aria-label="Open start date time">
+          <button mat-icon-button class="si-date-icon-btn" (click)="startTrigger.openMenu()" aria-label="Open start date time">
             <mat-icon>calendar_today</mat-icon>
           </button>
-          <mat-error *ngIf="showStartDateError" class="text-red-300">Start date is required.</mat-error>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="w-full text-white">
-          <mat-label class="text-white">End Date</mat-label>
+        </div>
+      </div>
+
+      <div class="si-date-field">
+        <label class="si-date-label">End Date</label>
+        <div class="si-date-input-shell">
           <input
-            matInput
+            type="text"
+            class="si-date-input"
             [value]="getEndDisplay()"
             readonly
-            class="text-white placeholder-white"
-            [style.color]="'white'"
             [matMenuTriggerFor]="endMenu"
             #endTrigger="matMenuTrigger"
           />
-          <button mat-icon-button matSuffix class="date-time-icon" (click)="endTrigger.openMenu()" aria-label="Open end date time">
+          <button mat-icon-button class="si-date-icon-btn" (click)="endTrigger.openMenu()" aria-label="Open end date time">
             <mat-icon>calendar_today</mat-icon>
           </button>
-        </mat-form-field>
-        <button mat-raised-button color="primary" (click)="getSalesByDateRange()" class="h-14 bg-gradient-to-r from-red-500 to-rose-500 hover:from-red-600 hover:to-rose-600">
-          <mat-icon>search</mat-icon>
-          Get {{ getPageTitle() }}
-        </button>
+        </div>
       </div>
 
-      <mat-menu #startMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
-        <div class="date-time-menu-content" (click)="$event.stopPropagation()">
-          <mat-calendar
-            [selected]="startDate"
-            [maxDate]="maxDate"
-            (selectedChange)="onStartDateSelected($event)">
-          </mat-calendar>
-          <div class="time-controls">
-            <div class="time-column">
-              <div class="time-col-title">Hours</div>
-              <div class="time-list">
-                <button
-                  type="button"
-                  class="time-item"
-                  *ngFor="let h of hours"
-                  [class.time-item--active]="h === startHour"
-                  (click)="startHour = h">
-                  {{ h }}
-                </button>
-              </div>
-            </div>
-            <div class="time-column">
-              <div class="time-col-title">Minutes</div>
-              <div class="time-list">
-                <button
-                  type="button"
-                  class="time-item"
-                  *ngFor="let m of minutes"
-                  [class.time-item--active]="m === startMinute"
-                  (click)="startMinute = m">
-                  {{ m }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </mat-menu>
-
-      <mat-menu #endMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
-        <div class="date-time-menu-content" (click)="$event.stopPropagation()">
-          <mat-calendar
-            [selected]="endDate"
-            [minDate]="minEndDate"
-            [maxDate]="maxDate"
-            (selectedChange)="onEndDateSelected($event)">
-          </mat-calendar>
-          <div class="time-controls">
-            <div class="time-column">
-              <div class="time-col-title">Hours</div>
-              <div class="time-list">
-                <button
-                  type="button"
-                  class="time-item"
-                  *ngFor="let h of hours"
-                  [class.time-item--active]="h === endHour"
-                  (click)="endHour = h">
-                  {{ h }}
-                </button>
-              </div>
-            </div>
-            <div class="time-column">
-              <div class="time-col-title">Minutes</div>
-              <div class="time-list">
-                <button
-                  type="button"
-                  class="time-item"
-                  *ngFor="let m of minutes"
-                  [class.time-item--active]="m === endMinute"
-                  (click)="endMinute = m">
-                  {{ m }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </mat-menu>
+      <div class="si-filter-actions">
+        <button type="button" class="si-btn si-btn--ghost" (click)="resetDateFilters()" [disabled]="!dateFilterActive">
+          <mat-icon>restart_alt</mat-icon>
+          Reset
+        </button>
+        <button type="button" class="si-btn si-btn--primary" (click)="getSalesByDateRange()">
+          <mat-icon>search</mat-icon>
+          Apply Date Filter
+        </button>
+      </div>
     </div>
+    <p class="si-date-error" *ngIf="showStartDateError">Please select a start date.</p>
 
-    <!-- Sales Table -->
-    <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-red-500/30 rounded-2xl backdrop-blur-xl overflow-hidden text-white">
-      <div class="overflow-x-auto">
-        <table mat-table [dataSource]="sales" class="w-full bg-transparent text-white" *ngIf="sales.length">
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">ID</th>
-            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{s.id}}</td>
-          </ng-container>
-          <ng-container matColumnDef="party">
-            <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Party</th>
-            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{s.party?.name}}</td>
-          </ng-container>
-          <ng-container matColumnDef="dateTime">
-            <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Date Time</th>
-            <td mat-cell *matCellDef="let s" class="text-red-300 bg-transparent py-4 px-6 border-t border-red-500/20">{{ getSaleDateTime(s) | date:'dd/MM/yyyy hh:mm a' }}</td>
-          </ng-container>
-          <ng-container matColumnDef="grandTotal">
-            <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Grand Total (₹)</th>
-            <td mat-cell *matCellDef="let s" class="text-emerald-400 bg-transparent font-bold py-4 px-6 border-t border-red-500/20">{{s.grandTotal}}</td>
-          </ng-container>
-          <ng-container matColumnDef="paymentStatus">
-            <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Payment Status</th>
-            <td mat-cell *matCellDef="let s" class="bg-transparent py-4 px-6 border-t border-red-500/20">
-              <span
-                [ngClass]="(s.paymentStatus || '').toUpperCase() === 'PAID'
-                  ? 'bg-green-500/30 text-green-300'
-                  : (s.paymentStatus || '').toUpperCase() === 'PARTIAL'
-                    ? 'bg-yellow-500/30 text-yellow-300'
-                    : 'bg-red-500/30 text-red-300'"
-                class="px-3 py-1 rounded-full text-xs font-semibold">
-                {{ (s.paymentStatus || '').toUpperCase() }}
+    <mat-menu #startMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
+      <div class="date-time-menu-content" (click)="$event.stopPropagation()">
+        <mat-calendar
+          [selected]="startDate"
+          [maxDate]="maxDate"
+          (selectedChange)="onStartDateSelected($event)">
+        </mat-calendar>
+        <div class="time-controls">
+          <div class="time-column">
+            <div class="time-col-title">Hours</div>
+            <div class="time-list">
+              <button
+                type="button"
+                class="time-item"
+                *ngFor="let h of hours"
+                [class.time-item--active]="h === startHour"
+                (click)="startHour = h">
+                {{ h }}
+              </button>
+            </div>
+          </div>
+          <div class="time-column">
+            <div class="time-col-title">Minutes</div>
+            <div class="time-list">
+              <button
+                type="button"
+                class="time-item"
+                *ngFor="let m of minutes"
+                [class.time-item--active]="m === startMinute"
+                (click)="startMinute = m">
+                {{ m }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-menu>
+
+    <mat-menu #endMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
+      <div class="date-time-menu-content" (click)="$event.stopPropagation()">
+        <mat-calendar
+          [selected]="endDate"
+          [minDate]="minEndDate"
+          [maxDate]="maxDate"
+          (selectedChange)="onEndDateSelected($event)">
+        </mat-calendar>
+        <div class="time-controls">
+          <div class="time-column">
+            <div class="time-col-title">Hours</div>
+            <div class="time-list">
+              <button
+                type="button"
+                class="time-item"
+                *ngFor="let h of hours"
+                [class.time-item--active]="h === endHour"
+                (click)="endHour = h">
+                {{ h }}
+              </button>
+            </div>
+          </div>
+          <div class="time-column">
+            <div class="time-col-title">Minutes</div>
+            <div class="time-list">
+              <button
+                type="button"
+                class="time-item"
+                *ngFor="let m of minutes"
+                [class.time-item--active]="m === endMinute"
+                (click)="endMinute = m">
+                {{ m }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-menu>
+  </div>
+
+  <!-- ── Table Card ──────────────────────────────────────────── -->
+  <div class="si-card si-table-card">
+    <div class="si-table-scroll">
+      <table class="si-table">
+        <thead>
+          <tr>
+            <th>INVOICE NO</th>
+            <th>PARTY / CLIENT</th>
+            <th>DATE &amp; TIME</th>
+            <th class="si-th-num">GRAND TOTAL (₹)</th>
+            <th>PAYMENT STATUS</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Sale rows -->
+          <tr *ngFor="let row of pagedRows" [class.si-row-return]="row.docType === 'RETURN'">
+            <td>
+              <span class="si-inv-no">{{ row.invoiceNo }}</span>
+              <span *ngIf="row.docType === 'RETURN'" class="si-doc-badge si-doc-badge--return">RETURN</span>
+            </td>
+            <td>{{ row.partyName }}</td>
+            <td>{{ row.dateStr | date:'dd/MM/yyyy hh:mm a' }}</td>
+            <td class="si-td-num">
+              <span *ngIf="row.grandTotal > 0">₹{{ row.grandTotal | number:'1.0-2' }}</span>
+              <span *ngIf="row.grandTotal === 0" class="si-nil">—</span>
+            </td>
+            <td>
+              <span class="si-status-badge" [ngClass]="getStatusBadgeClass(row.paymentStatus)">
+                {{ row.paymentStatus }}
               </span>
             </td>
-          </ng-container>
-          <ng-container matColumnDef="action">
-            <th mat-header-cell *matHeaderCellDef class="text-red-300 font-bold py-4 px-6 text-left">Action</th>
-            <td mat-cell *matCellDef="let s" class="text-emerald-400 bg-transparent font-bold py-4 px-6 border-t border-red-500/20">
-              <button mat-icon-button class="text-emerald-300" (click)="openSaleInvoicePreview(s.invoiceNo)" title="Preview Invoice PDF">
+            <td>
+              <div class="si-row-actions">
+                <button
+                  *ngIf="row.docType === 'SALE'"
+                  class="si-icon-btn"
+                  (click)="openSaleInvoicePreview(row.invoiceNo)"
+                  title="Preview Invoice PDF"
+                >
                   <mat-icon>receipt_long</mat-icon>
                 </button>
                 <button
-                  *ngIf="canMakePayment(s)"
-                  mat-stroked-button
-                  color="primary"
-                  (click)="openPaymentForSale(s)"
-                  title="Pay Now">
+                  *ngIf="row.docType === 'SALE' && canMakePayment(row.originalSale)"
+                  class="si-pay-btn"
+                  (click)="openPaymentForSale(row.originalSale)"
+                  title="Record Payment"
+                >
                   <mat-icon>payments</mat-icon>
                   Pay
                 </button>
+                <span *ngIf="row.docType === 'RETURN'" class="si-return-ref" title="Original Invoice">
+                  <mat-icon>info_outline</mat-icon>
+                  {{ row.originalInvoiceNo || 'N/A' }}
+                </span>
+              </div>
             </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="['id','party','dateTime','grandTotal','paymentStatus','action']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['id','party','dateTime','grandTotal','paymentStatus','action'];" class="hover:bg-red-500/10 transition-colors"></tr>
-        </table>
+          </tr>
+
+          <!-- Empty state -->
+          <tr *ngIf="pagedRows.length === 0">
+            <td colspan="6" class="si-empty-cell">
+              No sales invoices match the selected filter criteria.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="si-pagination">
+      <span class="si-pg-info">
+        Showing
+        <strong>{{ showingStart }}</strong> to
+        <strong>{{ showingEnd }}</strong> of
+        <strong>{{ totalFilteredCount }}</strong> entries
+      </span>
+      <div class="si-pg-size">
+        Rows:
+        <select [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+          <option *ngFor="let s of pageSizeOptions" [ngValue]="s">{{ s }}</option>
+        </select>
       </div>
-      <div *ngIf="!sales.length" class="p-8 text-center">
-        <mat-icon class="text-6xl text-red-500/30 mb-4">shopping_cart</mat-icon>
-        <p class="text-red-300/60">{{ getEmptyMessage() }}</p>
+      <div class="si-pg-nav">
+        <button (click)="goToPage(0)" [disabled]="currentPage === 0" title="First">«</button>
+        <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 0" title="Previous">‹</button>
+        <button class="si-pg-current">{{ currentPage + 1 }}</button>
+        <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages - 1" title="Next">›</button>
+        <button (click)="goToPage(totalPages - 1)" [disabled]="currentPage >= totalPages - 1" title="Last">»</button>
       </div>
     </div>
   </div>
+
+  </div>
+
+  </main>
 </div>

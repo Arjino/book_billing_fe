@@ -10,14 +10,14 @@
 }
 
 .sale-return-table th {
-  color: #fca5a5;
+  color: var(--color-red-300);
   font-weight: 700;
   border-top: none;
   white-space: nowrap;
 }
 
 .sale-return-table td {
-  color: #ffe4e6;
+  color: var(--color-danger-bg);
   vertical-align: top;
 }
 
@@ -39,7 +39,7 @@
   border-radius: 0.75rem;
   border: 1px solid rgba(248, 113, 113, 0.3);
   background: rgba(15, 23, 42, 0.55);
-  color: #fff;
+  color: var(--color-text-inverse);
   padding: 0 1rem;
   outline: none;
 }
@@ -51,12 +51,12 @@
 .page-button {
   min-width: 2.5rem;
   border-color: rgba(248, 113, 113, 0.35);
-  color: #fecaca;
+  color: var(--color-red-200);
 }
 
 .page-button--active {
   background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(244, 63, 94, 0.3));
-  color: #fff1f2;
+  color: var(--color-danger-bg-soft);
 }
 
 @media (max-width: 768px) {

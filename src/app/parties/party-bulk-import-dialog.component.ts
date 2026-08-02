@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Party } from '../interface/party';
+import { Party } from '../shared/models/party.model';
 import { PARTIES_CONSTANTS } from '../constants/parties.constants';
 
 @Component({

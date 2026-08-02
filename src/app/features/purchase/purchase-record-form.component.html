@@ -1,0 +1,158 @@
+<div class="page-shell">
+  <app-sidebar-nav [items]="navItems"></app-sidebar-nav>
+
+  <main class="main-content">
+  <div class="form-header">
+    <div class="heading">
+      <div class="heading-icon">
+        <span class="material-icons">shopping_bag</span>
+      </div>
+      <div>
+        <h1>{{ formTitle }}</h1>
+        <p>Bulk publisher order &amp; stock returns &bull; Up to 200 books supported with dual-column grid layout</p>
+      </div>
+    </div>
+    <button type="button" class="btn btn-ghost" (click)="cancel()">
+      <span class="material-icons">close</span>
+      Back to Purchases
+    </button>
+  </div>
+
+  <section class="panel">
+    <div class="top-fields">
+      <div class="field">
+        <label>Record Type *</label>
+        <select [(ngModel)]="recordType" (ngModelChange)="onRecordTypeChange()">
+          <option *ngFor="let option of recordTypeOptions" [ngValue]="option.value">{{ option.label }}</option>
+        </select>
+      </div>
+
+      <div class="field" *ngIf="requiresPoNumber">
+        <label>Purchase Order Number *</label>
+        <select [ngModel]="poNumber" (ngModelChange)="onPoNumberSelected($event)">
+          <option [ngValue]="null" disabled>Select an open purchase order</option>
+          <option *ngFor="let po of openPurchaseOrders" [ngValue]="po.poNumber">
+            {{ po.poNumber }} &mdash; {{ po.party?.name }}
+          </option>
+        </select>
+      </div>
+
+      <div class="field" *ngIf="!requiresPoNumber">
+        <label>Supplier / Publisher *</label>
+        <select [(ngModel)]="supplier">
+          <option [ngValue]="null" disabled>Select a supplier</option>
+          <option *ngFor="let party of suppliers" [ngValue]="party">
+            {{ party.name }} ({{ party.phone }})
+          </option>
+        </select>
+      </div>
+
+      <div class="field" *ngIf="requiresPoNumber">
+        <label>Supplier / Publisher</label>
+        <input type="text" [value]="supplier?.name || '-'" readonly />
+      </div>
+    </div>
+
+    <div class="field" *ngIf="requiresReturnFields">
+      <label>Original Invoice No *</label>
+      <input type="text" [(ngModel)]="originalInvoiceNo" placeholder="e.g. PINV-20260725-61DDF09B" />
+    </div>
+  </section>
+
+  <section class="panel lines-panel">
+    <div class="lines-header">
+      <div class="panel-title">
+        <span class="material-icons">menu_book</span>
+        Purchase Book Lines ({{ totalLines }} lines &bull; {{ totalVolume }} Pcs)
+      </div>
+      <div class="lines-actions">
+        <button type="button" class="chip-btn chip-primary" (click)="addLines(1)">
+          <span class="material-icons">add</span> +1 Line
+        </button>
+        <button type="button" class="chip-btn" (click)="addLines(5)">+5 Lines</button>
+        <button type="button" class="chip-btn" (click)="addLines(20)">+20 Lines</button>
+        <button type="button" class="chip-btn chip-success" (click)="addAllBooks()">
+          <span class="material-icons">auto_awesome</span> Add All Books ({{ books.length }})
+        </button>
+        <button type="button" class="chip-btn chip-danger" (click)="clearAllLines()">Clear All</button>
+      </div>
+    </div>
+
+    <div class="lines-grid">
+      <div class="line-card" *ngFor="let line of lines; let i = index">
+        <div class="line-card-head">
+          <span class="line-index">#{{ i + 1 }}</span>
+          <select class="book-select" [ngModel]="line.book?.id ?? null" (ngModelChange)="onBookSelected(line, $event)">
+            <option [ngValue]="null" disabled>Select a book</option>
+            <option *ngFor="let book of books" [ngValue]="book.id">{{ bookLabel(book) }}</option>
+          </select>
+          <button type="button" class="icon-btn danger" (click)="removeLine(i)" title="Remove line">
+            <span class="material-icons">delete</span>
+          </button>
+        </div>
+
+        <div class="line-card-fields" *ngIf="recordType !== 'RECEIVING_ORDER'; else roLineFields">
+          <div class="field">
+            <label>Quantity (Pcs)</label>
+            <input type="number" min="0" [(ngModel)]="line.qty" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Cost Rate (₹)</label>
+            <input type="number" min="0" [(ngModel)]="line.rate" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Line Total</label>
+            <div class="line-total">₹{{ lineTotal(line) | number:'1.0-0' }}</div>
+          </div>
+        </div>
+
+        <ng-template #roLineFields>
+          <div class="line-card-fields line-card-fields--ro">
+            <div class="field">
+              <label>Ordered Qty</label>
+              <input type="number" [value]="line.orderedQty ?? 0" readonly />
+            </div>
+            <div class="field">
+              <label>Remaining Qty</label>
+              <input type="number" [value]="line.remainingQty ?? 0" readonly />
+            </div>
+            <div class="field">
+              <label>Received Qty</label>
+              <input type="number" min="0" [attr.max]="line.orderedQty ?? null" [(ngModel)]="line.qty" placeholder="0" />
+            </div>
+            <div class="field">
+              <label>Accepted Qty</label>
+              <input type="number" min="0" [(ngModel)]="line.acceptedQty" placeholder="0" />
+            </div>
+            <div class="field">
+              <label>Rejected Qty</label>
+              <input type="number" min="0" [(ngModel)]="line.rejectedQty" placeholder="0" />
+            </div>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="field">
+      <label>{{ requiresReturnFields ? 'Return Reason *' : 'Reason / Notes' }}</label>
+      <textarea rows="2" [(ngModel)]="reason" placeholder="Bulk publisher stock replenishment / inbound consignment"></textarea>
+    </div>
+  </section>
+
+  <div class="form-footer">
+    <div class="footer-summary">
+      Total Lines: <strong>{{ totalLines }}</strong> &bull; Total Volume: <strong>{{ totalVolume }} Pcs</strong>
+      <span class="footer-amount">Total Amount: <strong>₹{{ totalAmount | number:'1.0-0' }}</strong></span>
+    </div>
+    <div class="footer-actions">
+      <button type="button" class="btn btn-ghost" (click)="cancel()">Cancel</button>
+      <button type="button" class="btn btn-primary" [disabled]="!canSave" (click)="save()">
+        <span class="material-icons">save</span>
+        {{ saving ? 'Saving...' : 'Save Purchase Record (' + totalLines + ' Lines)' }}
+      </button>
+    </div>
+  </div>
+  </main>
+</div>

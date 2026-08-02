@@ -1,0 +1,233 @@
+<div class="analytics-shell">
+  <app-sidebar-nav [items]="navItems()"></app-sidebar-nav>
+
+  <main class="analytics-main">
+    <header class="analytics-header">
+      <div class="analytics-header-title">
+        <span class="analytics-header-icon"><mat-icon>insights</mat-icon></span>
+        <div>
+          <h1>Advanced Business Analytics &amp; Reports</h1>
+          <p>Real-time performance analytics for book billing, publisher turnover &amp; client debt collection</p>
+        </div>
+      </div>
+      <div class="analytics-header-actions">
+        <span class="last-updated">Last updated: {{ lastUpdatedDisplay() }}</span>
+        <button type="button" class="account-btn" [matMenuTriggerFor]="accountMenu" aria-label="Account menu">
+          <mat-icon>account_circle</mat-icon>
+        </button>
+        <mat-menu #accountMenu="matMenu">
+          <button mat-menu-item routerLink="/dashboard">
+            <mat-icon>dashboard</mat-icon>
+            <span>Back to Dashboard</span>
+          </button>
+          <mat-divider></mat-divider>
+          <button mat-menu-item (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Logout</span>
+          </button>
+        </mat-menu>
+      </div>
+    </header>
+
+    <ng-container *ngIf="overview() as data; else loadingState">
+      <!-- Hero KPI row -->
+      <section class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-card-label">Avg Invoice Order Value</span>
+            <span class="kpi-pill kpi-pill--primary">{{ data.kpis.billsCount }} Bills</span>
+          </div>
+          <p class="kpi-card-value">{{ formatCurrency(data.kpis.avgInvoiceOrderValue) }}</p>
+          <p class="kpi-card-subtitle">Calculated across {{ data.kpis.billsCount }} issued bills</p>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-card-label">Payment Collection Rate</span>
+            <span
+              class="kpi-pill"
+              [ngClass]="{
+                'kpi-pill--success': data.kpis.collectionRatePercent >= 70,
+                'kpi-pill--warning': data.kpis.collectionRatePercent >= 40 && data.kpis.collectionRatePercent < 70,
+                'kpi-pill--danger': data.kpis.collectionRatePercent < 40
+              }"
+            >{{ data.kpis.collectionRatePercent | number: '1.0-0' }}%</span>
+          </div>
+          <p class="kpi-card-value">
+            {{ formatCurrency(data.kpis.totalCollected) }}
+            <span class="kpi-card-value-muted">/ {{ formatCurrency(data.kpis.totalBilled) }}</span>
+          </p>
+          <div class="kpi-progress-track">
+            <div
+              class="kpi-progress-fill"
+              [ngClass]="{
+                'kpi-progress-fill--success': data.kpis.collectionRatePercent >= 70,
+                'kpi-progress-fill--warning': data.kpis.collectionRatePercent >= 40 && data.kpis.collectionRatePercent < 70,
+                'kpi-progress-fill--danger': data.kpis.collectionRatePercent < 40
+              }"
+              [style.width.%]="data.kpis.collectionRatePercent"
+            ></div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-card-label">Active Book Catalog</span>
+            <span class="kpi-pill kpi-pill--primary">{{ data.kpis.activeTitlesCount }} Titles</span>
+          </div>
+          <p class="kpi-card-value">{{ formatUnitLabel(data.kpis.activeStockUnits, 'Unit') }}</p>
+          <p class="kpi-card-subtitle">In-stock physical inventory count</p>
+        </div>
+      </section>
+
+      <!-- Revenue trend -->
+      <section class="panel trend-panel">
+        <div class="panel-header">
+          <div>
+            <h2>{{ trendRange() === '7d' ? '7-Day' : '30-Day' }} Sales Revenue Trend</h2>
+            <p>Daily sales performance breakdown in &#8377; &bull; Total {{ formatCurrency(trendTotalAmount()) }}</p>
+          </div>
+          <div class="trend-toggle">
+            <button
+              type="button"
+              class="trend-toggle-btn"
+              [class.trend-toggle-btn--active]="trendRange() === '7d'"
+              (click)="setTrendRange('7d')"
+            >Weekly Trend</button>
+            <button
+              type="button"
+              class="trend-toggle-btn"
+              [class.trend-toggle-btn--active]="trendRange() === '30d'"
+              (click)="setTrendRange('30d')"
+            >Monthly Trend</button>
+          </div>
+        </div>
+
+        <div class="trend-chart" [class.trend-chart--dense]="trendRange() === '30d'">
+          <div class="trend-bar-col" *ngFor="let point of activeTrend()">
+            <div class="trend-bar-track">
+              <div
+                class="trend-bar-fill"
+                [style.height.%]="barHeightPercent(point.amount)"
+                [attr.title]="point.label + ': ' + formatCurrency(point.amount)"
+              ></div>
+            </div>
+            <span class="trend-bar-label" *ngIf="trendRange() === '7d'">{{ point.label }}</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Top selling titles + outstanding dues -->
+      <section class="analytics-grid">
+        <div class="panel top-selling-panel">
+          <div class="panel-header">
+            <div>
+              <h2><mat-icon class="panel-header-icon">military_tech</mat-icon> Top Selling Book Titles By Volume</h2>
+              <p>Ranked by total units sold across all invoices</p>
+            </div>
+          </div>
+
+          <div class="ranked-list" *ngIf="data.topSellingBooks.length; else noSalesState">
+            <div class="ranked-row" *ngFor="let book of data.topSellingBooks; let i = index; trackBy: trackByBookId">
+              <span class="rank-badge" [ngClass]="'rank-badge--' + (i + 1)">#{{ i + 1 }}</span>
+              <div class="ranked-row-main">
+                <div class="ranked-row-top">
+                  <p class="ranked-row-title">{{ book.title }}</p>
+                  <p class="ranked-row-value">{{ formatCurrency(book.mrp) }} <span>MRP</span></p>
+                </div>
+                <p class="ranked-row-meta">Publisher: {{ book.publisher }} &bull; SKU: {{ book.sku }}</p>
+                <div class="ranked-row-progress-row">
+                  <div class="ranked-row-progress-track">
+                    <div class="ranked-row-progress-fill" [style.width.%]="book.sharePercent"></div>
+                  </div>
+                  <span class="ranked-row-units">{{ formatUnitLabel(book.unitsSold, 'unit') }} sold</span>
+                </div>
+                <p class="ranked-row-stock">{{ book.stock }} units in stock</p>
+              </div>
+            </div>
+          </div>
+          <ng-template #noSalesState>
+            <p class="empty-state">No sales recorded yet — top titles will appear once invoices are issued.</p>
+          </ng-template>
+        </div>
+
+        <div class="side-panels">
+          <div class="panel debtors-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Outstanding Client Dues</h2>
+                <p>Total outstanding: {{ formatCurrency(data.outstandingDebtTotal) }}</p>
+              </div>
+            </div>
+            <div class="debtor-list" *ngIf="data.topDebtors.length; else noDebtorsState">
+              <div class="debtor-row" *ngFor="let debtor of data.topDebtors; trackBy: trackByPartyId">
+                <div class="debtor-row-info">
+                  <p class="debtor-row-name">{{ debtor.name }}</p>
+                  <p class="debtor-row-meta">{{ formatUnitLabel(debtor.invoiceCount, 'invoice') }} pending</p>
+                </div>
+                <span class="debtor-row-amount">{{ formatCurrency(debtor.outstandingAmount) }}</span>
+              </div>
+            </div>
+            <ng-template #noDebtorsState>
+              <p class="empty-state">All client invoices are fully settled.</p>
+            </ng-template>
+            <a routerLink="/ledger" class="panel-cta">
+              Open Party Statement Ledger
+              <mat-icon>open_in_new</mat-icon>
+            </a>
+          </div>
+
+          <div class="panel payment-mode-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Payment Collection Mix</h2>
+                <p>Recorded receipts by settlement mode</p>
+              </div>
+            </div>
+            <div class="mode-list" *ngIf="data.paymentModeBreakdown.length; else noPaymentsState">
+              <div class="mode-row" *ngFor="let mode of data.paymentModeBreakdown; trackBy: trackByMode">
+                <div class="mode-row-top">
+                  <span class="mode-row-label">{{ mode.mode }}</span>
+                  <span class="mode-row-value">{{ formatCurrency(mode.amount) }}</span>
+                </div>
+                <div class="mode-row-track">
+                  <div class="mode-row-fill" [style.width.%]="mode.percent"></div>
+                </div>
+              </div>
+            </div>
+            <ng-template #noPaymentsState>
+              <p class="empty-state">No payments recorded yet.</p>
+            </ng-template>
+          </div>
+        </div>
+      </section>
+
+      <!-- Publisher performance -->
+      <section class="panel publisher-panel">
+        <div class="panel-header">
+          <div>
+            <h2>Revenue by Publisher</h2>
+            <p>Publisher turnover ranked by total sales revenue</p>
+          </div>
+        </div>
+        <div class="publisher-list" *ngIf="data.publisherPerformance.length; else noPublisherState">
+          <div class="publisher-row" *ngFor="let publisher of data.publisherPerformance; trackBy: trackByPublisher">
+            <span class="publisher-row-name">{{ publisher.publisher }}</span>
+            <div class="publisher-row-track">
+              <div class="publisher-row-fill" [style.width.%]="publisher.sharePercent"></div>
+            </div>
+            <span class="publisher-row-revenue">{{ formatCurrency(publisher.revenue) }}</span>
+            <span class="publisher-row-units">{{ formatUnitLabel(publisher.unitsSold, 'unit') }}</span>
+          </div>
+        </div>
+        <ng-template #noPublisherState>
+          <p class="empty-state">No publisher sales data yet.</p>
+        </ng-template>
+      </section>
+    </ng-container>
+
+    <ng-template #loadingState>
+      <div class="analytics-loading">Loading business analytics…</div>
+    </ng-template>
+  </main>
+</div>

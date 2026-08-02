@@ -15,8 +15,19 @@ export const FEEDBACK_CONSTANTS = {
     LONG: 6000
   },
   CATEGORIES: [
-    'Issues Report',
-    'New Feature',
-    'Other'
+    'Billing & Invoicing',
+    'Inventory & Stock',
+    'Purchase Orders',
+    'Transactions & Payments',
+    'Issue Report',
+    'Feature Request',
+    'General'
+  ],
+  RATING_OPTIONS: [
+    { value: 1, label: '★ (1 Star — Poor)' },
+    { value: 2, label: '★★ (2 Stars — Fair)' },
+    { value: 3, label: '★★★ (3 Stars — Good)' },
+    { value: 4, label: '★★★★ (4 Stars — Very Good)' },
+    { value: 5, label: '★★★★★ (5 Stars — Excellent)' }
   ]
 };

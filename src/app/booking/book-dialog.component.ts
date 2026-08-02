@@ -1,12 +1,10 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { BookDialogData } from '../interface/book-dialog-data';
+import { BookDialogData } from './booking.models';
 import { BooksService } from '../services/books.service';
 
 @Component({
@@ -14,7 +12,7 @@ import { BooksService } from '../services/books.service';
   templateUrl: './book-dialog.component.html',
   styleUrls: ['./book-dialog.component.css'],
   standalone: true,
-  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule]
+  imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatIconModule]
 })
 export class BookDialogComponent implements OnInit {
   isEditMode = false;
@@ -35,7 +33,7 @@ export class BookDialogComponent implements OnInit {
 
   fetchSku(): void {
     if (this.isEditMode || this.isFetchingSku) return;
-    
+
     this.isFetchingSku = true;
     this.booksService.generateSku().subscribe({
       next: (sku) => {

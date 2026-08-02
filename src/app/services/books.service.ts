@@ -3,12 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { Book } from '../interface/book';
+import { Book } from '../shared/models/book.model';
 import { enviort } from '../../environments/environment';
-import { StockSummary } from '../interface/stock-summary';
-import { StockLedgerEntry } from '../interface/stock-ledger-entry';
-import { ManualStockAdjustmentRequest } from '../interface/manual-stock-adjustment-request';
-import { StockReconciliationReport } from '../interface/stock-reconciliation-report';
+import { StockSummary, StockLedgerEntry, ManualStockAdjustmentRequest, StockReconciliationReport } from '../shared/models/stock.model';
 
 @Injectable({ providedIn: 'root' })
 export class BooksService {

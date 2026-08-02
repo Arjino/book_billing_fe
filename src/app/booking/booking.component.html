@@ -1,299 +1,297 @@
-<div class="min-h-screen pt-20 pb-12 bg-gradient-to-br from-slate-950 via-purple-900/20 to-slate-950 relative overflow-hidden">
-  <!-- Animated Background Elements -->
-  <div class="fixed inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-20 left-10 w-72 h-72 bg-green-500/10 rounded-full blur-3xl animate-blob"></div>
-    <div class="absolute bottom-20 right-10 w-72 h-72 bg-emerald-500/10 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-  </div>
+<div class="books-layout">
+  <app-sidebar-nav [items]="navItems" (quickAdd)="onSidebarQuickAdd($event.id)"></app-sidebar-nav>
 
-  <div class="max-w-7xl mx-auto px-6 relative z-10">
-    <!-- Header -->
-    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
-      <div>
-        <h1 class="text-4xl font-extrabold mb-2">
-          <span class="bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">Books Management</span>
-        </h1>
-        <p class="text-green-200">Manage your book inventory</p>
-      </div>
-      <div class="flex gap-3 w-full md:w-auto justify-between md:justify-end mt-4 md:mt-0">
-        <button mat-raised-button (click)="runStockReconciliation()" [disabled]="reconciliationRunning" class="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600">
-          <mat-icon>sync</mat-icon>
-          {{ reconciliationRunning ? 'Reconciling...' : 'Run Reconciliation' }}
-        </button>
-        <button mat-raised-button color="accent" [disabled]="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED" (click)="addBook()" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600">
-          <mat-icon>add</mat-icon>
-          Add Book
-        </button>
-        <button mat-raised-button color="primary" [disabled]="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED" (click)="openSupplierBookMapping()" class="bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600">
-          <mat-icon>local_shipping</mat-icon>
-          Supplier Publisher Mapping
-        </button>
-        <button mat-raised-button [disabled]="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED" (click)="bulkImport()" class="bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-600 hover:to-emerald-600">
-          <mat-icon>cloud_upload</mat-icon>
-          <span class="hidden sm:inline">Bulk Import</span>
-        </button>
-        <button mat-icon-button (click)="goBack()" class="bg-slate-800/50 hover:bg-slate-700/50 text-green-300 rounded-lg border border-green-500/30" title="Back to Dashboard">
-          <mat-icon>arrow_back</mat-icon>
-        </button>
-      </div>
-    </div>
-
-    <!-- Filter Section -->
-    <div class="mb-6 bg-gradient-to-br from-slate-900/90 to-slate-950 border border-green-500/30 rounded-2xl backdrop-blur-xl p-6 text-white">
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-end justify-items-stretch">
-        <!-- Filter Dropdown -->
+  <main class="books-main">
+    <section class="page-header card-shell">
+      <div class="header-title">
+        <div class="header-icon"><mat-icon>menu_book</mat-icon></div>
         <div>
-          <label class="block text-green-300 font-semibold mb-2">Filter By</label>
-          <select [(ngModel)]="filterBy" class="w-full px-4 py-2 bg-slate-800/50 border border-green-500/30 rounded-lg text-white focus:outline-none focus:border-green-400 transition-colors">
-            <option *ngFor="let option of filterOptions" [value]="option.value">
-              {{option.label}}
-            </option>
-          </select>
+          <h1>Books Inventory &amp; Catalog</h1>
+          <p>Total {{ totalRecords || filteredBooks.length }} titles &bull; Real-time stock units &amp; price thresholds</p>
         </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="secondary-action" [disabled]="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED" (click)="bulkImport()">
+          <mat-icon>upload_file</mat-icon>
+          Bulk Import
+        </button>
+        <button type="button" class="secondary-action" (click)="runStockReconciliation()" [disabled]="reconciliationRunning">
+          <mat-icon [class.spinning]="reconciliationRunning">sync</mat-icon>
+          {{ reconciliationRunning ? 'Reconciling...' : 'Reconcile Stock' }}
+        </button>
+        <button type="button" class="secondary-action" [disabled]="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED" (click)="openSupplierBookMapping()">
+          <mat-icon>local_shipping</mat-icon>
+          Supplier Mapping
+        </button>
+        <button type="button" class="primary-action" [disabled]="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED" (click)="addBook()">
+          <mat-icon>add</mat-icon>
+          Add Book Title
+        </button>
+      </div>
+    </section>
 
-        <!-- Filter Input -->
-        <div>
-          <label class="block text-green-300 font-semibold mb-2">Search Value</label>
-          <input 
-            [(ngModel)]="filterValue" 
+    <section class="card-shell filters-card">
+      <div class="section-title">
+        <mat-icon>tune</mat-icon>
+        CATALOG FILTERS
+      </div>
+
+      <div class="filters-grid">
+        <div class="field-wrap search-wrap">
+          <mat-icon>search</mat-icon>
+          <input
+            [(ngModel)]="filterValue"
             (keyup.enter)="applyFilter()"
-            type="text" 
-            placeholder="Enter filter value..." 
-            class="w-full px-4 py-2 bg-slate-800/50 border border-green-500/30 rounded-lg text-white placeholder-green-300/40 focus:outline-none focus:border-green-400 transition-colors"
+            type="text"
+            placeholder="Search Title, SKU, Publisher, HSN..."
           />
         </div>
 
-        <!-- Filter Button -->
-        <!-- Buttons Group -->
-        <div class="flex flex-col sm:flex-row gap-3 sm:justify-start justify-center sm:col-span-2 md:col-span-1 lg:col-span-2">
-          <button 
-            (click)="applyFilter()" 
-            mat-raised-button 
-            class="w-full sm:w-auto bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold px-6 py-2 rounded-lg transition-all"
-          >
-            <mat-icon class="mr-2">search</mat-icon>
-            Apply Filter
-          </button>
-          <button 
-            (click)="clearFilter()" 
-            mat-outlined-button 
-            class="w-full sm:w-auto border border-green-500/50 text-green-300 hover:bg-green-500/10 font-semibold px-6 py-2 rounded-lg transition-all"
-          >
-            <mat-icon class="mr-2">clear</mat-icon>
-            Clear
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Table Container -->
-    <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-green-500/30 rounded-2xl backdrop-blur-xl overflow-hidden text-white">
-      <div class="overflow-x-auto">
-        <table mat-table [dataSource]="filteredBooks" class="w-full" *ngIf="filteredBooks.length">
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left">ID</th>
-              <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">{{b.id}}</td>
-          </ng-container>
-          <ng-container matColumnDef="title">
-            <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left">Title</th>
-              <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">{{b.title}}</td>
-          </ng-container>
-          <ng-container matColumnDef="publisher">
-            <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left">Publisher</th>
-              <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">{{b.publisher}}</td>
-          </ng-container>
-          <ng-container matColumnDef="mrp">
-            <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left cursor-pointer hover:bg-green-500/20 transition-colors" (click)="sortBy('mrp')">
-              MRP
-              <mat-icon class="inline-block ml-1 text-sm align-middle" *ngIf="sortColumn === 'mrp' && sortDirection === 'asc'">arrow_upward</mat-icon>
-              <mat-icon class="inline-block ml-1 text-sm align-middle" *ngIf="sortColumn === 'mrp' && sortDirection === 'desc'">arrow_downward</mat-icon>
-            </th>
-              <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">{{b.mrp}}</td>
-          </ng-container>
-          <ng-container matColumnDef="sku">
-            <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left">SKU No</th>
-              <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">{{b.sku}}</td>
-          </ng-container>
-          <ng-container matColumnDef="stock">
-            <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left cursor-pointer hover:bg-green-500/20 transition-colors" (click)="sortBy('stock')">
-              Stock
-              <mat-icon class="inline-block ml-1 text-sm align-middle" *ngIf="sortColumn === 'stock' && sortDirection === 'asc'">arrow_upward</mat-icon>
-              <mat-icon class="inline-block ml-1 text-sm align-middle" *ngIf="sortColumn === 'stock' && sortDirection === 'desc'">arrow_downward</mat-icon>
-            </th>
-              <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">{{b.stock}}</td>
-          </ng-container>
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="text-green-300 font-bold py-4 px-6 text-left">Actions</th>
-              <td mat-cell *matCellDef="let b" class="text-green-300 py-4 px-6 border-t border-green-500/20">
-                <button mat-icon-button (click)="editBook(b)" class="text-blue-400 hover:text-blue-300" title="Edit Book">
-                  <mat-icon>edit</mat-icon>
-                </button>
-                <button *ngIf="bookStatus === BOOKING_CONSTANTS.STATUS.AVAILABLE" mat-icon-button (click)="deleteBook(b)" class="text-red-400 hover:text-red-300 ml-2" title="Delete Book">
-                  <mat-icon>delete</mat-icon>
-                </button>
-                <button *ngIf="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED" mat-icon-button (click)="enableBook(b)" class="text-green-400 hover:text-green-300 ml-2" title="Enable Book">
-                  <mat-icon>check_circle</mat-icon>
-                </button>
-                <button *ngIf="bookStatus === BOOKING_CONSTANTS.STATUS.AVAILABLE" mat-icon-button (click)="openStockDetails(b)" class="text-amber-300 hover:text-amber-200 ml-2" title="Stock Details">
-                  <mat-icon>insights</mat-icon>
-                </button>
-              </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="['id','title','publisher','mrp','sku','stock','actions']"></tr>
-          <tr mat-row *matRowDef="let row; columns: ['id','title','publisher','mrp','sku','stock','actions'];" class="hover:bg-green-500/10 transition-colors"></tr>
-        </table>
-      </div>
-
-      <!-- Pagination Section -->
-      <div class="flex flex-col sm:flex-row items-center justify-between p-6 border-t border-green-500/30 bg-slate-900/50" *ngIf="filteredBooks.length">
-        <div class="flex items-center gap-4 mb-4 sm:mb-0">
-          <label class="text-green-300 font-semibold">Rows per page:</label>
-          <select [(ngModel)]="pageSize" (change)="onPageSizeChange()" class="px-4 py-2 bg-slate-800/50 border border-green-500/30 rounded-lg text-white focus:outline-none focus:border-green-400 transition-colors">
-            <option [ngValue]="25">25</option>
-            <option [ngValue]="50">50</option>
-            <option [ngValue]="100">100</option>
+        <div class="field-wrap select-wrap">
+          <select [(ngModel)]="filterBy" aria-label="Filter by field">
+            <option *ngFor="let option of filterOptions" [value]="option.value">{{ option.label }}</option>
           </select>
         </div>
 
-        <div class="flex items-center gap-2">
-          <button 
-            mat-icon-button 
-            (click)="previousPage()" 
-            [disabled]="currentPage === 0"
-            class="text-green-300 disabled:text-green-300/30 disabled:cursor-not-allowed"
-            title="Previous Page">
+        <div class="field-wrap select-wrap">
+          <select [(ngModel)]="bookStatus" (change)="loadBooksByStatus()" aria-label="Catalog status">
+            <option [value]="BOOKING_CONSTANTS.STATUS.AVAILABLE">Available Books</option>
+            <option [value]="BOOKING_CONSTANTS.STATUS.DISCARDED">Archived Books</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button type="button" class="icon-btn" (click)="clearFilter()" title="Reset filters" aria-label="Reset filters">
+            <mat-icon>restart_alt</mat-icon>
+          </button>
+          <button type="button" class="primary-action" (click)="applyFilter()">
+            <mat-icon>search</mat-icon>
+            Apply
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card-shell table-card" *ngIf="filteredBooks.length; else emptyState">
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Book Title</th>
+              <th>Publisher</th>
+              <th>HSN</th>
+              <th class="sortable" (click)="sortBy('mrp')">
+                MRP (&#8377;)
+                <mat-icon class="sort-icon" *ngIf="sortColumn === 'mrp' && sortDirection === 'asc'">arrow_upward</mat-icon>
+                <mat-icon class="sort-icon" *ngIf="sortColumn === 'mrp' && sortDirection === 'desc'">arrow_downward</mat-icon>
+              </th>
+              <th>SKU No</th>
+              <th class="sortable" (click)="sortBy('stock')">
+                Stock Units
+                <mat-icon class="sort-icon" *ngIf="sortColumn === 'stock' && sortDirection === 'asc'">arrow_upward</mat-icon>
+                <mat-icon class="sort-icon" *ngIf="sortColumn === 'stock' && sortDirection === 'desc'">arrow_downward</mat-icon>
+              </th>
+              <th class="align-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let book of filteredBooks">
+              <td class="book-id">#{{ book.id }}</td>
+              <td>
+                <p class="book-title">{{ book.title }}</p>
+              </td>
+              <td>{{ book.publisher || '—' }}</td>
+              <td class="mono">{{ book.hsn || '—' }}</td>
+              <td>&#8377;{{ book.mrp }}</td>
+              <td class="mono">{{ book.sku || '—' }}</td>
+              <td>
+                <div class="stock-cell">
+                  <span class="stock-value">{{ book.stock }}</span>
+                  <span [class]="stockStatusClass(book)">{{ stockStatusLabel(book) }}</span>
+                </div>
+              </td>
+              <td>
+                <div class="actions-wrap">
+                  <button type="button" class="icon-btn" (click)="editBook(book)" aria-label="Edit book" title="Edit Book">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button
+                    *ngIf="bookStatus === BOOKING_CONSTANTS.STATUS.AVAILABLE"
+                    type="button"
+                    class="icon-btn"
+                    (click)="openStockDetails(book)"
+                    aria-label="Stock details"
+                    title="Stock Details"
+                  >
+                    <mat-icon>insights</mat-icon>
+                  </button>
+                  <button
+                    *ngIf="bookStatus === BOOKING_CONSTANTS.STATUS.AVAILABLE"
+                    type="button"
+                    class="icon-btn danger"
+                    (click)="deleteBook(book)"
+                    aria-label="Delete book"
+                    title="Delete Book"
+                  >
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                  <button
+                    *ngIf="bookStatus === BOOKING_CONSTANTS.STATUS.DISCARDED"
+                    type="button"
+                    class="icon-btn success"
+                    (click)="enableBook(book)"
+                    aria-label="Restore book"
+                    title="Enable Book"
+                  >
+                    <mat-icon>check_circle</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        <p>Showing {{ filteredBooks.length }} of {{ totalRecords || filteredBooks.length }} entries</p>
+
+        <div class="table-footer-controls">
+          <label>
+            Rows:
+            <select [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+              <option [ngValue]="25">25</option>
+              <option [ngValue]="50">50</option>
+              <option [ngValue]="100">100</option>
+            </select>
+          </label>
+
+          <button type="button" class="pager" (click)="previousPage()" [disabled]="currentPage === 0">
             <mat-icon>chevron_left</mat-icon>
           </button>
-
-          <span class="text-green-300 font-semibold px-4">
-            Page {{ currentPage + 1 }} of {{ totalPages || 1 }}
-          </span>
-
-          <button 
-            mat-icon-button 
-            (click)="nextPage()" 
-            [disabled]="currentPage >= totalPages - 1 || totalPages === 0"
-            class="text-green-300 disabled:text-green-300/30 disabled:cursor-not-allowed"
-            title="Next Page">
+          <span class="page-indicator">{{ currentPage + 1 }}</span>
+          <button type="button" class="pager" (click)="nextPage()" [disabled]="currentPage >= totalPages - 1 || totalPages === 0">
             <mat-icon>chevron_right</mat-icon>
           </button>
-        </div>
-
-        <div class="text-green-300/60 text-sm mt-4 sm:mt-0">
-          Total Records: {{ totalRecords }}
+          <span class="page-total">of {{ totalPages || 1 }}</span>
         </div>
       </div>
+    </section>
 
-      <div *ngIf="!filteredBooks.length" class="p-8 text-center">
-        <mat-icon class="text-6xl text-green-500/30 mb-4">inventory_2</mat-icon>
-        <p class="text-green-300/60" *ngIf="filterValue">No results found for your filter.</p>
-        <p class="text-green-300/60" *ngIf="!filterValue">No books found. Create your first book entry.</p>
+    <ng-template #emptyState>
+      <section class="card-shell empty-state">
+        <mat-icon>inventory_2</mat-icon>
+        <h3>No books found</h3>
+        <p *ngIf="filterValue">Try adjusting your search and filter criteria.</p>
+        <p *ngIf="!filterValue">Create your first book title to get started.</p>
+      </section>
+    </ng-template>
+
+    <section *ngIf="reconciliationResult" class="card-shell result-card">
+      <div class="section-title">
+        <mat-icon>fact_check</mat-icon>
+        LAST RECONCILIATION RESULT
       </div>
-    </div>
-
-    <div *ngIf="reconciliationResult" class="mt-6 bg-gradient-to-br from-slate-900/90 to-slate-950 border border-amber-500/30 rounded-2xl backdrop-blur-xl p-6 text-white">
-      <h3 class="text-lg font-bold text-amber-300 mb-3">Last Reconciliation Result</h3>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-        <div>
-          <div class="text-amber-200/80">Books Checked</div>
-          <div class="text-xl font-semibold">{{ reconciliationResult.totalBooksChecked }}</div>
+      <div class="stat-grid">
+        <div class="stat-tile">
+          <span class="stat-label">Books Checked</span>
+          <span class="stat-value">{{ reconciliationResult.totalBooksChecked }}</span>
         </div>
-        <div>
-          <div class="text-amber-200/80">Bootstrapped</div>
-          <div class="text-xl font-semibold">{{ reconciliationResult.bootstrappedBooks }}</div>
+        <div class="stat-tile">
+          <span class="stat-label">Bootstrapped</span>
+          <span class="stat-value">{{ reconciliationResult.bootstrappedBooks }}</span>
         </div>
-        <div>
-          <div class="text-amber-200/80">Mismatched</div>
-          <div class="text-xl font-semibold">{{ reconciliationResult.mismatchedBooks }}</div>
+        <div class="stat-tile">
+          <span class="stat-label">Mismatched</span>
+          <span class="stat-value">{{ reconciliationResult.mismatchedBooks }}</span>
         </div>
-        <div>
-          <div class="text-amber-200/80">Checked At</div>
-          <div class="text-sm font-semibold">{{ reconciliationResult.checkedAt | date:'dd/MM/yyyy hh:mm a' }}</div>
+        <div class="stat-tile">
+          <span class="stat-label">Checked At</span>
+          <span class="stat-value stat-value--small">{{ reconciliationResult.checkedAt | date:'dd/MM/yyyy hh:mm a' }}</span>
         </div>
       </div>
-    </div>
+    </section>
 
-    <div *ngIf="selectedBook" class="mt-6 bg-gradient-to-br from-slate-900/90 to-slate-950 border border-cyan-500/30 rounded-2xl backdrop-blur-xl p-6 text-white">
-      <div class="flex items-start justify-between gap-4 mb-4">
+    <section *ngIf="selectedBook" class="card-shell stock-panel">
+      <div class="stock-panel-header">
         <div>
-          <h3 class="text-2xl font-bold text-cyan-300">Stock Details</h3>
-          <p class="text-cyan-100/80">{{ selectedBook.title }} (SKU: {{ selectedBook.sku }})</p>
+          <h3>Stock Details</h3>
+          <p>{{ selectedBook.title }} (SKU: {{ selectedBook.sku }})</p>
         </div>
-        <div class="flex gap-2">
-          <button mat-stroked-button (click)="loadStockDetails()" class="border-cyan-500/50 text-cyan-300">Refresh</button>
-          <button mat-icon-button (click)="closeStockDetails()" class="text-cyan-200" title="Close">
+        <div class="stock-panel-actions">
+          <button type="button" class="secondary-action" (click)="loadStockDetails()">
+            <mat-icon>refresh</mat-icon>
+            Refresh
+          </button>
+          <button type="button" class="close-btn" (click)="closeStockDetails()" aria-label="Close stock details">
             <mat-icon>close</mat-icon>
           </button>
         </div>
       </div>
 
-      <div *ngIf="stockError" class="mb-4 p-3 rounded-lg bg-red-500/15 border border-red-500/40 text-red-200">
-        {{ stockError }}
-      </div>
+      <div class="message-box error-box" *ngIf="stockError">{{ stockError }}</div>
+      <div class="loading-note" *ngIf="stockLoading">Loading stock data...</div>
 
-      <div *ngIf="stockLoading" class="mb-4 text-cyan-200">Loading stock data...</div>
-
-      <div *ngIf="stockSummary && !stockLoading" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-          <div class="text-cyan-100/70 text-sm">On Hand Stock</div>
-          <div class="text-2xl font-semibold">{{ stockSummary.onHandStock }}</div>
+      <div class="stat-grid" *ngIf="stockSummary && !stockLoading">
+        <div class="stat-tile stat-tile--info">
+          <span class="stat-label">On Hand Stock</span>
+          <span class="stat-value">{{ stockSummary.onHandStock }}</span>
         </div>
-        <div class="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20">
-          <div class="text-orange-100/70 text-sm">Reserved Stock</div>
-          <div class="text-2xl font-semibold">{{ stockSummary.reservedStock }}</div>
+        <div class="stat-tile stat-tile--warning">
+          <span class="stat-label">Reserved Stock</span>
+          <span class="stat-value">{{ stockSummary.reservedStock }}</span>
         </div>
-        <div class="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
-          <div class="text-emerald-100/70 text-sm">Available To Sell</div>
-          <div class="text-2xl font-semibold">{{ stockSummary.availableToSell }}</div>
+        <div class="stat-tile stat-tile--success">
+          <span class="stat-label">Available To Sell</span>
+          <span class="stat-value">{{ stockSummary.availableToSell }}</span>
         </div>
       </div>
 
-      <div class="mb-6 p-4 rounded-xl bg-slate-800/60 border border-cyan-500/20">
-        <h4 class="text-lg font-semibold text-cyan-300 mb-3">Manual Adjustment</h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Adjustment Qty (+/-)</mat-label>
-            <input matInput type="number" [(ngModel)]="adjustmentQty" name="adjustmentQty" placeholder="e.g. 5 or -3" />
-          </mat-form-field>
-          <mat-form-field appearance="outline" class="w-full">
-            <mat-label>Source Reference (optional)</mat-label>
-            <input matInput type="text" [(ngModel)]="adjustmentSourceRef" name="adjustmentSourceRef" />
-          </mat-form-field>
-          <button mat-raised-button (click)="submitAdjustment()" [disabled]="adjustmentSubmitting" class="bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600">
+      <div class="adjustment-panel">
+        <h4>Manual Adjustment</h4>
+        <div class="adjustment-grid">
+          <div>
+            <label>Adjustment Qty (+/-)</label>
+            <input type="number" [(ngModel)]="adjustmentQty" name="adjustmentQty" placeholder="e.g. 5 or -3" />
+          </div>
+          <div>
+            <label>Source Reference (optional)</label>
+            <input type="text" [(ngModel)]="adjustmentSourceRef" name="adjustmentSourceRef" />
+          </div>
+          <button type="button" class="primary-action" (click)="submitAdjustment()" [disabled]="adjustmentSubmitting">
             {{ adjustmentSubmitting ? 'Applying...' : 'Apply Adjustment' }}
           </button>
         </div>
       </div>
 
-      <h4 class="text-lg font-semibold text-cyan-300 mb-3">Stock Ledger</h4>
-      <div *ngIf="!stockLedger.length && !stockLoading" class="text-cyan-100/70">No stock ledger entries found for this book.</div>
-      <div class="overflow-x-auto" *ngIf="stockLedger.length">
-        <table class="w-full text-sm">
+      <h4 class="ledger-title">Stock Ledger</h4>
+      <p class="empty-note" *ngIf="!stockLedger.length && !stockLoading">No stock ledger entries found for this book.</p>
+      <div class="table-scroll" *ngIf="stockLedger.length">
+        <table class="ledger-table">
           <thead>
-            <tr class="text-cyan-200/80 border-b border-cyan-500/20">
-              <th class="text-left py-2 pr-3">Date/Time</th>
-              <th class="text-left py-2 pr-3">Type</th>
-              <th class="text-left py-2 pr-3">Qty</th>
-              <th class="text-left py-2 pr-3">Source</th>
-              <th class="text-left py-2 pr-3">On Hand</th>
-              <th class="text-left py-2 pr-3">Reserved</th>
-              <th class="text-left py-2 pr-3">Available</th>
+            <tr>
+              <th>Date/Time</th>
+              <th>Type</th>
+              <th>Qty</th>
+              <th>Source</th>
+              <th>On Hand</th>
+              <th>Reserved</th>
+              <th>Available</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of stockLedger" class="border-b border-cyan-500/10">
-              <td class="py-2 pr-3">{{ row.createdAt | date:'dd/MM/yyyy hh:mm a' }}</td>
-              <td class="py-2 pr-3">
-                <span class="px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="movementTypeClass(row.movementType)">{{ row.movementType }}</span>
-              </td>
-              <td class="py-2 pr-3">{{ row.qty }}</td>
-              <td class="py-2 pr-3">{{ row.sourceType || '-' }} / {{ row.sourceRef || '-' }}</td>
-              <td class="py-2 pr-3">{{ row.onHandBalance }}</td>
-              <td class="py-2 pr-3">{{ row.reservedBalance }}</td>
-              <td class="py-2 pr-3">{{ row.availableBalance }}</td>
+            <tr *ngFor="let row of stockLedger">
+              <td>{{ row.createdAt | date:'dd/MM/yyyy hh:mm a' }}</td>
+              <td><span [class]="movementTypeClass(row.movementType)">{{ row.movementType }}</span></td>
+              <td>{{ row.qty }}</td>
+              <td>{{ row.sourceType || '-' }} / {{ row.sourceRef || '-' }}</td>
+              <td>{{ row.onHandBalance }}</td>
+              <td>{{ row.reservedBalance }}</td>
+              <td>{{ row.availableBalance }}</td>
             </tr>
           </tbody>
         </table>
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 </div>

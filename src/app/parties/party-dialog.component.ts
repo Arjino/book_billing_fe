@@ -8,7 +8,7 @@ import { MatOptionModule } from '@angular/material/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { PartyDialogData } from '../interface/party-dialog-data';
+import { PartyDialogData } from './parties.models';
 import { PARTIES_CONSTANTS } from '../constants/parties.constants';
 
 @Component({
@@ -19,6 +19,10 @@ import { PARTIES_CONSTANTS } from '../constants/parties.constants';
   imports: [CommonModule, FormsModule, MatDialogModule, MatButtonModule, MatIconModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatOptionModule]
 })
 export class PartyDialogComponent implements OnInit {
+  get isEditMode(): boolean {
+    return Number(this.data?.id || 0) > 0;
+  }
+
   constructor(
     public dialogRef: MatDialogRef<PartyDialogComponent>,
     @Inject(MAT_DIALOG_DATA) public data: PartyDialogData
@@ -37,9 +41,10 @@ export class PartyDialogComponent implements OnInit {
     this.dialogRef.close();
   }
 
-  onPhoneInput(event: any): void {
+  onPhoneInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
     // Allow only digits; strip out any non-numeric characters
-    let value = event.target.value.replace(/[^0-9]/g, '');
+    let value = target.value.replace(/[^0-9]/g, '');
     // Enforce max 10 digits
     if (value.length > 10) {
       value = value.slice(0, 10);
@@ -49,7 +54,7 @@ export class PartyDialogComponent implements OnInit {
       value = '';
     }
     this.data.phone = value;
-    event.target.value = value;
+    target.value = value;
   }
 
   onSave(): void {

@@ -2,54 +2,81 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTableModule } from '@angular/material/table';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
-import { MatTooltipModule } from '@angular/material/tooltip';
-import { SalesDialogComponent } from './sales-dialog.component';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
+import { buildAppNavItems } from '../shared/nav-items';
+import { NavBadgeCountsService } from '../shared/nav-badge-counts.service';
+import { NavItem } from '../shared/models/common.models';
 import { SalesBulkImportDialogComponent } from './sales-bulk-import-dialog.component';
-import { SalesDialogData } from '../interface/sales-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
 import { LoadingService } from '../services/loading.service';
-import { toISODateTimeUTC } from '../utils/date.utils';
-import { Sale } from '../interface/Sale';
+import { toISODateTimeUTC, formatDateForAPI } from '../utils/date.utils';
+import { Sale } from '../shared/models/sale.model';
+import { SaleReturn } from './sales.models';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
 import { InvoicePreviewComponent } from '../invoice/invoice-preview.component';
-import { ReturnRequest } from '../interface/return-request';
-import { createIdempotencyKey, downloadBlobFile, extractHttpErrorMessage } from '../utils/http.utils';
+
+/** Unified display row for both sales and sale returns */
+export interface SaleDisplayRow {
+  id: number;
+  invoiceNo: string;
+  partyName: string;
+  dateStr: string;
+  grandTotal: number;
+  paymentStatus: string;
+  docType: 'SALE' | 'RETURN';
+  originalInvoiceNo?: string;
+  originalSale?: Sale;
+  originalReturn?: SaleReturn;
+}
 
 @Component({
   selector: 'app-sales',
   templateUrl: './sales.component.html',
   styleUrls: ['./sales.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, FormsModule, MatFormFieldModule, MatInputModule, MatDatepickerModule, MatNativeDateModule, MatIconModule, MatSnackBarModule, MatMenuModule, MatTooltipModule]
+  imports: [CommonModule, MatButtonModule, MatDialogModule, FormsModule, MatIconModule, MatSnackBarModule, MatMenuModule, MatDatepickerModule, MatNativeDateModule, SidebarNavComponent]
 })
 export class SalesComponent implements OnInit {
   @ViewChild('startTrigger') startMenuTrigger?: MatMenuTrigger;
   @ViewChild('endTrigger') endMenuTrigger?: MatMenuTrigger;
+
+  navItems: ReadonlyArray<NavItem> = buildAppNavItems();
   sales: Sale[] = [];
+  saleReturns: SaleReturn[] = [];
+
+  // ── Filters ────────────────────────────────────────────────
+  searchText = '';
+  docTypeFilter: 'ALL' | 'SALE' | 'RETURN' = 'ALL';
+  paymentStatusFilter = 'ALL';
+  minBill: number | null = null;
+  maxBill: number | null = null;
+
+  // ── Pagination ─────────────────────────────────────────────
+  pageSize = 10;
+  currentPage = 0;
+  readonly pageSizeOptions = [10, 25, 50];
+
+  // kept for legacy date-range API call if needed
   startDate: Date | null = null;
   endDate: Date | null = null;
-  startHour: string = '00';
-  startMinute: string = '00';
-  endHour: string = '23';
-  endMinute: string = '59';
+  startHour = '00';
+  startMinute = '00';
+  endHour = '23';
+  endMinute = '59';
   hours: string[] = [];
   minutes: string[] = [];
   maxDate = new Date();
   minEndDate: Date | null = null;
-  showStartDateError: boolean = false;
-  private returnSubmitInProgress = false;
-  private lastReturnAttempt: { fingerprint: string; key: string } | null = null;
+  showStartDateError = false;
 
   constructor(
     private dialog: MatDialog, 
@@ -57,200 +84,144 @@ export class SalesComponent implements OnInit {
     private store: DataStoreService, 
     private salesService: SalesService,
     private loadingService: LoadingService,
-    private snackBar: MatSnackBar
-  ) {}
+    private snackBar: MatSnackBar,
+    private navBadgeCounts: NavBadgeCountsService
+  ) {
+    this.navBadgeCounts.counts$.pipe(takeUntilDestroyed()).subscribe((counts) => {
+      this.navItems = buildAppNavItems(counts, ['sales-billing']);
+    });
+  }
+
+  onSidebarQuickAdd(itemId: string): void {
+    if (itemId === 'sales-billing') {
+      this.addSale();
+      return;
+    }
+    const target = this.navItems.find((item) => item.id === itemId);
+    if (target?.route) this.router.navigate([target.route]);
+  }
 
   ngOnInit() {
     const today = new Date();
     this.startDate = today;
     this.endDate = today;
-    this.startHour = '00';
-    this.startMinute = '00';
-    this.endHour = '23';
-    this.endMinute = '59';
     this.hours = this.buildHourOptions();
     this.minutes = this.buildMinuteOptions();
     this.loadSales();
+    this.loadSaleReturns();
   }
 
-  
   loadSales() {
     this.loadingService.show('Loading sales...');
-    this.salesService.getSalesByDate().subscribe(data => {
-      this.sales = data;
-      this.loadingService.hide();
+    this.salesService.getSalesByDate().subscribe({
+      next: data => {
+        this.sales = data;
+        this.loadingService.hide();
+      },
+      error: () => this.loadingService.hide()
     });
   }
 
-  addSale() {
-    const dialogRef = this.dialog.open(SalesDialogComponent, {
-      width: SALES_CONSTANTS.DIALOG_WIDTH,
-      maxWidth: '90vw',
-      maxHeight: '95vh',
-      data: {
-        id: 0,
-        invoiceNo: '',
-        originalInvoiceNo: '',
-        returnReason: '',
-        party: null,
-        createdAt: new Date(),
-        totalAmount: 0,
-        discount: 0,
-        taxAmount: 0,
-        roundOff: 0,
-        grandTotal: 0,
-        paymentStatus: SALES_CONSTANTS.DEFAULTS.PAYMENT_STATUS,
-        paidAmount: 0,
-        type: 'SALE',
-        items: [{
-          id: 0,
-          sale: null,
-          book: null,
-          qty: null,
-          rate: null,
-          discount: 0,
-          amount: null,
-          bookSearch: '',
-          filteredBooks: []
-        }]
-      } as SalesDialogData,
-      disableClose: false
+  loadSaleReturns() {
+    this.salesService.getSaleReturns({ page: 0, size: 500 }).subscribe({
+      next: (page) => {
+        this.saleReturns = page.content || [];
+      },
+      error: () => { /* non-critical */ }
     });
-    dialogRef.afterClosed().subscribe((result: SalesDialogData) => {
-      if (!result) return;
-      
-      // Convert createdAt to UTC ISO string before sending API payload.
-      const createdAtValue = result.createdAt;
-      const createdAt = createdAtValue instanceof Date
-        ? createdAtValue.toISOString()
-        : createdAtValue
-          ? new Date(createdAtValue).toISOString()
-          : new Date().toISOString();
+  }
 
-      const { paymentStatus, createdAt: _discardCreatedAt, ...payload } = result as any;
-      // Add createdAt field to payload
-      payload.createdAt = createdAt;
-      
-      // If this is a Return In, call the sale returns endpoint with mapped payload
-      if (payload.type === 'RETURN_IN') {
-        const returnPayload: ReturnRequest = {
-          partyId: payload.party && payload.party.id ? payload.party.id : payload.party,
-          returnDate: createdAt,
-          originalInvoiceNo: (payload.originalInvoiceNo || '').trim(),
-          returnReason: (payload.returnReason || '').trim(),
-          items: (payload.items || []).map((it: any) => ({
-            // Prefer sku when it looks numeric, else fallback to id
-            bookId: String(it.book?.sku || it.book?.id || ''),
-            qty: it.qty,
-            rate: it.rate
-          }))
-        };
+  // ── Computed: unified + filtered + paged rows ─────────────────
 
-        const hasInvalidItems = !returnPayload.items.length || returnPayload.items.some((it: any) => !it.bookId || Number(it.qty || 0) <= 0);
-        if (!returnPayload.originalInvoiceNo || !returnPayload.returnReason || hasInvalidItems) {
-          this.snackBar.open('Please provide invoice number, return reason, and at least one valid return item.', 'Close', {
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          });
-          return;
-        }
+  get unifiedRows(): SaleDisplayRow[] {
+    const saleRows: SaleDisplayRow[] = this.sales.map(s => ({
+      id: s.id,
+      invoiceNo: s.invoiceNo || String(s.id),
+      partyName: s.party?.name || '—',
+      dateStr: (s as any).createdAt || '',
+      grandTotal: s.grandTotal || 0,
+      paymentStatus: (s.paymentStatus || 'UNPAID').toUpperCase(),
+      docType: 'SALE' as const,
+      originalSale: s
+    }));
 
-        if (this.returnSubmitInProgress) {
-          this.snackBar.open('Return submission is already in progress. Please wait.', 'Close', {
-            duration: 3000
-          });
-          return;
-        }
+    const returnRows: SaleDisplayRow[] = this.saleReturns.map(r => ({
+      id: r.id,
+      invoiceNo: r.returnNumber || r.originalInvoiceNo || `RET-${r.id}`,
+      partyName: r.party?.name || r.partyName || '—',
+      dateStr: r.returnDate || '',
+      grandTotal: 0,
+      paymentStatus: 'RETURN',
+      docType: 'RETURN' as const,
+      originalInvoiceNo: r.originalInvoiceNo,
+      originalReturn: r
+    }));
 
-        const fingerprint = JSON.stringify(returnPayload);
-        const idempotencyKey = this.lastReturnAttempt?.fingerprint === fingerprint
-          ? this.lastReturnAttempt.key
-          : createIdempotencyKey();
-        this.lastReturnAttempt = { fingerprint, key: idempotencyKey };
+    return [...saleRows, ...returnRows];
+  }
 
-        this.loadingService.show('Processing return...');
-        this.returnSubmitInProgress = true;
-        this.salesService.createSaleReturn(returnPayload, idempotencyKey).subscribe({
-          next: (blob) => {
-            downloadBlobFile(blob, 'return-receipt.pdf');
-            this.loadingService.hide();
-            this.returnSubmitInProgress = false;
-            this.snackBar.open(SALES_CONSTANTS.MESSAGES.RETURN_IN_SUCCESS || 'Return created successfully!', 'Close', { 
-              duration: 3000,
-              panelClass: ['success-snackbar']
-            });
-            this.loadSales();
-            this.store.refreshBooks();
-          },
-          error: async (err) => {
-            this.loadingService.hide();
-            this.returnSubmitInProgress = false;
-            console.error('Failed to post sale return:', err);
-            const errorMessage = await extractHttpErrorMessage(err, SALES_CONSTANTS.MESSAGES.RETURN_IN_ERROR);
-            this.snackBar.open(errorMessage, 'Close', { 
-              duration: 5000,
-              panelClass: ['error-snackbar']
-            });
-          }
-        });
+  get filteredRows(): SaleDisplayRow[] {
+    let rows = this.unifiedRows;
 
-        return;
-      }
+    if (this.docTypeFilter !== 'ALL') {
+      rows = rows.filter(r => r.docType === this.docTypeFilter);
+    }
+    if (this.searchText.trim()) {
+      const q = this.searchText.toLowerCase();
+      rows = rows.filter(r =>
+        r.invoiceNo.toLowerCase().includes(q) ||
+        r.partyName.toLowerCase().includes(q)
+      );
+    }
+    if (this.paymentStatusFilter !== 'ALL') {
+      rows = rows.filter(r => r.paymentStatus === this.paymentStatusFilter);
+    }
+    if (this.minBill !== null && this.minBill !== undefined) {
+      rows = rows.filter(r => r.grandTotal >= (this.minBill as number));
+    }
+    if (this.maxBill !== null && this.maxBill !== undefined) {
+      rows = rows.filter(r => r.grandTotal <= (this.maxBill as number));
+    }
+    return rows;
+  }
 
-      this.loadingService.show('Creating sale...');
-      payload['paymentStatus']= paymentStatus
-      this.store.createSale([payload]).subscribe({
-        next: () => {
-          const invoiceNo = (payload as any)?.invoiceNo ? String((payload as any).invoiceNo) : '';
-          const reload$ = invoiceNo ? this.salesService.getSaleByInvoiceNumber(invoiceNo) : null;
-          if (reload$) {
-            reload$.subscribe({
-              next: () => {
-                this.loadingService.hide();
-                this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
-                  duration: 3000,
-                  panelClass: ['success-snackbar']
-                });
-                this.loadSales();
-                // refresh cached books so stock updates after a sale
-                this.store.refreshBooks();
-              },
-              error: () => {
-                this.loadingService.hide();
-                this.snackBar.open('Sale saved, but failed to reload invoice details.', 'Close', {
-                  duration: 4000,
-                  panelClass: ['error-snackbar']
-                });
-                this.loadSales();
-                this.store.refreshBooks();
-              }
-            });
-            return;
-          }
-          this.loadingService.hide();
-          this.snackBar.open(SALES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Sale created successfully!', 'Close', { 
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-          this.loadSales();
-          // refresh cached books so stock updates after a sale
-          this.store.refreshBooks();
-        },
-        error: (err) => {
-          this.loadingService.hide();
-          console.error('Failed to create sale:', err);
-          this.snackBar.open(SALES_CONSTANTS.MESSAGES.CREATE_ERROR, 'Close', { 
-            duration: 5000,
-            panelClass: ['error-snackbar']
-          });
-        }
-      });
-    });
+  get pagedRows(): SaleDisplayRow[] {
+    const start = this.currentPage * this.pageSize;
+    return this.filteredRows.slice(start, start + this.pageSize);
+  }
+
+  get totalFilteredCount(): number { return this.filteredRows.length; }
+  get totalPages(): number { return Math.max(1, Math.ceil(this.filteredRows.length / this.pageSize)); }
+  get showingStart(): number { return this.filteredRows.length === 0 ? 0 : this.currentPage * this.pageSize + 1; }
+  get showingEnd(): number { return Math.min((this.currentPage + 1) * this.pageSize, this.filteredRows.length); }
+  get totalSaleValue(): number { return this.sales.reduce((s, x) => s + (x.grandTotal || 0), 0); }
+
+  onFilterChange() { this.currentPage = 0; }
+  onPageSizeChange() { this.currentPage = 0; }
+  goToPage(page: number) { this.currentPage = Math.max(0, Math.min(page, this.totalPages - 1)); }
+
+  getStatusBadgeClass(status: string): Record<string, boolean> {
+    const s = (status || '').toUpperCase();
+    return {
+      'si-badge--paid':    s === 'PAID',
+      'si-badge--partial': s === 'PARTIAL',
+      'si-badge--unpaid':  s === 'UNPAID',
+      'si-badge--return':  s === 'RETURN'
+    };
+  }
+
+  addSale(): void {
+    this.router.navigate(['/sales/new'], { queryParams: { type: 'SALE' } });
+  }
+
+  addSaleReturn(): void {
+    this.router.navigate(['/sales/new'], { queryParams: { type: 'RETURN' } });
   }
 
   bulkImport() {
     const dialogRef = this.dialog.open(SalesBulkImportDialogComponent, {
-      width: '650px',
+      width: '900px',
+      maxWidth: '95vw',
       maxHeight: '90vh',
       data: {
         saleType: 'SALE',
@@ -290,15 +261,21 @@ export class SalesComponent implements OnInit {
     });
   }
 
+  dateFilterActive = false;
+
   getSalesByDateRange() {
     if (!this.startDate) {
       this.showStartDateError = true;
       return;
     }
     this.showStartDateError = false;
+    this.dateFilterActive = true;
+    this.currentPage = 0;
 
     const startDateTime = this.toApiDateTime(this.startDate, this.startHour, this.startMinute);
     const endDateTime = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
+    const startDateOnly = formatDateForAPI(this.startDate);
+    const endDateOnly = formatDateForAPI(this.endDate);
 
     this.loadingService.show('Fetching sales...');
     this.salesService.getSalesByDateRange(startDateTime, endDateTime).subscribe({
@@ -312,37 +289,33 @@ export class SalesComponent implements OnInit {
         this.loadingService.hide();
       }
     });
+
+    this.salesService.getSaleReturns({ page: 0, size: 500, startDate: startDateOnly, endDate: endDateOnly }).subscribe({
+      next: (page) => {
+        this.saleReturns = page.content || [];
+      },
+      error: () => { /* non-critical */ }
+    });
   }
 
-  getSaleDateTime(s: Sale): Date {
-    // First check for createdAt which contains both date and time in ISO format
-    const createdAt = (s as any).createdAt;
-    if (!createdAt) {
-      return new Date(); // fallback to current date if createdAt is missing
-    }
-    
-    // Fallback to existing logic for older data
-  return new Date(createdAt);
+  resetDateFilters() {
+    const today = new Date();
+    this.startDate = today;
+    this.endDate = today;
+    this.startHour = '00';
+    this.startMinute = '00';
+    this.endHour = '23';
+    this.endMinute = '59';
+    this.minEndDate = null;
+    this.showStartDateError = false;
+    this.dateFilterActive = false;
+    this.currentPage = 0;
+    this.loadSales();
+    this.loadSaleReturns();
   }
 
   goBack() {
     this.router.navigate(['/dashboard']);
-  }
-
-  getPageTitle(): string {
-    return 'Sales';
-  }
-
-  getPageSubtitle(): string {
-    return 'Track and manage all sales transactions';
-  }
-
-  getButtonLabel(): string {
-    return 'Add Sale';
-  }
-
-  getEmptyMessage(): string {
-    return 'No sales found. Create your first sales entry.';
   }
 
   onStartDateSelected(date: Date) {
@@ -372,16 +345,6 @@ export class SalesComponent implements OnInit {
     const mm = String(date.getMonth() + 1).padStart(2, '0');
     const yyyy = date.getFullYear();
     return `${dd}/${mm}/${yyyy} ${hour}:${minute}`;
-  }
-
-  private combineDateTime(date: Date | string | null, hour: string, minute: string): Date | null {
-    if (!date) return null;
-    const base = date instanceof Date ? new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0) : new Date(date);
-    if (isNaN(base.getTime())) return null;
-    const h = Number(hour);
-    const m = Number(minute);
-    base.setHours(isNaN(h) ? 0 : h, isNaN(m) ? 0 : m, 0, 0);
-    return base;
   }
 
   private toApiDateTime(date: Date | null, hour: string, minute: string): string {

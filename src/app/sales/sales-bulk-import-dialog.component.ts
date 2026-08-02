@@ -6,9 +6,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DataStoreService } from '../services/data-store.service';
-import { Party } from '../interface/party';
-import { Book } from '../interface/book';
-import { Sale } from '../interface/Sale';
+import { Party } from '../shared/models/party.model';
+import { Book } from '../shared/models/book.model';
+import { Sale } from '../shared/models/sale.model';
 import { formatDateForUTC } from '../utils/date.utils';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
 

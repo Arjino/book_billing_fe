@@ -1,12 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
-import { MatCardModule } from '@angular/material/card';
+import { Router, RouterLink } from '@angular/router';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services/auth.service';
 import { LoadingService } from '../../../services/loading.service';
@@ -18,12 +13,7 @@ import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatIconModule,
-    MatCardModule,
+    RouterLink,
     MatSnackBarModule
   ],
   templateUrl: './login.component.html',
@@ -52,7 +42,10 @@ export class LoginComponent {
 
   onSubmit(): void {
     if (this.loginForm.invalid) {
-      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.INVALID_FORM, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
+      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.INVALID_FORM, 'Close', {
+        duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+        panelClass: ['error-snackbar']
+      });
       return;
     }
 
@@ -62,13 +55,19 @@ export class LoginComponent {
     this.authService.login(username, password).subscribe({
       next: () => {
         this.loadingService.hide();
-        this.snackBar.open(AUTH_CONSTANTS.MESSAGES.LOGIN_SUCCESS, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
+        this.snackBar.open(AUTH_CONSTANTS.MESSAGES.LOGIN_SUCCESS, 'Close', {
+          duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+          panelClass: ['success-snackbar']
+        });
         this.router.navigate(['/dashboard']);
       },
       error: (error: any) => {
         this.loadingService.hide();
         const message = error.error?.message || AUTH_CONSTANTS.MESSAGES.LOGIN_ERROR;
-        this.snackBar.open(message, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
+        this.snackBar.open(message, 'Close', {
+          duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+          panelClass: ['error-snackbar']
+        });
       }
     });
   }

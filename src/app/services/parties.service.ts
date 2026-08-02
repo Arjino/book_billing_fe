@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError, tap } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { Party } from '../interface/party';
+import { Party } from '../shared/models/party.model';
 import { enviort } from '../../environments/environment';
 
 @Injectable({ providedIn: 'root' })

@@ -14,6 +14,16 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client
   },
   {
+    // Edit routes with id parameters should be client-rendered because ids are
+    // dynamic and we don't want to prerender every possible record id.
+    path: 'parties/edit/:id',
+    renderMode: RenderMode.Client
+  },
+  {
+    path: 'booking/edit/:id',
+    renderMode: RenderMode.Client
+  },
+  {
     path: '**',
     renderMode: RenderMode.Prerender
   }

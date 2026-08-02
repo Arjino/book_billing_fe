@@ -1,16 +1,9 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
-import { MatButtonModule } from '@angular/material/button';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { Router, RouterLink } from '@angular/router';
 import { LoadingService } from '../../../services/loading.service';
-import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { AuthService } from '../../../services/auth.service';
 import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
 
@@ -20,15 +13,8 @@ import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
   imports: [
     CommonModule,
     ReactiveFormsModule,
-    RouterModule,
-    MatButtonModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatIconModule,
-    // MatProgressSpinnerModule removed; using global spinner
-    MatCardModule,
-    MatSnackBarModule,
-    MatCheckboxModule
+    RouterLink,
+    MatSnackBarModule
   ],
   templateUrl: './register.component.html',
   styleUrl: './register.component.css'
@@ -104,16 +90,6 @@ export class RegisterComponent {
     this.hideConfirmPassword.set(!this.hideConfirmPassword());
   }
 
-  getPasswordStrengthColor(): string {
-    const strengthColors: Record<string, string> = {
-      weak: 'bg-red-500',
-      fair: 'bg-yellow-500',
-      good: 'bg-blue-500',
-      strong: 'bg-green-500'
-    };
-    return strengthColors[this.passwordStrength()];
-  }
-
   getPasswordStrengthText(): string {
     const strengthTexts: Record<string, string> = {
       weak: 'Weak',
@@ -126,7 +102,10 @@ export class RegisterComponent {
 
   onSubmit(): void {
     if (this.registerForm.invalid) {
-      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.INVALID_FORM, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
+      this.snackBar.open(AUTH_CONSTANTS.MESSAGES.INVALID_FORM, 'Close', {
+        duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+        panelClass: ['error-snackbar']
+      });
       return;
     }
     this.loadingService.show('Creating account...');
@@ -135,13 +114,19 @@ export class RegisterComponent {
     this.authService.register(username, password, email).subscribe({
       next: () => {
         this.loadingService.hide();
-        this.snackBar.open(AUTH_CONSTANTS.MESSAGES.REGISTER_SUCCESS, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
+        this.snackBar.open(AUTH_CONSTANTS.MESSAGES.REGISTER_SUCCESS, 'Close', {
+          duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+          panelClass: ['success-snackbar']
+        });
         this.router.navigate(['/dashboard']);
       },
       error: (error: any) => {
         this.loadingService.hide();
         const message = error.error?.message || AUTH_CONSTANTS.MESSAGES.REGISTER_ERROR;
-        this.snackBar.open(message, 'Close', { duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM });
+        this.snackBar.open(message, 'Close', {
+          duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+          panelClass: ['error-snackbar']
+        });
       }
     });
   }

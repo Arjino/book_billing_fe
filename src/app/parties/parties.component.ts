@@ -1,36 +1,34 @@
-import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTableModule } from '@angular/material/table';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatSelectModule } from '@angular/material/select';
-import { PartyDialogComponent } from './party-dialog.component';
 import { PartyBulkImportDialogComponent } from './party-bulk-import-dialog.component';
-import { PartyDialogData } from '../interface/party-dialog-data';
 import { DataStoreService } from '../services/data-store.service';
 import { PartiesService } from '../services/parties.service';
 import { LoadingService } from '../services/loading.service';
-import { Party } from '../interface/party';
+import { Party } from '../shared/models/party.model';
 import { PARTIES_CONSTANTS } from '../constants/parties.constants';
+import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
+import { buildAppNavItems } from '../shared/nav-items';
+import { NavBadgeCountsService } from '../shared/nav-badge-counts.service';
+import { NavItem } from '../shared/models/common.models';
 
 @Component({
   selector: 'app-parties',
   templateUrl: './parties.component.html',
   styleUrls: ['./parties.component.css'],
   standalone: true,
-  imports: [CommonModule, MatButtonModule, MatTableModule, MatDialogModule, MatIconModule, FormsModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatSnackBarModule]
+  imports: [CommonModule, MatButtonModule, MatIconModule, FormsModule, MatSnackBarModule, SidebarNavComponent]
 })
 export class PartiesComponent implements OnInit {
   parties: Party[] = [];
   filteredParties: Party[] = [];
-  
+
   filterBy: string = PARTIES_CONSTANTS.DEFAULTS.FILTER_BY;
   filterValue: string = '';
   partyStatus: string = PARTIES_CONSTANTS.DEFAULTS.STATUS; // Track current status
@@ -42,26 +40,43 @@ export class PartiesComponent implements OnInit {
   totalPages: number = 0;
   
   filterOptions = PARTIES_CONSTANTS.FILTER_OPTIONS;
+  readonly partyTypes = PARTIES_CONSTANTS.PARTY_TYPES;
+  readonly balanceFilterOptions: ReadonlyArray<{ value: 'all' | 'dr' | 'cr' | 'zero'; label: string }> = [
+    { value: 'all', label: 'All Balances' },
+    { value: 'dr', label: 'Debit (Dr)' },
+    { value: 'cr', label: 'Credit (Cr)' },
+    { value: 'zero', label: 'Zero Balance' }
+  ];
+  selectedPartyType = 'all';
+  selectedBalanceType: 'all' | 'dr' | 'cr' | 'zero' = 'all';
+
+  navItems: ReadonlyArray<NavItem> = buildAppNavItems();
+
   readonly PARTIES_CONSTANTS = PARTIES_CONSTANTS;
 
   constructor(
-    private dialog: MatDialog, 
+    private dialog: MatDialog,
     private router: Router,
-    private route: ActivatedRoute, 
+    private route: ActivatedRoute,
     private store: DataStoreService,
     private partiesService: PartiesService,
     private snackBar: MatSnackBar,
-    private loadingService: LoadingService
-  ) {}
+    private loadingService: LoadingService,
+    private navBadgeCounts: NavBadgeCountsService
+  ) {
+    this.navBadgeCounts.counts$.pipe(takeUntilDestroyed()).subscribe((counts) => {
+      this.navItems = buildAppNavItems(counts, ['parties-clients']);
+    });
+  }
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.route?.queryParamMap?.subscribe(params => {
       this.partyStatus = params.get('status') || PARTIES_CONSTANTS.STATUS.CURRENT;
     });
     this.loadPartiesByStatus();
   }
 
-  loadPartiesByStatus(force: boolean = false) {
+  loadPartiesByStatus(force: boolean = false): void {
     if (this.partyStatus === PARTIES_CONSTANTS.STATUS.CURRENT) {
       this.loadingService.show('Loading parties...');
       const pageSize = Number(this.pageSize);
@@ -72,7 +87,8 @@ export class PartiesComponent implements OnInit {
         this.filterBy,
         this.filterValue
       ).subscribe(data => {
-        this.filteredParties = data?.content || [];
+        this.parties = data?.content || [];
+        this.filteredParties = this.applyUiFilters(this.parties);
         this.totalRecords = data?.totalElements || 0;
         this.totalPages = data?.totalPages || 0;
         this.loadingService.hide();
@@ -82,12 +98,12 @@ export class PartiesComponent implements OnInit {
     }
   }
 
-  loadOldParties() {
+  loadOldParties(): void {
     this.loadingService.show('Loading old parties...');
     this.partiesService.getOldParties().subscribe(
       (data) => {
         this.parties = data || [];
-        this.filteredParties = [...this.parties];
+        this.filteredParties = this.applyUiFilters(this.parties);
         this.loadingService.hide();
       },
       (error) => {
@@ -98,67 +114,35 @@ export class PartiesComponent implements OnInit {
     );
   }
 
-  applyFilter() {
+  applyFilter(): void {
     this.currentPage = 0;
     this.loadPartiesByStatus();
   }
 
-  clearFilter() {
+  clearFilter(): void {
     this.filterValue = '';
+    this.selectedPartyType = 'all';
+    this.selectedBalanceType = 'all';
     this.currentPage = 0;
     this.loadPartiesByStatus();
   }
 
-  goBack() {
+  goBack(): void {
     this.router.navigate(['/dashboard']);
   }
 
-  loadParties(force: boolean = false) {
+  loadParties(force: boolean = false): void {
     this.loadPartiesByStatus(force);
   }
 
-  addParty() {
-    const dialogRef = this.dialog.open(PartyDialogComponent, {
-      width: PARTIES_CONSTANTS.DIALOG_WIDTH,
-      data: {
-        id: 0,
-        name: '',
-        type: PARTIES_CONSTANTS.DEFAULTS.PARTY_TYPE,
-        phone: '',
-        address: '',
-        gstin: ''
-      } as PartyDialogData
-    });
-
-    dialogRef.afterClosed().subscribe((result: PartyDialogData) => {
-      if (result) {
-        this.loadingService.show('Adding party...');
-        this.store.createParty(result as Party).subscribe({
-          next: () => {
-            this.loadingService.hide();
-            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Party added successfully!', 'Close', { 
-              duration: 3000,
-              panelClass: ['success-snackbar']
-            });
-            this.store.getPartiesLoaded();
-            this.loadParties();
-          },
-          error: (err) => {
-            this.loadingService.hide();
-            const errorMessage = err?.error?.message || err?.message || PARTIES_CONSTANTS.MESSAGES.ADD_ERROR;
-            this.snackBar.open(errorMessage, 'Close', { 
-              duration: 5000,
-              panelClass: ['error-snackbar']
-            });
-          }
-        });
-      }
-    });
+  addParty(): void {
+    this.router.navigate(['/parties/new']);
   }
 
-  bulkImport() {
+  bulkImport(): void {
     const dialogRef = this.dialog.open(PartyBulkImportDialogComponent, {
-      width: '600px',
+      width: '900px',
+      maxWidth: '95vw',
       maxHeight: '90vh',
       data: null
     });
@@ -175,7 +159,7 @@ export class PartiesComponent implements OnInit {
               panelClass: ['success-snackbar']
             });
             this.store.refreshParties();
-            this.loadParties();
+            this.loadParties(true);
           },
           error: (err) => {
             this.loadingService.hide();
@@ -191,37 +175,11 @@ export class PartiesComponent implements OnInit {
     });
   }
 
-  editParty(party: Party) {
-    const dialogRef = this.dialog.open(PartyDialogComponent, {
-      width: PARTIES_CONSTANTS.DIALOG_WIDTH,
-      data: { ...party } as PartyDialogData
-    });
-
-    dialogRef.afterClosed().subscribe((result: PartyDialogData) => {
-      if (result) {
-        this.loadingService.show('Updating party...');
-        this.store.updateParty(result.id, result as Party).subscribe({
-          next: () => {
-            this.loadingService.hide();
-            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.UPDATE_SUCCESS, 'Close', { 
-              duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT,
-              panelClass: ['success-snackbar']
-            });
-            this.loadParties();
-          },
-          error: (err) => {
-            this.loadingService.hide();
-            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.UPDATE_ERROR, 'Close', { 
-              duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
-              panelClass: ['error-snackbar']
-            });
-          }
-        });
-      }
-    });
+  editParty(party: Party): void {
+    this.router.navigate(['/parties/edit', party.id]);
   }
 
-  deleteParty(party: Party) {
+  deleteParty(party: Party): void {
     const confirmMessage = PARTIES_CONSTANTS.MESSAGES.CONFIRM_DELETE.replace('{name}', party.name);
     if (confirm(confirmMessage)) {
       this.loadingService.show('Deleting party...');
@@ -232,7 +190,7 @@ export class PartiesComponent implements OnInit {
             duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT,
             panelClass: ['success-snackbar']
           });
-          this.loadParties();
+          this.loadParties(true);
         },
         error: (err) => {
           this.loadingService.hide();
@@ -242,14 +200,14 @@ export class PartiesComponent implements OnInit {
             panelClass: ['error-snackbar']
           });
           if (err?.status === 409) {
-            this.loadParties();
+            this.loadParties(true);
           }
         }
       });
     }
   }
 
-  enableParty(party: Party) {
+  enableParty(party: Party): void {
     const confirmMessage = PARTIES_CONSTANTS.MESSAGES.CONFIRM_ENABLE.replace('{name}', party.name);
     if (confirm(confirmMessage)) {
       const updatedParty = { ...party, hidden: false };
@@ -261,7 +219,7 @@ export class PartiesComponent implements OnInit {
             duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.SHORT,
             panelClass: ['success-snackbar']
           });
-          this.loadParties();
+          this.loadParties(true);
         },
         error: (err) => {
           this.loadingService.hide();
@@ -276,22 +234,75 @@ export class PartiesComponent implements OnInit {
   }
 
   // Pagination methods
-  onPageSizeChange() {
+  onPageSizeChange(): void {
     this.currentPage = 0;
     this.loadPartiesByStatus();
   }
 
-  nextPage() {
+  nextPage(): void {
     if (this.currentPage < this.totalPages - 1) {
       this.currentPage++;
       this.loadPartiesByStatus();
     }
   }
 
-  previousPage() {
+  previousPage(): void {
     if (this.currentPage > 0) {
       this.currentPage--;
       this.loadPartiesByStatus();
     }
+  }
+
+  openLedger(party: Party): void {
+    if (!party?.id) return;
+    this.router.navigate(['/ledger'], { queryParams: { partyId: party.id } });
+  }
+
+  onSidebarQuickAdd(itemId: string): void {
+    if (itemId === 'parties-clients') {
+      this.addParty();
+      return;
+    }
+
+    const target = this.navItems.find((item) => item.id === itemId);
+    if (target?.route) this.router.navigate([target.route]);
+  }
+
+  getPartyTypeClass(type: string): string {
+    const normalizedType = (type || '').toLowerCase();
+    if (normalizedType.includes('supplier')) return 'type-chip type-chip--supplier';
+    if (normalizedType.includes('customer')) return 'type-chip type-chip--customer';
+    if (normalizedType.includes('distributor')) return 'type-chip type-chip--distributor';
+    if (normalizedType.includes('retailer')) return 'type-chip type-chip--retailer';
+    return 'type-chip type-chip--consumer';
+  }
+
+  getBalanceDisplay(_party: Party): string {
+    return '₹0';
+  }
+
+  getBalanceClass(_party: Party): string {
+    return 'balance-neutral';
+  }
+
+  getPartySubtitle(party: Party): string {
+    return party.address || 'Address not set';
+  }
+
+  onUiFilterChanged(): void {
+    this.filteredParties = this.applyUiFilters(this.parties);
+  }
+
+  private applyUiFilters(data: Party[]): Party[] {
+    return (data || []).filter((party) => {
+      const typeMatches = this.selectedPartyType === 'all' || (party.type || '') === this.selectedPartyType;
+      if (!typeMatches) return false;
+
+      if (this.selectedBalanceType === 'all') return true;
+      if (this.selectedBalanceType === 'zero') return true;
+
+      // Balance classification is placeholder until ledger summary API is integrated.
+      return false;
+    });
   }
 }

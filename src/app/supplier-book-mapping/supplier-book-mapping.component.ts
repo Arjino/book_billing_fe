@@ -1,74 +1,56 @@
-import { Component, OnInit, AfterViewInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
-import { MatInputModule } from '@angular/material/input';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
+import { FormsModule } from '@angular/forms';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { MatSort, MatSortModule } from '@angular/material/sort';
-import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Party } from '../interface/party';
+import { Party } from '../shared/models/party.model';
 import { DataStoreService } from '../services/data-store.service';
 import { AuthService } from '../services/auth.service';
 import { LoadingService } from '../services/loading.service';
 import { baseUrl } from '../../environments/environment';
 import { formatDateForUTC } from '../utils/date.utils';
+import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
+import { buildAppNavItems } from '../shared/nav-items';
+import { NavItem } from '../shared/models/common.models';
+
+interface SupplierPublisherRow {
+  id: number | null;
+  publisher: string;
+  discountPercent?: number | null;
+  effectiveFrom?: string | null;
+  effectiveTo?: string | null;
+}
 
 @Component({
   selector: 'app-supplier-book-mapping',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    MatInputModule,
-    MatIconModule,
-    MatButtonModule,
-    MatTableModule,
-    MatSortModule,
-    MatDatepickerModule,
-    MatNativeDateModule,
-    MatSnackBarModule
-  ],
+  imports: [CommonModule, FormsModule, MatSnackBarModule, SidebarNavComponent],
   templateUrl: './supplier-book-mapping.component.html',
   styleUrls: ['./supplier-book-mapping.component.css']
 })
-export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
-  form: FormGroup;
+export class SupplierBookMappingComponent implements OnInit {
+  readonly navItems: ReadonlyArray<NavItem> = buildAppNavItems();
+
   suppliers: Party[] = [];
   publishers: string[] = [];
-  dataSource = new MatTableDataSource<SupplierPublisherRow>([]);
-  displayedColumns: string[] = ['publisher', 'discountPercent', 'effectiveFrom', 'effectiveTo', 'actions'];
+  rows: SupplierPublisherRow[] = [];
+
   selectedSupplierId: number | null = null;
+  selectedPublisher: string | null = null;
+  discountPercent: number | null = null;
+  effectiveFrom: string | null = null;
+  effectiveTo: string | null = null;
   selectedDiscountId: number | null = null;
 
-  @ViewChild(MatSort) sort!: MatSort;
-
   constructor(
-    private fb: FormBuilder,
     private store: DataStoreService,
     private http: HttpClient,
     private auth: AuthService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar,
     private router: Router
-  ) {
-    this.form = this.fb.group({
-      supplierId: [null, [Validators.required]],
-      publisher: [null, [Validators.required]],
-      discountPercent: [null, [Validators.required, Validators.min(0), Validators.max(100)]],
-      effectiveFrom: [null],
-      effectiveTo: [null]
-    });
-  }
+  ) {}
 
   ngOnInit(): void {
     this.loadPublishers();
@@ -77,30 +59,12 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
       const all = parties || [];
       this.suppliers = all.filter(p => (p?.type || '').toString().toUpperCase() === 'SUPPLIER');
     });
-
-    this.form.get('supplierId')?.valueChanges.subscribe((supplierId: number | null) => {
-      this.onSupplierChange(supplierId);
-    });
-
-    this.form.get('publisher')?.valueChanges.subscribe((publisher: string | null) => {
-      this.onPublisherSelectionChange(publisher);
-    });
-  }
-
-  ngAfterViewInit(): void {
-    this.dataSource.sort = this.sort;
   }
 
   onSupplierChange(supplierId: number | null): void {
     this.selectedSupplierId = supplierId;
-    this.dataSource.data = [];
-    this.selectedDiscountId = null;
-    this.form.patchValue({
-      publisher: null,
-      discountPercent: null,
-      effectiveFrom: null,
-      effectiveTo: null
-    }, { emitEvent: false });
+    this.rows = [];
+    this.resetForm();
     if (!supplierId) return;
 
     this.loadingService.show('Loading supplier publishers...');
@@ -115,11 +79,7 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
           const payload = Array.isArray(response)
             ? response
             : response?.data || response?.result || response?.discounts || response?.items || [];
-          const resolved = this.resolvePublisherRows(payload);
-          this.dataSource.data = resolved;
-          if (this.sort) {
-            this.dataSource.sort = this.sort;
-          }
+          this.rows = this.resolvePublisherRows(payload);
         },
         error: (error) => {
           this.loadingService.hide();
@@ -152,15 +112,13 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private onPublisherSelectionChange(publisher: string | null): void {
+  onPublisherSelectionChange(publisher: string | null): void {
     this.selectedDiscountId = null;
 
     if (!this.selectedSupplierId || !publisher) {
-      this.form.patchValue({
-        discountPercent: null,
-        effectiveFrom: null,
-        effectiveTo: null
-      }, { emitEvent: false });
+      this.discountPercent = null;
+      this.effectiveFrom = null;
+      this.effectiveTo = null;
       return;
     }
 
@@ -179,32 +137,45 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
           : response?.data || response?.result || response?.discounts?.[0] || response?.items?.[0] || response;
 
         if (!payload || !payload.publisher) {
-          this.form.patchValue({
-            discountPercent: null,
-            effectiveFrom: null,
-            effectiveTo: null
-          }, { emitEvent: false });
+          this.discountPercent = null;
+          this.effectiveFrom = null;
+          this.effectiveTo = null;
           return;
         }
 
         this.selectedDiscountId = Number(payload?.id) || null;
-        const effectiveFrom = this.parseDate(payload?.effectiveFrom);
-        const effectiveTo = this.parseDate(payload?.effectiveTo);
-        this.form.patchValue({
-          discountPercent: payload?.discountPercent ?? payload?.percentage ?? payload?.discount ?? null,
-          effectiveFrom,
-          effectiveTo
-        }, { emitEvent: false });
+        this.discountPercent = payload?.discountPercent ?? payload?.percentage ?? payload?.discount ?? null;
+        this.effectiveFrom = this.toDateInputValue(payload?.effectiveFrom);
+        this.effectiveTo = this.toDateInputValue(payload?.effectiveTo);
       },
       error: () => {
         this.loadingService.hide();
-        this.form.patchValue({
-          discountPercent: null,
-          effectiveFrom: null,
-          effectiveTo: null
-        }, { emitEvent: false });
+        this.discountPercent = null;
+        this.effectiveFrom = null;
+        this.effectiveTo = null;
       }
     });
+  }
+
+  /** Fills the form from an existing row without a round-trip to the server. */
+  editMapping(row: SupplierPublisherRow): void {
+    this.selectedPublisher = row.publisher;
+    this.selectedDiscountId = row.id;
+    this.discountPercent = row.discountPercent ?? null;
+    this.effectiveFrom = row.effectiveFrom ?? null;
+    this.effectiveTo = row.effectiveTo ?? null;
+  }
+
+  cancelEdit(): void {
+    this.resetForm();
+  }
+
+  private resetForm(): void {
+    this.selectedPublisher = null;
+    this.discountPercent = null;
+    this.effectiveFrom = null;
+    this.effectiveTo = null;
+    this.selectedDiscountId = null;
   }
 
   private resolvePublisherRows(items: any[]): SupplierPublisherRow[] {
@@ -217,9 +188,8 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
           id: Number(item?.id) || null,
           publisher,
           discountPercent: item?.discountPercent ?? item?.percentage ?? item?.discount ?? null,
-          effectiveFrom: this.parseDate(item?.effectiveFrom),
-          effectiveTo: this.parseDate(item?.effectiveTo),
-          isEditing: false
+          effectiveFrom: this.toDateInputValue(item?.effectiveFrom),
+          effectiveTo: this.toDateInputValue(item?.effectiveTo)
         } as SupplierPublisherRow;
       })
       .filter((r): r is SupplierPublisherRow => !!r);
@@ -229,17 +199,24 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
     return (value || '').toString().trim().toLowerCase();
   }
 
-  private parseDate(value: any): Date | null {
+  /** Normalizes any date-ish value from the API into a yyyy-MM-dd string usable by <input type="date">. */
+  private toDateInputValue(value: any): string | null {
     if (!value) return null;
-    if (value instanceof Date) return value;
-    const date = new Date(value);
-    return isNaN(date.getTime()) ? null : date;
+    const str = value.toString();
+    const match = str.match(/^(\d{4}-\d{2}-\d{2})/);
+    if (match) return match[1];
+    const parsed = new Date(str);
+    if (isNaN(parsed.getTime())) return null;
+    const yyyy = parsed.getFullYear();
+    const mm = String(parsed.getMonth() + 1).padStart(2, '0');
+    const dd = String(parsed.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
   }
 
   saveSupplierPublisher(): void {
     if (!this.selectedSupplierId) return;
-    const publisher = (this.form.get('publisher')?.value || '').toString().trim();
-    const percent = this.form.get('discountPercent')?.value;
+    const publisher = (this.selectedPublisher || '').toString().trim();
+    const percent = this.discountPercent;
     if (!publisher) {
       this.snackBar.open('Publisher is required.', 'Close', {
         duration: 3000,
@@ -262,8 +239,8 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    const effectiveFrom = this.form.get('effectiveFrom')?.value as Date | null;
-    const effectiveTo = this.form.get('effectiveTo')?.value as Date | null;
+    const effectiveFrom = this.effectiveFrom;
+    const effectiveTo = this.effectiveTo;
     if (effectiveFrom && effectiveTo && effectiveFrom > effectiveTo) {
       this.snackBar.open('Effective To must be greater than or equal to Effective From.', 'Close', {
         duration: 3500,
@@ -289,10 +266,8 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
 
     this.loadingService.show('Saving discount...');
     request$.subscribe({
-      next: (res) => {
+      next: () => {
         this.loadingService.hide();
-        const responseData = res?.data || res?.result || res;
-        this.selectedDiscountId = responseData?.id ?? discountId ?? null;
         this.snackBar.open('Discount saved.', 'Close', {
           duration: 3000,
           panelClass: ['success-snackbar']
@@ -312,27 +287,20 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
 
   deleteDiscount(row: SupplierPublisherRow): void {
     if (!row?.publisher) return;
-    const discountId = row.id;
+    if (!confirm(`Remove the publisher mapping for "${row.publisher}"?`)) return;
 
+    const discountId = row.id;
     if (!discountId) {
-      this.dataSource.data = this.dataSource.data.filter(r => this.normalizePublisher(r.publisher) !== this.normalizePublisher(row.publisher));
-      this.dataSource.data = [...this.dataSource.data];
+      this.rows = this.rows.filter(r => this.normalizePublisher(r.publisher) !== this.normalizePublisher(row.publisher));
       return;
     }
     this.loadingService.show('Deleting discount...');
     this.http.delete(`${baseUrl}/supplier-publisher-discounts/${discountId}`, { headers: this.auth.getAuthHeaders() }).subscribe({
       next: () => {
         this.loadingService.hide();
-        this.dataSource.data = this.dataSource.data.filter(r => r.id !== discountId);
-        this.dataSource.data = [...this.dataSource.data];
+        this.rows = this.rows.filter(r => r.id !== discountId);
         if (this.selectedDiscountId === discountId) {
-          this.selectedDiscountId = null;
-          this.form.patchValue({
-            publisher: null,
-            discountPercent: null,
-            effectiveFrom: null,
-            effectiveTo: null
-          }, { emitEvent: false });
+          this.resetForm();
         }
         this.snackBar.open('Publisher mapping deleted.', 'Close', {
           duration: 3000,
@@ -353,17 +321,4 @@ export class SupplierBookMappingComponent implements OnInit, AfterViewInit {
   goBack(): void {
     this.router.navigate(['/booking']);
   }
-
-  // Backward-compatible handler in case the dev server still serves an older template.
-  openAddBookDialog(): void {
-    this.saveSupplierPublisher();
-  }
-}
-
-interface SupplierPublisherRow {
-  id: number | null;
-  publisher: string;
-  discountPercent?: number | null;
-  effectiveFrom?: Date | null;
-  effectiveTo?: Date | null;
 }

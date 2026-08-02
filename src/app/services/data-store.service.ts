@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, of, throwError } from 'rxjs';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { catchError, tap, finalize } from 'rxjs/operators';
+import { catchError, map, tap, finalize } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { Party } from '../interface/party';
-import { Book } from '../interface/book';
-import { Sale } from '../interface/Sale';
-import { Transaction } from '../interface/Transaction';
+import { Party } from '../shared/models/party.model';
+import { Book } from '../shared/models/book.model';
+import { Sale } from '../shared/models/sale.model';
+import { Transaction } from '../shared/models/transaction.model';
 import { enviort } from '../../environments/environment';
 import { normalizeUTCDatePayload, toUTCDateTimePlus00 } from '../utils/date.utils';
-import { ReturnRequest } from '../interface/return-request';
+import { ReturnRequest } from '../shared/models/return-request.model';
 
 @Injectable({ providedIn: 'root' })
 export class DataStoreService {
@@ -76,7 +76,7 @@ export class DataStoreService {
   getPartiesPaginated(
     page: number = 0,
     size: number = 20,
-    force: boolean = false,
+    _force: boolean = false,
     filterBy?: string,
     filterValue?: string
   ): Observable<any> {
@@ -111,9 +111,9 @@ export class DataStoreService {
   }
 
   getBooksPaginated(
-    page: number = 0, 
-    size: number = 20, 
-    force: boolean = false,
+    page: number = 0,
+    size: number = 20,
+    _force: boolean = false,
     filterBy?: string,
     filterValue?: string
   ): Observable<any> {
@@ -154,10 +154,10 @@ export class DataStoreService {
           this.booksLoaded = false;
           return of([]);
         }),
-        tap(data => {
+        // Extract content array from paginated response, or use data directly if it's an array
+        map(data => (Array.isArray(data) ? data : (data?.content || []))),
+        tap(books => {
           this.booksLoaded = true;
-          // Extract content array from paginated response, or use data directly if it's an array
-          const books = Array.isArray(data) ? data : (data?.content || []);
           this.books$.next(books);
         }),
         finalize(() => {
@@ -204,12 +204,19 @@ export class DataStoreService {
 
   loadSales(force = false): void {
     if (this.salesLoaded && !force) return;
+    if (!this.auth.isLoggedIn()) {
+      this.salesLoaded = true;
+      this.sales$.next([]);
+      return;
+    }
     this.salesLoaded = true;
-    this.http.get<Sale[]>(enviort.salesUrl, { headers: this.auth.getAuthHeaders() })
-      .pipe(catchError(() => of([])))
-      .subscribe(data => {
-        this.sales$.next(data || []);
-      });
+    // Use the same read endpoint as SalesService to avoid forbidden access on /sales.
+    this.http.get<any>(enviort.salesByDateUrl, { headers: this.auth.getAuthHeaders() })
+      .pipe(
+        catchError(() => of([])),
+          map((data) => (Array.isArray(data) ? data : (data?.content || [])))
+      )
+        .subscribe(data => this.sales$.next(data || []));
   }
 
   refreshSales(): void {
@@ -291,12 +298,19 @@ export class DataStoreService {
 
   loadTransactions(force = false): void {
     if (this.transactionsLoaded && !force) return;
+    if (!this.auth.isLoggedIn()) {
+      this.transactionsLoaded = true;
+      this.transactions$.next([]);
+      return;
+    }
     this.transactionsLoaded = true;
-    this.http.get<Transaction[]>(enviort.transactionUrl, { headers: this.auth.getAuthHeaders() })
-      .pipe(catchError(() => of([])))
-      .subscribe(data => {
-        this.transactions$.next(data || []);
-      });
+    // Keep DataStore consistent with TransactionsService read endpoint.
+    this.http.get<any>(enviort.paymentUrl, { headers: this.auth.getAuthHeaders() })
+      .pipe(
+        catchError(() => of([])),
+          map((data) => (Array.isArray(data) ? data : (data?.content || [])))
+      )
+        .subscribe(data => this.transactions$.next(data || []));
   }
 
   refreshTransactions(): void {

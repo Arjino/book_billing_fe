@@ -1,210 +1,288 @@
-<div class="min-h-screen pt-20 pb-12 bg-gradient-to-br from-slate-950 via-purple-900/20 to-slate-950 relative overflow-hidden">
-  <!-- Animated Background Elements -->
-  <div class="fixed inset-0 overflow-hidden pointer-events-none">
-    <div class="absolute top-20 left-10 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl animate-blob"></div>
-    <div class="absolute bottom-20 right-10 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl animate-blob animation-delay-2000"></div>
-  </div>
+<div class="page-shell">
+  <app-sidebar-nav [items]="navItems" (quickAdd)="onSidebarQuickAdd($event.id)"></app-sidebar-nav>
 
-  <div class="max-w-7xl mx-auto px-6 relative z-10">
-    <!-- Header -->
-    <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between">
-      <div>
-        <h1 class="text-4xl font-extrabold mb-2">
-          <span class="bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">Transactions Management</span>
-        </h1>
-        <p class="text-purple-200">Manage payment transactions and records</p>
-      </div>
-      <div class="flex gap-3 w-full md:w-auto justify-between md:justify-end mt-4 md:mt-0">
-        <button mat-raised-button color="accent" (click)="addTransaction()" class="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600">
-          <mat-icon>add</mat-icon>
-          Add Transaction
-        </button>
-        <button mat-icon-button (click)="goBack()" class="bg-slate-800/50 hover:bg-slate-700/50 text-purple-300 rounded-lg border border-purple-500/30" title="Back to Dashboard">
-          <mat-icon>arrow_back</mat-icon>
-        </button>
-      </div>
-    </div>
+  <main class="main-content">
+    <div class="tx-page">
 
-    <!-- Filters -->
-    <div class="mb-8 bg-gradient-to-br from-slate-800/50 to-slate-900/50 border border-purple-500/30 rounded-2xl p-6 backdrop-blur-xl text-white">
-      <h3 class="text-lg font-bold text-purple-300 mb-4 flex items-center gap-2">
-        <mat-icon>calendar_today</mat-icon>
-        Filter by Date Range
-      </h3>
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
-      <mat-form-field appearance="outline" class="w-full md:w-1/4">
-        <mat-label>Transaction Type</mat-label>
-        <mat-select [(ngModel)]="selectedTransactionType" (selectionChange)="filterTransactions()">
-          <mat-option value="SALE">Sale</mat-option>
-          <mat-option value="PURCHASE">Purchase</mat-option>
-        </mat-select>
-      </mat-form-field>
-        <mat-form-field appearance="outline" class="w-full text-white">
-          <mat-label class="text-white">Start Date</mat-label>
-          <input
-            matInput
-            [value]="getStartDisplay()"
-            readonly
-            class="text-white placeholder-white"
-            [style.color]="'white'"
-            [matMenuTriggerFor]="startMenu"
-            #startTrigger="matMenuTrigger"
-          />
-          <button mat-icon-button matSuffix class="date-time-icon" (click)="startTrigger.openMenu()" aria-label="Open start date time">
-            <mat-icon>calendar_today</mat-icon>
+      <!-- ── Inline "Record Payment Entry" form (replaces the popup) ── -->
+      <app-transaction-dialog
+        *ngIf="showPaymentForm && paymentFormData"
+        [embeddedData]="paymentFormData"
+        (saved)="onPaymentFormSaved($event)"
+        (cancelled)="onPaymentFormCancelled()">
+      </app-transaction-dialog>
+
+      <ng-container *ngIf="!showPaymentForm">
+
+      <!-- ── Header Card ─────────────────────────────────────────── -->
+      <div class="tx-card tx-header-card">
+        <div class="tx-header-left">
+          <div class="tx-header-icon" aria-hidden="true">
+            <mat-icon>account_balance_wallet</mat-icon>
+          </div>
+          <div>
+            <h1 class="tx-title">Transactions Management</h1>
+            <p class="tx-meta">
+              Total <strong>{{ filteredTransactions.length }}</strong> payment entries
+              &bull; Total Settled: <strong class="tx-meta-settled">₹{{ totalSettled | number:'1.0-2' }}</strong>
+            </p>
+          </div>
+        </div>
+        <div class="tx-header-actions">
+          <button type="button" class="tx-btn tx-btn--primary" (click)="addTransaction()">
+            <mat-icon>add</mat-icon>
+            Add Transaction
           </button>
-        </mat-form-field>
-        <mat-form-field appearance="outline" class="w-full text-white">
-          <mat-label class="text-white">End Date</mat-label>
-          <input
-            matInput
-            [value]="getEndDisplay()"
-            readonly
-            class="text-white placeholder-white"
-            [style.color]="'white'"
-            [matMenuTriggerFor]="endMenu"
-            #endTrigger="matMenuTrigger"
-          />
-          <button mat-icon-button matSuffix class="date-time-icon" (click)="endTrigger.openMenu()" aria-label="Open end date time">
-            <mat-icon>calendar_today</mat-icon>
-          </button>
-        </mat-form-field>
-        <button mat-raised-button color="primary" (click)="filterTransactions()" class="h-14 bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600">
-          <mat-icon>search</mat-icon>
-          Filter
-        </button>
+        </div>
       </div>
 
-      <mat-menu #startMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
-        <div class="date-time-menu-content" (click)="$event.stopPropagation()">
-          <mat-calendar
-            [selected]="startDate"
-            [maxDate]="maxDate"
-            (selectedChange)="onStartDateSelected($event)">
-          </mat-calendar>
-          <div class="time-controls">
-            <div class="time-column">
-              <div class="time-col-title">Hours</div>
-              <div class="time-list">
-                <button
-                  type="button"
-                  class="time-item"
-                  *ngFor="let h of hours"
-                  [class.time-item--active]="h === startHour"
-                  (click)="startHour = h; applyDateFilter()">
-                  {{ h }}
-                </button>
-              </div>
+      <!-- ── Filter Card ─────────────────────────────────────────── -->
+      <div class="tx-card tx-filter-card">
+        <div class="tx-filter-title">
+          <mat-icon>tune</mat-icon>
+          PAYMENT ENTRY FILTERS
+        </div>
+
+        <div class="tx-filters-row">
+          <!-- Search -->
+          <div class="tx-search-wrap">
+            <mat-icon class="tx-search-icon">search</mat-icon>
+            <input
+              type="text"
+              class="tx-search-input"
+              placeholder="Search Party, Ref No, Notes..."
+              [(ngModel)]="searchText"
+              (ngModelChange)="onExtraFilterChange()"
+            />
+          </div>
+
+          <!-- Transaction Type -->
+          <select class="tx-select" [(ngModel)]="selectedTransactionType" (change)="filterTransactions()">
+            <option value="SALE">Sale</option>
+            <option value="PURCHASE">Purchase</option>
+          </select>
+
+          <!-- Payment Method -->
+          <select class="tx-select" [(ngModel)]="paymentMethodFilter" (change)="onExtraFilterChange()">
+            <option value="ALL">All Payment Methods</option>
+            <option *ngFor="let method of paymentMethodOptions" [value]="method">{{ method }}</option>
+          </select>
+
+          <!-- Amount Range -->
+          <input
+            type="number"
+            class="tx-amount-input"
+            placeholder="Min Payment ₹"
+            [(ngModel)]="minAmount"
+            (ngModelChange)="onExtraFilterChange()"
+            min="0"
+          />
+          <span class="tx-range-sep">&ndash;</span>
+          <input
+            type="number"
+            class="tx-amount-input"
+            placeholder="Max Payment ₹"
+            [(ngModel)]="maxAmount"
+            (ngModelChange)="onExtraFilterChange()"
+            min="0"
+          />
+
+          <div class="tx-date-field">
+            <label class="tx-date-label">Start Date</label>
+            <div class="tx-date-input-shell">
+              <input
+                type="text"
+                class="tx-date-input"
+                [value]="getStartDisplay()"
+                readonly
+                [matMenuTriggerFor]="startMenu"
+                #startTrigger="matMenuTrigger"
+              />
+              <button mat-icon-button class="tx-date-icon-btn" (click)="startTrigger.openMenu()" aria-label="Open start date time">
+                <mat-icon>calendar_today</mat-icon>
+              </button>
             </div>
-            <div class="time-column">
-              <div class="time-col-title">Minutes</div>
-              <div class="time-list">
-                <button
-                  type="button"
-                  class="time-item"
-                  *ngFor="let m of minutes"
-                  [class.time-item--active]="m === startMinute"
-                  (click)="startMinute = m; applyDateFilter()">
-                  {{ m }}
-                </button>
+          </div>
+
+          <div class="tx-date-field">
+            <label class="tx-date-label">End Date</label>
+            <div class="tx-date-input-shell">
+              <input
+                type="text"
+                class="tx-date-input"
+                [value]="getEndDisplay()"
+                readonly
+                [matMenuTriggerFor]="endMenu"
+                #endTrigger="matMenuTrigger"
+              />
+              <button mat-icon-button class="tx-date-icon-btn" (click)="endTrigger.openMenu()" aria-label="Open end date time">
+                <mat-icon>calendar_today</mat-icon>
+              </button>
+            </div>
+          </div>
+
+          <div class="tx-filter-actions">
+            <button type="button" class="tx-icon-btn tx-icon-btn--clear" (click)="clearExtraFilters()" title="Clear filters" aria-label="Clear filters">
+              <mat-icon>restart_alt</mat-icon>
+            </button>
+            <button type="button" class="tx-btn tx-btn--primary" (click)="filterTransactions()">
+              <mat-icon>search</mat-icon>
+              Filter
+            </button>
+          </div>
+        </div>
+
+        <mat-menu #startMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
+          <div class="date-time-menu-content" (click)="$event.stopPropagation()">
+            <mat-calendar
+              [selected]="startDate"
+              [maxDate]="maxDate"
+              (selectedChange)="onStartDateSelected($event)">
+            </mat-calendar>
+            <div class="time-controls">
+              <div class="time-column">
+                <div class="time-col-title">Hours</div>
+                <div class="time-list">
+                  <button
+                    type="button"
+                    class="time-item"
+                    *ngFor="let h of hours"
+                    [class.time-item--active]="h === startHour"
+                    (click)="startHour = h; applyDateFilter()">
+                    {{ h }}
+                  </button>
+                </div>
+              </div>
+              <div class="time-column">
+                <div class="time-col-title">Minutes</div>
+                <div class="time-list">
+                  <button
+                    type="button"
+                    class="time-item"
+                    *ngFor="let m of minutes"
+                    [class.time-item--active]="m === startMinute"
+                    (click)="startMinute = m; applyDateFilter()">
+                    {{ m }}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </mat-menu>
+        </mat-menu>
 
-      <mat-menu #endMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
-        <div class="date-time-menu-content" (click)="$event.stopPropagation()">
-          <mat-calendar
-            [selected]="endDate"
-            [minDate]="minEndDate"
-            [maxDate]="maxDate"
-            (selectedChange)="onEndDateSelected($event)">
-          </mat-calendar>
-          <div class="time-controls">
-            <div class="time-column">
-              <div class="time-col-title">Hours</div>
-              <div class="time-list">
-                <button
-                  type="button"
-                  class="time-item"
-                  *ngFor="let h of hours"
-                  [class.time-item--active]="h === endHour"
-                  (click)="endHour = h; applyDateFilter()">
-                  {{ h }}
-                </button>
+        <mat-menu #endMenu="matMenu" class="date-time-menu" [overlapTrigger]="false">
+          <div class="date-time-menu-content" (click)="$event.stopPropagation()">
+            <mat-calendar
+              [selected]="endDate"
+              [minDate]="minEndDate"
+              [maxDate]="maxDate"
+              (selectedChange)="onEndDateSelected($event)">
+            </mat-calendar>
+            <div class="time-controls">
+              <div class="time-column">
+                <div class="time-col-title">Hours</div>
+                <div class="time-list">
+                  <button
+                    type="button"
+                    class="time-item"
+                    *ngFor="let h of hours"
+                    [class.time-item--active]="h === endHour"
+                    (click)="endHour = h; applyDateFilter()">
+                    {{ h }}
+                  </button>
+                </div>
               </div>
-            </div>
-            <div class="time-column">
-              <div class="time-col-title">Minutes</div>
-              <div class="time-list">
-                <button
-                  type="button"
-                  class="time-item"
-                  *ngFor="let m of minutes"
-                  [class.time-item--active]="m === endMinute"
-                  (click)="endMinute = m; applyDateFilter()">
-                  {{ m }}
-                </button>
+              <div class="time-column">
+                <div class="time-col-title">Minutes</div>
+                <div class="time-list">
+                  <button
+                    type="button"
+                    class="time-item"
+                    *ngFor="let m of minutes"
+                    [class.time-item--active]="m === endMinute"
+                    (click)="endMinute = m; applyDateFilter()">
+                    {{ m }}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+        </mat-menu>
+      </div>
+
+      <!-- ── Table Card ──────────────────────────────────────────── -->
+      <div class="tx-card tx-table-card">
+        <div class="tx-table-scroll" *ngIf="pagedTransactions.length">
+          <table class="tx-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Party</th>
+                <th>Transaction Date Time</th>
+                <th class="tx-th-num">Amount (₹)</th>
+                <th>Payment Method</th>
+                <th>Reference No</th>
+                <th>Notes</th>
+                <th class="tx-th-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let t of pagedTransactions">
+                <td class="tx-id-cell">{{ t.id }}</td>
+                <td class="tx-party-name">{{ t.party?.name || '—' }}</td>
+                <td>{{ getPaymentDateTime(t) | date:'dd/MM/yyyy hh:mm a' }}</td>
+                <td class="tx-td-num tx-amount-cell">₹{{ (t.paidAmount || t.totalAmount || 0) | number:'1.0-2' }}</td>
+                <td>
+                  <span class="tx-badge" [ngClass]="getPaymentMethodClass(getPaymentMethodValue(t))">
+                    {{ getPaymentMethodValue(t) || '—' }}
+                  </span>
+                </td>
+                <td class="tx-ref-no">{{ t.referenceNumber || t.referenceNo || t.invoiceNo || '—' }}</td>
+                <td>{{ t.notes || t.remarks || '—' }}</td>
+                <td class="tx-td-center">
+                  <div class="tx-row-actions">
+                    <button class="tx-icon-btn" matTooltip="View Receipt" (click)="viewPaymentReceipt(t.referenceNumber)" title="View PDF Receipt">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                    <button class="tx-icon-btn tx-icon-btn--download" matTooltip="Download Receipt" (click)="downloadPaymentReceipt(t.referenceNumber)" title="Download PDF Receipt">
+                      <mat-icon>download</mat-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </mat-menu>
-    </div>
-    <!-- Transactions Table -->
-    <div class="bg-gradient-to-br from-slate-900/90 to-slate-950 border border-purple-500/30 rounded-2xl backdrop-blur-xl overflow-hidden text-white">
-      <div class="overflow-x-auto">
-        <table mat-table [dataSource]="filteredTransactions" class="w-full bg-transparent text-white" *ngIf="filteredTransactions.length">
-          <ng-container matColumnDef="id">
-            <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">ID</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20">{{t.id}}</td>
-          </ng-container>
-          <ng-container matColumnDef="party">
-            <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Party</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20">{{t.party?.name}}</td>
-          </ng-container>
-          <ng-container matColumnDef="paymentDateTime">
-            <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Transaction Date Time</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20">{{ getPaymentDateTime(t) | date:'dd/MM/yyyy hh:mm a' }}</td>
-          </ng-container>
-          <ng-container matColumnDef="amount">
-            <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Amount (₹)</th>
-            <td mat-cell *matCellDef="let t" class="text-emerald-400 bg-transparent font-bold py-4 px-6 border-t border-purple-500/20">{{t.paidAmount || t.totalAmount || '-'}}</td>
-          </ng-container>
-          <ng-container matColumnDef="paymentMethod">
-            <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Payment Method</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20">{{t.paymentMode || t.paymentMethod || '-'}}</td>
-          </ng-container>
-          <ng-container matColumnDef="referenceNo">
-            <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Reference No</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20">{{t.referenceNo || t.invoiceNo || '-'}}</td>
-          </ng-container>
-          <ng-container matColumnDef="notes">
-            <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-left">Notes</th>
-            <td mat-cell *matCellDef="let t" class="text-purple-300 bg-transparent py-4 px-6 border-t border-purple-500/20">{{t.notes || t.remarks || '-'}}</td>
-          </ng-container>
-          <ng-container matColumnDef="actions">
-            <th mat-header-cell *matHeaderCellDef class="text-purple-300 font-bold py-4 px-6 text-center">Actions</th>
-            <td mat-cell *matCellDef="let t" class="bg-transparent py-4 px-6 border-t border-purple-500/20 text-center">
-              <div class="flex justify-center gap-2">
-                <button mat-icon-button matTooltip="View Receipt" (click)="viewPaymentReceipt(t?.referenceNumber)" class="text-blue-400 hover:text-blue-300 transition-colors" title="View PDF Receipt">
-                  <mat-icon>visibility</mat-icon>
-                </button>
-                <button mat-icon-button matTooltip="Download Receipt" (click)="downloadPaymentReceipt(t?.referenceNumber)" class="text-green-400 hover:text-green-300 transition-colors" title="Download PDF Receipt">
-                  <mat-icon>download</mat-icon>
-                </button>
-              </div>
-            </td>
-          </ng-container>
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="hover:bg-purple-500/10 transition-colors"></tr>
-        </table>
+
+        <div *ngIf="!pagedTransactions.length" class="tx-empty-cell">
+          <mat-icon>payments</mat-icon>
+          <p>No transactions found. Create your first transaction entry.</p>
+        </div>
+
+        <!-- Pagination -->
+        <div class="tx-pagination" *ngIf="totalFilteredCount">
+          <span class="tx-pg-info">
+            Showing <strong>{{ showingStart }}</strong> to <strong>{{ showingEnd }}</strong>
+            of <strong>{{ totalFilteredCount }}</strong> entries
+          </span>
+          <div class="tx-pg-size">
+            Rows:
+            <select [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+              <option *ngFor="let s of pageSizeOptions" [ngValue]="s">{{ s }}</option>
+            </select>
+          </div>
+          <div class="tx-pg-nav">
+            <button (click)="goToPage(0)"              [disabled]="currentPage === 0">«</button>
+            <button (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 0">‹</button>
+            <button class="tx-pg-current">{{ currentPage + 1 }}</button>
+            <button (click)="goToPage(currentPage + 1)" [disabled]="currentPage >= totalPages - 1">›</button>
+            <button (click)="goToPage(totalPages - 1)"  [disabled]="currentPage >= totalPages - 1">»</button>
+          </div>
+        </div>
       </div>
-      <div *ngIf="!filteredTransactions.length" class="p-8 text-center">
-        <mat-icon class="text-6xl text-purple-500/30 mb-4">payment</mat-icon>
-        <p class="text-purple-300/60">No transactions found. Create your first transaction entry.</p>
-      </div>
+
+      </ng-container>
+
     </div>
-  </div>
+  </main>
 </div>

@@ -1,4 +1,4 @@
-import { Component, Inject, OnInit, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Inject, Input, OnInit, Optional, Output, ViewChild } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -12,12 +12,12 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
-import { Transaction } from '../interface/Transaction';
+import { Transaction } from '../shared/models/transaction.model';
 import { SalesService } from '../services/sales.service';
 import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
 import { DataStoreService } from '../services/data-store.service';
-import { Party } from '../interface/party';
+import { Party } from '../shared/models/party.model';
 
 @Component({
   selector: 'app-transaction-dialog',
@@ -28,6 +28,13 @@ import { Party } from '../interface/party';
 })
 export class TransactionDialogComponent implements OnInit {
   @ViewChild('paymentTrigger') paymentMenuTrigger?: MatMenuTrigger;
+
+  /** Used when this component is embedded directly on a page instead of opened as a MatDialog. */
+  @Input() embeddedData?: Transaction;
+  @Output() saved = new EventEmitter<Transaction>();
+  @Output() cancelled = new EventEmitter<void>();
+
+  data!: Transaction;
 
   paymentMethods = ['Cash', 'Cheque', 'Bank Transfer', 'Card', 'UPI', 'Other'];
   isFetching = false;
@@ -58,20 +65,22 @@ export class TransactionDialogComponent implements OnInit {
   };
 
   constructor(
-    public dialogRef: MatDialogRef<TransactionDialogComponent>,
+    @Optional() public dialogRef: MatDialogRef<TransactionDialogComponent> | null,
     private salesService: SalesService,
     private purchaseService: PurchaseService,
     private store: DataStoreService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar,
-    @Inject(MAT_DIALOG_DATA) public data: Transaction
+    @Optional() @Inject(MAT_DIALOG_DATA) private dialogData: Transaction | null
   ) {}
 
   ngOnInit(): void {
+    this.data = this.dialogData ?? this.embeddedData ?? ({} as Transaction);
+
     const now = new Date();
     this.hours = this.buildHourOptions();
     this.minutes = this.buildMinuteOptions();
-    
+
     const paymentValue = this.data.paymentDate || now;
     this.paymentDateTime = this.toDateTimeLocalValue(paymentValue);
     this.syncPaymentPartsFromDateTime();
@@ -120,7 +129,11 @@ export class TransactionDialogComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.dialogRef.close();
+    if (this.dialogRef) {
+      this.dialogRef.close();
+    } else {
+      this.cancelled.emit();
+    }
   }
   isOverpay(): boolean {
     const paid = Number(this.data?.paidAmount || 0);
@@ -263,7 +276,11 @@ export class TransactionDialogComponent implements OnInit {
       const d = new Date(this.paymentDateTime);
       this.data.paymentDate = isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
     }
-    this.dialogRef.close(this.data);
+    if (this.dialogRef) {
+      this.dialogRef.close(this.data);
+    } else {
+      this.saved.emit(this.data);
+    }
   }
 
   getPaymentDisplay(): string {

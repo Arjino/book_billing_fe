@@ -1,0 +1,123 @@
+<div class="page-shell">
+  <app-sidebar-nav [items]="navItems"></app-sidebar-nav>
+
+  <main class="main-content">
+    <div class="form-header">
+      <div class="heading">
+        <div class="heading-icon">
+          <mat-icon>groups</mat-icon>
+        </div>
+        <div>
+          <h1>{{ isEditMode ? 'Edit Party Profile' : 'Add Party / Client Profile' }}</h1>
+          <p>{{ isEditMode ? 'Update customer depot or supplier publisher contact details' : 'Customer book depot or supplier publisher account' }}</p>
+        </div>
+      </div>
+      <button type="button" class="btn btn-ghost" (click)="onCancel()">
+        <mat-icon>close</mat-icon>
+        Back to Parties
+      </button>
+    </div>
+
+    <section class="panel">
+      <form #partyForm="ngForm" class="party-form">
+        <div class="form-row full-width">
+          <label for="partyName">Party / Business Name *</label>
+          <input
+            id="partyName"
+            [(ngModel)]="data.name"
+            name="name"
+            required
+            pattern="^[A-Za-z0-9 .&()-]+$"
+            #nameModel="ngModel"
+            placeholder="e.g. Sanskar Book Depot"
+          />
+          <small class="error" *ngIf="nameModel.invalid && (nameModel.dirty || nameModel.touched)">
+            Enter a valid party name.
+          </small>
+        </div>
+
+        <div class="form-row two-col">
+          <div>
+            <label for="partyType">Party Type *</label>
+            <select id="partyType" [(ngModel)]="data.type" name="type" required #typeModel="ngModel">
+              <option value="Consumer">Customer / Book Depot</option>
+              <option value="Supplier">Supplier / Publisher</option>
+              <option value="Distributor">Distributor</option>
+              <option value="Retailer">Retailer</option>
+              <option value="Customer">Customer</option>
+            </select>
+            <small class="error" *ngIf="typeModel.invalid && (typeModel.dirty || typeModel.touched)">
+              Select a party type.
+            </small>
+          </div>
+
+          <div>
+            <label for="partyPhone">Phone Number *</label>
+            <input
+              id="partyPhone"
+              type="tel"
+              [(ngModel)]="data.phone"
+              name="phone"
+              required
+              pattern="^[6-9][0-9]{9}$"
+              maxlength="10"
+              inputmode="numeric"
+              #phoneModel="ngModel"
+              (input)="onPhoneInput($event)"
+              placeholder="e.g. 9879123456"
+            />
+            <small class="error" *ngIf="phoneModel.invalid && (phoneModel.dirty || phoneModel.touched)">
+              Phone must be 10 digits starting with 6-9.
+            </small>
+          </div>
+        </div>
+
+        <div class="form-row two-col">
+          <div>
+            <label for="partyGstin">GSTIN Number</label>
+            <input
+              id="partyGstin"
+              [(ngModel)]="data.gstin"
+              name="gstin"
+              pattern="^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$"
+              #gstModel="ngModel"
+              placeholder="e.g. 07AABC1234A1Z5"
+            />
+            <small class="error" *ngIf="gstModel.invalid && (gstModel.dirty || gstModel.touched)">
+              Invalid GSTIN format.
+            </small>
+          </div>
+
+          <div>
+            <label for="partyBalance">{{ isEditMode ? 'Current Balance (₹)' : 'Opening Balance (₹)' }}</label>
+            <input id="partyBalance" value="0" disabled />
+          </div>
+        </div>
+
+        <div class="form-row full-width">
+          <label for="partyAddress">Billing Address *</label>
+          <textarea
+            id="partyAddress"
+            [(ngModel)]="data.address"
+            name="address"
+            required
+            rows="5"
+            #addrModel="ngModel"
+            placeholder="e.g. Shop 14, Main Market, Meerut"
+          ></textarea>
+          <small class="error" *ngIf="addrModel.invalid && (addrModel.dirty || addrModel.touched)">
+            Address is required.
+          </small>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" (click)="onCancel()">Cancel</button>
+          <button type="button" class="btn btn-primary" (click)="onSave()" [disabled]="partyForm.invalid || saving">
+            <mat-icon>save</mat-icon>
+            {{ isEditMode ? 'Save Changes' : 'Save Party Profile' }}
+          </button>
+        </div>
+      </form>
+    </section>
+  </main>
+</div>

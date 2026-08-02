@@ -3,18 +3,12 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { PurchaseInvoice } from '../interface/purchase-invoice';
-import { ReceivingOrder } from '../interface/receiving-order';
-import { PurchaseOrder } from '../interface/purchase-order';
-import { PurchaseReturn } from '../interface/purchase-return';
-import { SpringPage } from '../interface/spring-page';
+import { PurchaseInvoice, ReceivingOrder, PurchaseOrder, PurchaseReturn } from '../features/purchase/purchase.models';
+import { SpringPage } from '../shared/models/spring-page.model';
 import { enviort } from '../../environments/environment';
 import { normalizeUTCDatePayload } from '../utils/date.utils';
-import { ReturnRequest } from '../interface/return-request';
-import { StockSummary } from '../interface/stock-summary';
-import { StockLedgerEntry } from '../interface/stock-ledger-entry';
-import { ManualStockAdjustmentRequest } from '../interface/manual-stock-adjustment-request';
-import { StockReconciliationReport } from '../interface/stock-reconciliation-report';
+import { ReturnRequest } from '../shared/models/return-request.model';
+import { StockSummary, StockLedgerEntry, ManualStockAdjustmentRequest, StockReconciliationReport } from '../shared/models/stock.model';
 
 @Injectable({ providedIn: 'root' })
 export class PurchaseService {
@@ -309,6 +303,42 @@ export class PurchaseService {
     }).pipe(
       catchError((error) => {
         console.error('Error downloading receiving order PDF:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  deletePurchaseOrder(poNumber: string): Observable<void> {
+    return this.http.delete<void>(`${enviort.purchaseOrdersUrl}/${encodeURIComponent(poNumber)}`, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error deleting purchase order:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  deleteReceivingOrder(grnNumber: string): Observable<void> {
+    return this.http.delete<void>(`${enviort.receivingOrdersUrl}/${encodeURIComponent(grnNumber)}`, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error deleting receiving order:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  deletePurchase(id: number): Observable<void> {
+    return this.http.delete<void>(`${enviort.purchasesUrl}/${id}`, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error deleting purchase:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  deletePurchaseReturn(id: number): Observable<void> {
+    return this.http.delete<void>(`${enviort.purchaseReturnsUrl}/${id}`, { headers: this.auth.getAuthHeaders() }).pipe(
+      catchError((error) => {
+        console.error('Error deleting purchase return:', error);
         return throwError(() => error);
       })
     );
