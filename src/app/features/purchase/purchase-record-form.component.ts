@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -15,6 +15,7 @@ import { Book } from '../../shared/models/book.model';
 import { Party } from '../../shared/models/party.model';
 import { RoPaymentPromptDialogComponent } from '../../purchase/ro-payment-prompt-dialog.component';
 import { SidebarNavComponent } from '../../shared/ui/sidebar-nav/sidebar-nav.component';
+import { SearchableSelectComponent, SearchableSelectOption } from '../../shared/ui/searchable-select/searchable-select.component';
 import { buildAppNavItems } from '../../shared/nav-items';
 import { NavItem } from '../../shared/models/common.models';
 
@@ -67,7 +68,7 @@ function emptyLine(): FormLine {
 @Component({
   selector: 'app-purchase-record-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatSnackBarModule, SidebarNavComponent],
+  imports: [CommonModule, FormsModule, MatSnackBarModule, SidebarNavComponent, SearchableSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './purchase-record-form.component.html',
   styleUrls: ['./purchase-record-form.component.css']
@@ -94,6 +95,7 @@ export class PurchaseRecordFormComponent implements OnInit {
 
   constructor(
     private readonly router: Router,
+    private readonly route: ActivatedRoute,
     private readonly dialog: MatDialog,
     private readonly store: DataStoreService,
     private readonly purchaseService: PurchaseService,
@@ -104,6 +106,13 @@ export class PurchaseRecordFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.navItems = buildAppNavItems();
+
+    // Arriving via a tab's "+ New ..." button (e.g. from the Receiving Orders
+    // tab) should land straight on that record type instead of the generic default.
+    const requestedType = this.route.snapshot.queryParamMap.get('type') as RecordType | null;
+    if (requestedType && this.recordTypeOptions.some((o) => o.value === requestedType)) {
+      this.recordType = requestedType;
+    }
 
     this.store.getBooks().subscribe((data) => {
       this.books = Array.isArray(data) ? data : ((data as any)?.content || []);
@@ -184,6 +193,26 @@ export class PurchaseRecordFormComponent implements OnInit {
   bookLabel(book: Book | null): string {
     if (!book) return '';
     return `${book.title} (SKU: ${book.sku} • Stock: ${book.stock})`;
+  }
+
+  get supplierOptions(): SearchableSelectOption<Party>[] {
+    return this.suppliers.map((party) => ({
+      value: party,
+      label: party.name || '',
+      sublabel: party.phone || ''
+    }));
+  }
+
+  get bookOptions(): SearchableSelectOption<number>[] {
+    return this.books.map((book) => ({ value: book.id, label: this.bookLabel(book) }));
+  }
+
+  get poNumberOptions(): SearchableSelectOption<string>[] {
+    return this.openPurchaseOrders.map((po) => ({
+      value: po.poNumber || '',
+      label: po.poNumber || '',
+      sublabel: po.party?.name || ''
+    }));
   }
 
   onBookSelected(line: FormLine, bookId: string): void {

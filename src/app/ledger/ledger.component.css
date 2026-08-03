@@ -492,6 +492,17 @@
   border-color: var(--icon-btn-hover-border);
 }
 
+.ld-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.ld-icon-btn:disabled:hover {
+  background: var(--icon-btn-bg);
+  color: var(--icon-btn-color);
+  border-color: var(--icon-btn-border);
+}
+
 /* Empty cell */
 .ld-empty-cell {
   text-align: center;

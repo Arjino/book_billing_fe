@@ -12,6 +12,7 @@ import { ReturnRequest } from '../shared/models/return-request.model';
 import { Book } from '../shared/models/book.model';
 import { Party } from '../shared/models/party.model';
 import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
+import { SearchableSelectComponent, SearchableSelectOption } from '../shared/ui/searchable-select/searchable-select.component';
 import { buildAppNavItems } from '../shared/nav-items';
 import { NavItem } from '../shared/models/common.models';
 
@@ -49,7 +50,7 @@ function emptyLine(): SaleLine {
 @Component({
   selector: 'app-sale-record-form',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatSnackBarModule, SidebarNavComponent],
+  imports: [CommonModule, FormsModule, MatSnackBarModule, SidebarNavComponent, SearchableSelectComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sale-record-form.component.html',
   styleUrls: ['./sale-record-form.component.css']
@@ -124,6 +125,18 @@ export class SaleRecordFormComponent implements OnInit {
   bookLabel(book: Book | null): string {
     if (!book) return '';
     return `${book.title} (SKU: ${book.sku} • Stock: ${book.stock} • MRP ₹${book.mrp})`;
+  }
+
+  get partyOptions(): SearchableSelectOption<Party>[] {
+    return this.parties.map((party) => ({
+      value: party,
+      label: party.name || '',
+      sublabel: party.phone || ''
+    }));
+  }
+
+  get bookOptions(): SearchableSelectOption<number>[] {
+    return this.books.map((book) => ({ value: book.id, label: this.bookLabel(book) }));
   }
 
   onBookSelected(line: SaleLine, bookId: string): void {

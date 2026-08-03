@@ -16,14 +16,16 @@ export class NavBadgeCountsService {
 
   constructor(private readonly store: DataStoreService) {
     this.counts$ = combineLatest([
-      this.store.getBooks(),
-      this.store.getParties(),
+      this.store.getBooksCount(),
+      this.store.getPartiesCount(),
       this.store.getSales(),
       this.store.getTransactions()
     ]).pipe(
       map(([books, parties, sales, transactions]) => ({
-        books: books.length,
-        parties: parties.length,
+        // Books/Parties come from the server-reported total (paginated endpoints
+        // only return one page's worth of rows, so array length undercounts).
+        books,
+        parties,
         sales: sales.length,
         transactions: transactions.length
       })),

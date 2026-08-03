@@ -20,7 +20,8 @@
       class="nav-item"
       [routerLink]="item.route"
       routerLinkActive="active"
-      [routerLinkActiveOptions]="{ exact: false }">
+      [routerLinkActiveOptions]="{ exact: false }"
+      [title]="item.label">
       <span class="material-icons nav-icon">{{ item.icon }}</span>
       <span class="nav-text">
         <span class="nav-label">{{ item.label }}</span>
@@ -40,8 +41,11 @@
   </nav>
 
   <div class="sidebar-footer">
-    <span class="status-dot"></span>
-    <span class="status-text">{{ statusText }}</span>
-    <span class="version-text">{{ versionText }}</span>
+    <div class="sidebar-footer-status">
+      <span class="status-dot"></span>
+      <span class="status-text">{{ statusText }}</span>
+      <span class="version-text">{{ versionText }}</span>
+    </div>
+    <app-session-timer></app-session-timer>
   </div>
 </aside>

@@ -251,10 +251,18 @@
               <td class="ld-remarks">{{ r.remarks || '' }}</td>
               <td>
                 <div class="ld-row-actions">
-                  <button class="ld-icon-btn" (click)="openInvoicePreview(r)" title="Preview PDF">
+                  <button
+                    class="ld-icon-btn"
+                    [disabled]="isReturnEntry(r)"
+                    (click)="openInvoicePreview(r)"
+                    [title]="isReturnEntry(r) ? 'Return receipts are only available at the time the return is processed' : 'Preview PDF'">
                     <mat-icon>picture_as_pdf</mat-icon>
                   </button>
-                  <button class="ld-icon-btn" (click)="downloadInvoice(r)" title="Download PDF">
+                  <button
+                    class="ld-icon-btn"
+                    [disabled]="isReturnEntry(r)"
+                    (click)="downloadInvoice(r)"
+                    [title]="isReturnEntry(r) ? 'Return receipts are only available at the time the return is processed' : 'Download PDF'">
                     <mat-icon>download</mat-icon>
                   </button>
                 </div>

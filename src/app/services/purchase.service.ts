@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { PurchaseInvoice, ReceivingOrder, PurchaseOrder, PurchaseReturn } from '../features/purchase/purchase.models';
 import { SpringPage } from '../shared/models/spring-page.model';
@@ -152,13 +152,18 @@ export class PurchaseService {
   }
 
   getReceivingOrdersByDateRange(startDateTime: string, endDateTime: string): Observable<ReceivingOrder[]> {
-    const params = new HttpParams()
-      .set('startDateTime', startDateTime)
-      .set('endDateTime', endDateTime);
-    return this.http.get<ReceivingOrder[]>(enviort.receivingOrdersUrl, {
-      headers: this.auth.getAuthHeaders(),
-      params
-    }).pipe(
+    // The backend's GET /api/receiving-orders endpoint takes no date-range
+    // query params (unlike purchase-orders/purchases), so filtering has to
+    // happen client-side against the full list.
+    const start = new Date(startDateTime).getTime();
+    const end = new Date(endDateTime).getTime();
+    return this.getReceivingOrders().pipe(
+      map((orders) => (orders || []).filter((ro) => {
+        const raw = (ro as any)?.createdAt || ro?.receivedDate;
+        if (!raw) return false;
+        const t = new Date(raw).getTime();
+        return !isNaN(t) && t >= start && t <= end;
+      })),
       catchError((error) => {
         console.error('Error loading receiving orders by date range:', error);
         return throwError(() => error);

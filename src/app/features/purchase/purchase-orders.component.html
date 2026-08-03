@@ -16,7 +16,7 @@
       <div class="header-actions">
         <button type="button" class="btn btn-primary" (click)="openNewRecordForm()">
           <span class="material-icons">add</span>
-          New Purchase Record / Return
+          {{ newRecordButtonLabel }}
         </button>
       </div>
     </div>
@@ -49,17 +49,17 @@
           <span class="material-icons search-icon">search</span>
           <input
             type="text"
-            placeholder="Search Record No, Supplier, Reason, Book..."
+            placeholder="Search record, supplier, book..."
             [ngModel]="searchValue"
             (ngModelChange)="onSearchChange($event)" />
         </div>
 
         <div class="amount-field">
-          <input type="number" min="0" [(ngModel)]="minAmount" (change)="onAmountChange()" placeholder="Min Amount ₹" />
+          <input type="number" min="0" [(ngModel)]="minAmount" (change)="onAmountChange()" placeholder="Min ₹" />
         </div>
         <span class="amount-sep">-</span>
         <div class="amount-field">
-          <input type="number" min="0" [(ngModel)]="maxAmount" (change)="onAmountChange()" placeholder="Max Amount ₹" />
+          <input type="number" min="0" [(ngModel)]="maxAmount" (change)="onAmountChange()" placeholder="Max ₹" />
         </div>
 
         <div class="date-field">

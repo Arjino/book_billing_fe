@@ -69,7 +69,7 @@ export function buildAppNavItems(
     },
     {
       id: 'purchase-orders',
-      label: 'Purchase Orders',
+      label: 'Purchase and Return / Procurement',
       description: 'Stock receiving & returns',
       icon: 'local_shipping',
       route: '/purchase',

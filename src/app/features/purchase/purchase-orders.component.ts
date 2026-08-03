@@ -70,6 +70,16 @@ const TYPE_BADGE_LABEL: Readonly<Record<PurchaseRecordType, string>> = {
   PURCHASE_RETURN: 'PURCHASE RETURN'
 };
 
+// "+ New ..." button label per active tab, so the button always reflects
+// what it's actually about to create instead of a generic catch-all label.
+const NEW_RECORD_BUTTON_LABEL: Readonly<Record<TabId, string>> = {
+  all: 'New Purchase Record / Return',
+  po: 'New Purchase Order',
+  receiving: 'New Receiving Order',
+  bills: 'New Purchase Bill',
+  returns: 'New Purchase Return'
+};
+
 /**
  * Unified "Purchase & Stock Inbound Orders" list. Merges purchase orders,
  * receiving orders (GRNs), direct purchase bills and purchase returns into
@@ -185,6 +195,10 @@ export class PurchaseOrdersComponent implements OnInit {
     return this.tabs.find((t) => t.id === this.activeTab)?.label ?? 'Purchase Records';
   }
 
+  get newRecordButtonLabel(): string {
+    return NEW_RECORD_BUTTON_LABEL[this.activeTab];
+  }
+
   tabCount(tab: TabConfig): number {
     if (!tab.type) return this.allRows.length;
     return this.allRows.filter((row) => row.recordType === tab.type).length;
@@ -298,6 +312,10 @@ export class PurchaseOrdersComponent implements OnInit {
     this.startDate = date;
     if (date) {
       this.minEndDate = new Date(date);
+      // Keep the range valid if the previously chosen end date now falls before it.
+      if (this.endDate && this.endDate.getTime() < date.getTime()) {
+        this.endDate = new Date(date);
+      }
     }
     this.startMenuTrigger?.closeMenu();
   }
@@ -596,7 +614,8 @@ export class PurchaseOrdersComponent implements OnInit {
   }
 
   openNewRecordForm(): void {
-    this.router.navigate(['/purchase/new']);
+    const activeType = this.tabs.find((t) => t.id === this.activeTab)?.type ?? null;
+    this.router.navigate(['/purchase/new'], activeType ? { queryParams: { type: activeType } } : {});
   }
 
   trackByRowKey = (row: PurchaseRecordRow): string => row.key;

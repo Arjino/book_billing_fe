@@ -11,12 +11,20 @@ import { enviort } from '../../environments/environment';
 import { normalizeUTCDatePayload, toUTCDateTimePlus00 } from '../utils/date.utils';
 import { ReturnRequest } from '../shared/models/return-request.model';
 
+// The books/parties list endpoints default to a 20-row page server-side.
+// DataStoreService caches these as "the full list" for counts, dropdowns and
+// dashboard aggregation, so the initial load must ask for effectively
+// everything in one page rather than silently getting capped at 20.
+const CACHE_ALL_PAGE_SIZE = 1000;
+
 @Injectable({ providedIn: 'root' })
 export class DataStoreService {
   private parties$ = new BehaviorSubject<Party[]>([]);
   private books$ = new BehaviorSubject<Book[]>([]);
   private sales$ = new BehaviorSubject<Sale[]>([]);
   private transactions$ = new BehaviorSubject<Transaction[]>([]);
+  private partiesCount$ = new BehaviorSubject<number>(0);
+  private booksCount$ = new BehaviorSubject<number>(0);
   private partiesLoaded = false;
   private booksLoaded = false;
   private booksLoading = false;
@@ -36,7 +44,8 @@ export class DataStoreService {
     if (this.partiesLoaded && !force) return;
     // mark as loading immediately to prevent duplicate parallel requests
     this.partiesLoaded = true;
-    this.http.get<any>(enviort.partiesUrl, { headers: this.auth.getAuthHeaders() })
+    const params = new HttpParams().set('size', String(CACHE_ALL_PAGE_SIZE));
+    this.http.get<any>(enviort.partiesUrl, { headers: this.auth.getAuthHeaders(), params })
       .pipe(catchError(() => of([])))
       ?.subscribe(data => {
         if(!data){
@@ -45,7 +54,16 @@ export class DataStoreService {
         // Extract content array from paginated response, or use data directly if it's an array
         const parties = Array.isArray(data) ? data : (data?.content || []);
         this.parties$.next(parties);
+        // Prefer the server-reported total (paginated responses only return one page),
+        // falling back to the array length when the endpoint isn't paginated.
+        const total = Array.isArray(data) ? data.length : (data?.totalElements ?? parties.length);
+        this.partiesCount$.next(total);
       });
+  }
+
+  getPartiesCount(): Observable<number> {
+    if (!this.partiesLoaded) this.loadParties();
+    return this.partiesCount$.asObservable();
   }
 
   refreshParties(): void {
@@ -148,13 +166,18 @@ export class DataStoreService {
       return this.books$.asObservable();
     }
     this.booksLoading = true;
-    const request$ = this.http.get<any>(enviort.bookingUrl, { headers: this.auth.getAuthHeaders() })
+    const params = new HttpParams().set('size', String(CACHE_ALL_PAGE_SIZE));
+    const request$ = this.http.get<any>(enviort.bookingUrl, { headers: this.auth.getAuthHeaders(), params })
       .pipe(
         catchError(() => {
           this.booksLoaded = false;
           return of([]);
         }),
         // Extract content array from paginated response, or use data directly if it's an array
+        tap((data: any) => {
+          const total = Array.isArray(data) ? data.length : (data?.totalElements ?? (data?.content || []).length);
+          this.booksCount$.next(total);
+        }),
         map(data => (Array.isArray(data) ? data : (data?.content || []))),
         tap(books => {
           this.booksLoaded = true;
@@ -173,6 +196,11 @@ export class DataStoreService {
   refreshBooks(): void {
     this.booksLoaded = false;
     this.loadBooks(true);
+  }
+
+  getBooksCount(): Observable<number> {
+    if (!this.booksLoaded) this.loadBooks();
+    return this.booksCount$.asObservable();
   }
 
   updateBook(id: number, book: Book): Observable<Book> {

@@ -29,22 +29,21 @@
 
       <div class="field" *ngIf="requiresPoNumber">
         <label>Purchase Order Number *</label>
-        <select [ngModel]="poNumber" (ngModelChange)="onPoNumberSelected($event)">
-          <option [ngValue]="null" disabled>Select an open purchase order</option>
-          <option *ngFor="let po of openPurchaseOrders" [ngValue]="po.poNumber">
-            {{ po.poNumber }} &mdash; {{ po.party?.name }}
-          </option>
-        </select>
+        <app-searchable-select
+          [options]="poNumberOptions"
+          [ngModel]="poNumber"
+          (ngModelChange)="onPoNumberSelected($event)"
+          placeholder="Search PO number or supplier...">
+        </app-searchable-select>
       </div>
 
       <div class="field" *ngIf="!requiresPoNumber">
         <label>Supplier / Publisher *</label>
-        <select [(ngModel)]="supplier">
-          <option [ngValue]="null" disabled>Select a supplier</option>
-          <option *ngFor="let party of suppliers" [ngValue]="party">
-            {{ party.name }} ({{ party.phone }})
-          </option>
-        </select>
+        <app-searchable-select
+          [options]="supplierOptions"
+          [(ngModel)]="supplier"
+          placeholder="Search supplier...">
+        </app-searchable-select>
       </div>
 
       <div class="field" *ngIf="requiresPoNumber">
@@ -82,10 +81,13 @@
       <div class="line-card" *ngFor="let line of lines; let i = index">
         <div class="line-card-head">
           <span class="line-index">#{{ i + 1 }}</span>
-          <select class="book-select" [ngModel]="line.book?.id ?? null" (ngModelChange)="onBookSelected(line, $event)">
-            <option [ngValue]="null" disabled>Select a book</option>
-            <option *ngFor="let book of books" [ngValue]="book.id">{{ bookLabel(book) }}</option>
-          </select>
+          <app-searchable-select
+            class="book-select"
+            [options]="bookOptions"
+            [ngModel]="line.book?.id ?? null"
+            (ngModelChange)="onBookSelected(line, $event)"
+            placeholder="Search book title or SKU...">
+          </app-searchable-select>
           <button type="button" class="icon-btn danger" (click)="removeLine(i)" title="Remove line">
             <span class="material-icons">delete</span>
           </button>

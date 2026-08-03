@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { NavItem } from '../../models/common.models';
+import { SessionTimerComponent } from '../session-timer/session-timer.component';
 
 /**
  * Reusable left-hand navigation shell. Fully presentational: active state
@@ -11,7 +12,7 @@ import { NavItem } from '../../models/common.models';
 @Component({
   selector: 'app-sidebar-nav',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, SessionTimerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './sidebar-nav.component.html',
   styleUrls: ['./sidebar-nav.component.css']

@@ -628,6 +628,14 @@ export class LedgerComponent implements OnInit, OnDestroy {
     return refType.includes('purchase') ? 'purchase' : 'sale';
   }
 
+  // Sale/purchase returns only ever get their receipt PDF once, as the
+  // synchronous response to the return-creation call — the backend has no
+  // endpoint to re-fetch that PDF afterwards, so ledger rows for a return
+  // can't offer a working preview/download the way invoice rows can.
+  isReturnEntry(entry: any): boolean {
+    return (entry?.refType || '').toString().toLowerCase().includes('return');
+  }
+
   private getPaymentReferenceNumber(entry: any): string | null {
     const referenceNumber = entry?.referenceNumber ?? entry?.refId;
     if (referenceNumber === null || referenceNumber === undefined || referenceNumber === '') {
@@ -637,6 +645,15 @@ export class LedgerComponent implements OnInit, OnDestroy {
   }
 
   openInvoicePreview(entry: any): void {
+    if (this.isReturnEntry(entry)) {
+      this.snackBar.open(
+        'Return receipts can only be downloaded at the time the return is processed; historical re-download isn\'t supported yet.',
+        'Close',
+        { duration: 6000 }
+      );
+      return;
+    }
+
     const refType = (entry?.refType || '').toString().toLowerCase();
     if (refType.includes('payment')) {
 
@@ -667,6 +684,15 @@ export class LedgerComponent implements OnInit, OnDestroy {
   }
 
   downloadInvoice(entry: any): void {
+    if (this.isReturnEntry(entry)) {
+      this.snackBar.open(
+        'Return receipts can only be downloaded at the time the return is processed; historical re-download isn\'t supported yet.',
+        'Close',
+        { duration: 6000 }
+      );
+      return;
+    }
+
     const refType = (entry?.refType || '').toString().toLowerCase();
     if (refType.includes('payment')) {
       const referenceNumber = this.getPaymentReferenceNumber(entry);

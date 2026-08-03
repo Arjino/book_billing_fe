@@ -1,0 +1,37 @@
+<div class="searchable-select" [class.disabled]="disabled" [class.open]="open">
+  <div class="searchable-select-control">
+    <input
+      type="text"
+      class="searchable-select-input"
+      [placeholder]="placeholder"
+      [disabled]="disabled"
+      [value]="displayValue"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+      (input)="onInput($any($event.target).value)"
+      (keydown)="onKeydown($event)"
+      autocomplete="off"
+    />
+    <button
+      type="button"
+      class="searchable-select-clear"
+      *ngIf="selectedOption && !disabled"
+      (mousedown)="clearSelection($event)"
+      title="Clear selection">
+      <span class="material-icons">close</span>
+    </button>
+    <span class="material-icons searchable-select-caret">expand_more</span>
+  </div>
+
+  <div class="searchable-select-panel" *ngIf="open">
+    <div
+      class="searchable-select-option"
+      *ngFor="let option of filteredOptions; let i = index"
+      [class.active]="i === activeIndex"
+      (mousedown)="selectOption(option)">
+      <span class="searchable-select-option-label">{{ option.label }}</span>
+      <span class="searchable-select-option-sublabel" *ngIf="option.sublabel">{{ option.sublabel }}</span>
+    </div>
+    <div class="searchable-select-empty" *ngIf="!filteredOptions.length">{{ emptyMessage }}</div>
+  </div>
+</div>
