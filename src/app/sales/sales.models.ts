@@ -6,6 +6,10 @@ export interface SaleReturnItem {
   bookId: string;
   qty: number;
   rate?: number;
+  /** Discount% carried over from the original sale invoice line (bug #18). */
+  discountPercent?: number;
+  /** rate * qty, net of discountPercent (bug #18). */
+  netAmount?: number;
 }
 
 export interface SaleReturn {

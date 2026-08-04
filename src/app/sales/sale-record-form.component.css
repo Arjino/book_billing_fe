@@ -9,7 +9,7 @@
 .main-content {
   flex: 1;
   height: 100vh;
-  padding: 24px 28px 120px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -334,13 +334,19 @@
   gap: 10px;
 }
 
-.line-card-fields input {
+.line-card-fields input,
+.line-total {
+  /* border-box so the 1px input border doesn't push inputs 2px taller than the
+     borderless Amount box beside them in the same grid row (bug #14). */
+  box-sizing: border-box;
   height: 38px;
+}
+
+.line-card-fields input {
   background: var(--color-surface);
 }
 
 .line-total {
-  height: 38px;
   display: flex;
   align-items: center;
   padding: 0 10px;
@@ -405,8 +411,8 @@
 }
 
 .form-footer {
-  position: sticky;
-  bottom: 16px;
+  /* Normal document flow at the very end of the page, not a floating/sticky
+     bar (bug #11). */
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -416,7 +422,6 @@
   border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 16px 22px;
-  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
 }
 
 .footer-summary {

@@ -46,10 +46,11 @@ export class DashboardService {
       this.store.getSales(),
       this.store.getBooks(),
       this.store.getParties(),
-      this.store.getTransactions()
+      this.store.getTransactions(),
+      this.store.getHiddenBooks()
     ]).pipe(
-      map(([sales, books, parties, transactions]) =>
-        this.buildOverview(sales || [], books || [], parties || [], transactions || [], resolvedOptions)
+      map(([sales, books, parties, transactions, hiddenBooks]) =>
+        this.buildOverview(sales || [], books || [], parties || [], transactions || [], resolvedOptions, hiddenBooks || [])
       )
     );
   }
@@ -78,12 +79,13 @@ export class DashboardService {
     books: Book[],
     parties: Party[],
     transactions: Transaction[],
-    options: ResolvedDashboardOverviewOptions
+    options: ResolvedDashboardOverviewOptions,
+    hiddenBooks: Book[]
   ): DashboardOverview {
     return {
       revenue: this.buildRevenueSummary(sales),
       outstandingDebt: this.buildOutstandingDebtSummary(sales, parties),
-      stock: this.buildStockSummary(books, options.lowStockThreshold),
+      stock: this.buildStockSummary(books, options.lowStockThreshold, hiddenBooks),
       cashbook: this.buildCashbookSummary(transactions),
       recentInvoices: this.buildRecentInvoices(sales, options.recentInvoicesLimit),
       lowStockAlerts: this.buildLowStockAlerts(books, options.lowStockThreshold),
@@ -114,8 +116,10 @@ export class DashboardService {
     };
   }
 
-  private buildStockSummary(books: Book[], lowStockThreshold: number): StockOverviewSummary {
-    const totalStockUnits = books.reduce((sum, book) => sum + (book.stock || 0), 0);
+  private buildStockSummary(books: Book[], lowStockThreshold: number, hiddenBooks: Book[] = []): StockOverviewSummary {
+    // getBooks() only returns visible titles, but hidden ones still hold real physical
+    // stock — omitting them here is what made the dashboard total undercount (bug #9).
+    const totalStockUnits = [...books, ...hiddenBooks].reduce((sum, book) => sum + (book.stock || 0), 0);
     const lowStockTitlesCount = books.filter(
       (book) => this.mapStockLevelStatus(book.stock, lowStockThreshold) !== 'IN_STOCK'
     ).length;

@@ -9,7 +9,7 @@
 .main-content {
   flex: 1;
   height: 100vh;
-  padding: 24px 28px 120px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -321,7 +321,7 @@
 
 .line-card-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -329,17 +329,28 @@
   margin-top: 0;
 }
 
+.line-card-fields .field label {
+  white-space: nowrap;
+}
+
 .line-card-fields--ro {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  /* Auto-fit instead of a hard 5-column split so the RO qty boxes (Ordered/
+     Remaining/Received/Accepted/Rejected) reflow instead of squeezing their
+     labels into unreadable widths inside the half-width line card (bug #4). */
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+}
+
+.line-card-fields input,
+.line-total {
+  box-sizing: border-box;
+  height: 38px;
 }
 
 .line-card-fields input {
-  height: 38px;
   background: var(--color-surface);
 }
 
 .line-total {
-  height: 38px;
   display: flex;
   align-items: center;
   padding: 0 10px;
@@ -351,8 +362,9 @@
 }
 
 .form-footer {
-  position: sticky;
-  bottom: 16px;
+  /* Normal document flow at the very end of the page, not a floating/sticky
+     bar — it should read as the last thing on the page, not hover mid-content
+     (bug #11). */
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -362,7 +374,6 @@
   border: 1px solid var(--color-border);
   border-radius: 16px;
   padding: 16px 22px;
-  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.08);
 }
 
 .footer-summary {

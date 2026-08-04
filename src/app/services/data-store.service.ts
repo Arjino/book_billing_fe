@@ -198,6 +198,20 @@ export class DataStoreService {
     this.loadBooks(true);
   }
 
+  /**
+   * Hidden books (discontinued/temporarily delisted from pickers) still hold real physical
+   * stock, so dashboard-wide stock totals need them too even though `getBooks()` deliberately
+   * excludes them everywhere else (bug: dashboard total stock undercounting hidden titles).
+   * Not cached like `getBooks()` — this is only used for that one aggregate.
+   */
+  getHiddenBooks(): Observable<Book[]> {
+    const params = new HttpParams().set('size', String(CACHE_ALL_PAGE_SIZE));
+    return this.http.get<any>(`${enviort.bookingUrl}/hidden`, { headers: this.auth.getAuthHeaders(), params }).pipe(
+      map((data) => (Array.isArray(data) ? data : (data?.content || []))),
+      catchError(() => of([]))
+    );
+  }
+
   getBooksCount(): Observable<number> {
     if (!this.booksLoaded) this.loadBooks();
     return this.booksCount$.asObservable();

@@ -60,8 +60,11 @@ const TABLE_COLUMNS: ReadonlyArray<DataTableColumn> = [
 const TABLE_ACTIONS: ReadonlyArray<TableActionConfig> = [
   { id: 'preview', icon: 'visibility', label: 'Preview', tone: 'primary' },
   { id: 'download', icon: 'download', label: 'Download PDF', tone: 'default' },
+  { id: 'pay', icon: 'payments', label: 'Pay', tone: 'success' },
   { id: 'delete', icon: 'delete', label: 'Delete Record', tone: 'danger' }
 ];
+
+const UNPAID_STATUSES: ReadonlySet<string> = new Set(['UNPAID', 'PARTIAL', 'PARTIALLY_PAID']);
 
 const TYPE_BADGE_LABEL: Readonly<Record<PurchaseRecordType, string>> = {
   PURCHASE_ORDER: 'PURCHASE ORDER',
@@ -72,11 +75,14 @@ const TYPE_BADGE_LABEL: Readonly<Record<PurchaseRecordType, string>> = {
 
 // "+ New ..." button label per active tab, so the button always reflects
 // what it's actually about to create instead of a generic catch-all label.
+// Purchase Bills are never created directly (bug #10) — they're the automatic
+// result of receiving stock against a PO, so the Bills tab's button routes to
+// Receiving Order creation instead and says so.
 const NEW_RECORD_BUTTON_LABEL: Readonly<Record<TabId, string>> = {
   all: 'New Purchase Record / Return',
   po: 'New Purchase Order',
   receiving: 'New Receiving Order',
-  bills: 'New Purchase Bill',
+  bills: 'New Receiving Order (creates the Bill)',
   returns: 'New Purchase Return'
 };
 
@@ -397,7 +403,7 @@ export class PurchaseOrdersComponent implements OnInit {
   private mapPurchaseReturn(item: PurchaseReturn): PurchaseRecordRow {
     const any = item as any;
     const grandTotal = Number(any.grandTotal ?? any.totalAmount ?? (item.items || []).reduce(
-      (sum, line) => sum + (Number(line.qty) || 0) * (Number(line.rate) || 0), 0
+      (sum, line) => sum + (line.netAmount != null ? Number(line.netAmount) : (Number(line.qty) || 0) * (Number(line.rate) || 0)), 0
     ));
     return {
       key: `ret-${item.id}`,
@@ -511,7 +517,11 @@ export class PurchaseOrdersComponent implements OnInit {
       return row.recordType !== 'PURCHASE_RETURN';
     }
     if (actionId === 'download') {
-      return row.recordType === 'PURCHASE_ORDER' || row.recordType === 'RECEIVING_ORDER' || row.recordType === 'PURCHASE_BILL';
+      // PURCHASE_RETURN is downloadable too (bug #17) — GET /api/purchases/returns/{id}/pdf.
+      return true;
+    }
+    if (actionId === 'pay') {
+      return row.recordType === 'PURCHASE_BILL' && UNPAID_STATUSES.has(row.status);
     }
     return true;
   };
@@ -524,10 +534,21 @@ export class PurchaseOrdersComponent implements OnInit {
       case 'download':
         this.downloadRecord(event.row);
         break;
+      case 'pay':
+        this.payRecord(event.row);
+        break;
       case 'delete':
         this.deleteRecord(event.row);
         break;
     }
+  }
+
+  private payRecord(row: PurchaseRecordRow): void {
+    const purchaseId = Number((row.raw as PurchaseInvoice)?.id);
+    if (!purchaseId) return;
+    this.router.navigate(['/transaction'], {
+      queryParams: { type: 'PURCHASE', openPayment: 'true', purchaseId }
+    });
   }
 
   private previewRecord(row: PurchaseRecordRow): void {
@@ -555,25 +576,38 @@ export class PurchaseOrdersComponent implements OnInit {
       URL.revokeObjectURL(objectUrl);
       this.loadingService.hide();
     };
+    const fail = async (error: unknown, fallback: string) => {
+      this.loadingService.hide();
+      const message = await extractHttpErrorMessage(error, fallback);
+      this.snackBar.open(message, 'Close', { duration: 6000, panelClass: ['error-snackbar'] });
+    };
 
     if (row.recordType === 'PURCHASE_ORDER') {
       this.purchaseService.downloadPurchaseOrderPdf(row.recordNo).subscribe({
         next: (blob) => finish(blob, `po-${row.recordNo}.pdf`),
-        error: () => this.loadingService.hide()
+        error: (error) => fail(error, 'Failed to download purchase order PDF.')
       });
       return;
     }
     if (row.recordType === 'RECEIVING_ORDER') {
       this.purchaseService.downloadReceivingOrderPdf(row.recordNo).subscribe({
         next: (blob) => finish(blob, `ro-${row.recordNo}.pdf`),
-        error: () => this.loadingService.hide()
+        error: (error) => fail(error, 'Failed to download receiving order PDF.')
       });
       return;
     }
     if (row.recordType === 'PURCHASE_BILL') {
       this.purchaseService.downloadPurchaseInvoice(row.recordNo).subscribe({
         next: (blob) => finish(blob, `invoice-${row.recordNo}.pdf`),
-        error: () => this.loadingService.hide()
+        error: (error) => fail(error, 'Failed to download purchase invoice PDF.')
+      });
+      return;
+    }
+    if (row.recordType === 'PURCHASE_RETURN') {
+      const returnNumber = (row.raw as PurchaseReturn)?.returnNumber || row.recordNo;
+      this.purchaseService.downloadPurchaseReturnPdf(returnNumber).subscribe({
+        next: (blob) => finish(blob, `${row.recordNo}.pdf`),
+        error: (error) => fail(error, 'Failed to download purchase return PDF.')
       });
     }
   }
@@ -615,7 +649,10 @@ export class PurchaseOrdersComponent implements OnInit {
 
   openNewRecordForm(): void {
     const activeType = this.tabs.find((t) => t.id === this.activeTab)?.type ?? null;
-    this.router.navigate(['/purchase/new'], activeType ? { queryParams: { type: activeType } } : {});
+    // Purchase Bills can't be created directly (bug #10) — routing "bills" to the
+    // Receiving Order form is what actually produces one.
+    const targetType = activeType === 'PURCHASE_BILL' ? 'RECEIVING_ORDER' : activeType;
+    this.router.navigate(['/purchase/new'], targetType ? { queryParams: { type: targetType } } : {});
   }
 
   trackByRowKey = (row: PurchaseRecordRow): string => row.key;

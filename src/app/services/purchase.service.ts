@@ -3,9 +3,9 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
-import { PurchaseInvoice, ReceivingOrder, PurchaseOrder, PurchaseReturn } from '../features/purchase/purchase.models';
+import { PurchaseInvoice, ReceivingOrder, PurchaseOrder, PurchaseReturn, SupplierBookInfo } from '../features/purchase/purchase.models';
 import { SpringPage } from '../shared/models/spring-page.model';
-import { enviort } from '../../environments/environment';
+import { enviort, baseUrl } from '../../environments/environment';
 import { normalizeUTCDatePayload } from '../utils/date.utils';
 import { ReturnRequest } from '../shared/models/return-request.model';
 import { StockSummary, StockLedgerEntry, ManualStockAdjustmentRequest, StockReconciliationReport } from '../shared/models/stock.model';
@@ -180,7 +180,12 @@ export class PurchaseService {
     );
   }
 
-  createReceivingOrderFromPo(poNumber: string, payload: ReceivingOrder): Observable<ReceivingOrder> {
+  /**
+   * Creating an RO from a PO atomically creates its linked Purchase Bill on the backend
+   * (ReceivingProcessService.processReceiving), so despite the "receiving order" name this
+   * actually resolves with the created Purchase (id, invoiceNo, grnNumber, grandTotal, ...).
+   */
+  createReceivingOrderFromPo(poNumber: string, payload: ReceivingOrder): Observable<PurchaseInvoice> {
     const body: any = { ...(payload as any) };
     if (!body.createdAt && body.receivedDate) {
       const parsed = new Date(body.receivedDate);
@@ -192,7 +197,7 @@ export class PurchaseService {
     }
     delete body.receivedDate;
 
-    return this.http.post<ReceivingOrder>(`${enviort.receivingOrdersUrl}/from-po/${encodeURIComponent(poNumber)}`, body, { headers: this.auth.getAuthHeaders() }).pipe(
+    return this.http.post<PurchaseInvoice>(`${enviort.receivingOrdersUrl}/from-po/${encodeURIComponent(poNumber)}`, body, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error creating receiving order:', error);
         return throwError(() => error);
@@ -301,6 +306,18 @@ export class PurchaseService {
     );
   }
 
+  downloadPurchaseReturnPdf(returnNumber: string): Observable<Blob> {
+    return this.http.get(`${enviort.purchaseReturnsUrl}/${encodeURIComponent(returnNumber)}/pdf`, {
+      headers: this.auth.getAuthHeaders(),
+      responseType: 'blob'
+    }).pipe(
+      catchError((error) => {
+        console.error('Error downloading purchase return PDF:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   downloadReceivingOrderPdf(grnNumber: string): Observable<Blob> {
     return this.http.get(`${enviort.receivingOrdersUrl}/${grnNumber}/pdf`, {
       headers: this.auth.getAuthHeaders(),
@@ -344,6 +361,20 @@ export class PurchaseService {
     return this.http.delete<void>(`${enviort.purchaseReturnsUrl}/${id}`, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error deleting purchase return:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /** Books mapped to a supplier, each carrying the discount% applicable when buying from them (bugs #1, #2, #3). */
+  getSupplierBooks(supplierId: number): Observable<SupplierBookInfo[]> {
+    const url = `${baseUrl}/supplier-books`;
+    return this.http.get<SupplierBookInfo[]>(url, {
+      headers: this.auth.getAuthHeaders(),
+      params: { supplierId: String(supplierId) }
+    }).pipe(
+      catchError((error) => {
+        console.error('Error loading supplier books:', error);
         return throwError(() => error);
       })
     );

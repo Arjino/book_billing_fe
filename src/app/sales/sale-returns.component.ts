@@ -181,6 +181,13 @@ export class SaleReturnsComponent implements OnInit {
     return (row.items || []).reduce((total, item) => total + Number(item.qty || 0), 0);
   }
 
+  getNetAmount(row: SaleReturn): number {
+    return (row.items || []).reduce((total, item) => {
+      if (item.netAmount != null) return total + Number(item.netAmount);
+      return total + (Number(item.qty) || 0) * (Number(item.rate) || 0);
+    }, 0);
+  }
+
   getEmptyStateMessage(): string {
     if (this.startDate || this.endDate) {
       return 'No sale returns found for the selected date filters.';
@@ -195,6 +202,30 @@ export class SaleReturnsComponent implements OnInit {
 
   addSaleReturn(): void {
     this.router.navigate(['/sales/new'], { queryParams: { type: 'RETURN' } });
+  }
+
+  // Re-download an already-created SRN's receipt PDF (bug #18) — creation only
+  // returns the PDF once, synchronously, with no way to get it back afterward.
+  downloadSaleReturn(row: SaleReturn): void {
+    const returnNumber = row.returnNumber;
+    if (!returnNumber) return;
+    this.loadingService.show('Downloading PDF...');
+    this.salesService.downloadSaleReturnPdf(returnNumber).subscribe({
+      next: (blob) => {
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = `${returnNumber}.pdf`;
+        link.click();
+        URL.revokeObjectURL(objectUrl);
+        this.loadingService.hide();
+      },
+      error: async (error) => {
+        this.loadingService.hide();
+        const message = await extractHttpErrorMessage(error, 'Failed to download sale return PDF.');
+        this.snackBar.open(message, 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+      }
+    });
   }
 
   goBack(): void {

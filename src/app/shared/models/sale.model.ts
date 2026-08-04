@@ -17,6 +17,8 @@ export interface Sale {
   type?: string;
   paidAmount?: number;
   dueAmount?: number;
+  /** Reference number of the most recent payment recorded against this sale (bug #15). */
+  transactionId?: string;
 }
 
 /** A single line item on a persisted `Sale`. */

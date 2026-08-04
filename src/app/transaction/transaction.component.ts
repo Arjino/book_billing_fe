@@ -180,7 +180,17 @@ export class TransactionComponent implements OnInit {
     this.currentPage = 0;
   }
 
-  addTransaction(purchaseId?: number) {
+  // `type` is explicit so the "Add Sale/Purchase Payment" buttons always create the
+  // kind of transaction they say they do, independent of whatever the list filter
+  // dropdown currently happens to be set to (bug #12).
+  addTransaction(purchaseId?: number, type?: 'SALE' | 'PURCHASE') {
+    // Keep the filter dropdown (and the post-save list reload, which filters by
+    // selectedTransactionType) in sync with what's actually being created — otherwise
+    // a Purchase payment added while the dropdown was still on "Sale" would silently
+    // vanish from the list until the user manually flipped the dropdown themselves.
+    if (type) {
+      this.selectedTransactionType = type;
+    }
     this.paymentFormData = {
       id: 0,
       party: null,
@@ -192,7 +202,7 @@ export class TransactionComponent implements OnInit {
       invoiceNo: purchaseId,
       dueAmount: 0,
       purchaseId,
-      transactionType: this.selectedTransactionType
+      transactionType: type ?? this.selectedTransactionType
     } as unknown as Transaction;
     this.showPaymentForm = true;
   }

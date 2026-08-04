@@ -130,8 +130,7 @@ export class SaleRecordFormComponent implements OnInit {
   get partyOptions(): SearchableSelectOption<Party>[] {
     return this.parties.map((party) => ({
       value: party,
-      label: party.name || '',
-      sublabel: party.phone || ''
+      label: party.name || ''
     }));
   }
 
@@ -319,7 +318,8 @@ export class SaleRecordFormComponent implements OnInit {
       items: this.validLines.map((l) => ({
         bookId: String(l.book?.sku || l.book?.id || ''),
         qty: l.qty || 0,
-        rate: l.mrp || 0
+        rate: l.mrp || 0,
+        discountPercent: l.discPercent || 0
       }))
     };
 

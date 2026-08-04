@@ -48,6 +48,18 @@ export interface PurchaseInvoice {
   dueAmount: number;
   paymentStatus: string;
   items: PurchaseInvoiceItem[];
+  /** Present when this Bill was auto-created from a Receiving Order (GRN). */
+  grnNumber?: string;
+}
+
+/** A book mapped to a supplier, with the discount% applicable when buying it from them. */
+export interface SupplierBookInfo {
+  bookId: number;
+  bookTitle?: string;
+  bookSku?: string;
+  bookPublisher?: string;
+  applicableDiscountPercentage?: number | null;
+  active?: boolean;
 }
 
 export interface ReceivingOrderItem {
@@ -81,6 +93,10 @@ export interface PurchaseReturnItem {
   bookId: string;
   qty: number;
   rate: number;
+  /** Discount% carried over from the original purchase invoice line (bug #17). */
+  discountPercent?: number;
+  /** rate * qty, net of discountPercent (bug #17). */
+  netAmount?: number;
 }
 
 export interface PurchaseReturn {

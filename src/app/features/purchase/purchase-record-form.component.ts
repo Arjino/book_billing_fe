@@ -9,7 +9,7 @@ import { DataStoreService } from '../../services/data-store.service';
 import { PurchaseService } from '../../services/purchase.service';
 import { LoadingService } from '../../services/loading.service';
 import { extractHttpErrorMessage, createIdempotencyKey, downloadBlobFile } from '../../utils/http.utils';
-import { isSupplierParty, PurchaseOrder, PurchaseInvoice } from './purchase.models';
+import { isSupplierParty, PurchaseOrder } from './purchase.models';
 import { ReturnRequest } from '../../shared/models/return-request.model';
 import { Book } from '../../shared/models/book.model';
 import { Party } from '../../shared/models/party.model';
@@ -19,17 +19,20 @@ import { SearchableSelectComponent, SearchableSelectOption } from '../../shared/
 import { buildAppNavItems } from '../../shared/nav-items';
 import { NavItem } from '../../shared/models/common.models';
 
-type RecordType = 'PURCHASE_ORDER' | 'RECEIVING_ORDER' | 'PURCHASE_BILL' | 'PURCHASE_RETURN';
+type RecordType = 'PURCHASE_ORDER' | 'RECEIVING_ORDER' | 'PURCHASE_RETURN';
 
 interface RecordTypeOption {
   readonly value: RecordType;
   readonly label: string;
 }
 
+// Purchase Bills are intentionally not creatable here: a Bill only comes into
+// existence as the automatic result of receiving stock against a PO (see
+// ReceivingProcessService.processReceiving on the backend), never by typing
+// line items into a blank form.
 const RECORD_TYPE_OPTIONS: ReadonlyArray<RecordTypeOption> = [
   { value: 'PURCHASE_ORDER', label: 'Purchase Order (PO)' },
   { value: 'RECEIVING_ORDER', label: 'Receiving Order (GRN)' },
-  { value: 'PURCHASE_BILL', label: 'Purchase Bill (PINV)' },
   { value: 'PURCHASE_RETURN', label: 'Purchase Return' }
 ];
 
@@ -79,7 +82,7 @@ export class PurchaseRecordFormComponent implements OnInit {
 
   navItems: ReadonlyArray<NavItem> = [];
 
-  recordType: RecordType = 'PURCHASE_BILL';
+  recordType: RecordType = 'PURCHASE_ORDER';
   supplier: Party | null = null;
   poNumber: string | null = null;
   originalInvoiceNo = '';
@@ -92,6 +95,14 @@ export class PurchaseRecordFormComponent implements OnInit {
   openPurchaseOrders: PurchaseOrder[] = [];
 
   saving = false;
+
+  /** Books the currently selected PO supplier is actually mapped to, keyed by book id (bug #2). Null = not restricted/not loaded. */
+  private allowedBookIds: Set<number> | null = null;
+  /** Discount% applicable per book for the current PO supplier, keyed by book id (bug #3). */
+  private discountByBookId = new Map<number, number>();
+  /** Discount% applied on the original purchase invoice being returned against, keyed by book id (bug #3, PRN). */
+  private originalInvoiceDiscountByBookId = new Map<number, number>();
+  private lastLoadedOriginalInvoiceNo = '';
 
   constructor(
     private readonly router: Router,
@@ -154,7 +165,84 @@ export class PurchaseRecordFormComponent implements OnInit {
     this.originalInvoiceNo = '';
     this.reason = '';
     this.lines = [emptyLine()];
+    this.allowedBookIds = null;
+    this.discountByBookId.clear();
+    this.originalInvoiceDiscountByBookId.clear();
+    this.lastLoadedOriginalInvoiceNo = '';
     this.cdr.markForCheck();
+  }
+
+  /** Loads which books this supplier is actually mapped to, and their discount%, for PO creation (bugs #2, #3). */
+  onSupplierSelected(): void {
+    this.allowedBookIds = null;
+    this.discountByBookId.clear();
+    if (this.recordType !== 'PURCHASE_ORDER' || !this.supplier?.id) {
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const supplierId = this.supplier.id;
+    this.purchaseService.getSupplierBooks(Number(supplierId)).subscribe({
+      next: (mappings) => {
+        // Only apply if the supplier hasn't changed again while this request was in flight.
+        if (this.supplier?.id !== supplierId) return;
+        this.allowedBookIds = new Set((mappings || []).map((m) => Number(m.bookId)).filter((id) => !!id));
+        (mappings || []).forEach((m) => {
+          if (m.bookId && m.applicableDiscountPercentage !== null && m.applicableDiscountPercentage !== undefined) {
+            this.discountByBookId.set(Number(m.bookId), Number(m.applicableDiscountPercentage));
+          }
+        });
+        // Drop any already-selected lines whose book isn't actually mapped to this supplier.
+        this.lines.forEach((line) => {
+          if (line.book && !this.allowedBookIds!.has(line.book.id)) {
+            line.book = null;
+            line.rate = null;
+          }
+        });
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        // Mapping lookup failed — fail open (don't block book selection) and let the
+        // backend's own validation catch a genuinely unmapped book at save time.
+        this.allowedBookIds = null;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  /** Discount% readonly display for a PO/PRN line (bug #3). */
+  lineDiscountPercent(line: FormLine): number | null {
+    if (!line.book) return null;
+    if (this.recordType === 'PURCHASE_ORDER') {
+      return this.discountByBookId.get(line.book.id) ?? null;
+    }
+    if (this.recordType === 'PURCHASE_RETURN') {
+      return this.originalInvoiceDiscountByBookId.get(line.book.id) ?? null;
+    }
+    return null;
+  }
+
+  /** Loads the discount% applied on each item of the original invoice being returned against (bug #3, PRN). */
+  onOriginalInvoiceBlur(): void {
+    const invoiceNo = this.originalInvoiceNo.trim();
+    if (!invoiceNo || invoiceNo === this.lastLoadedOriginalInvoiceNo) return;
+
+    this.lastLoadedOriginalInvoiceNo = invoiceNo;
+    this.purchaseService.getPurchaseByInvoiceNumber(invoiceNo).subscribe({
+      next: (purchase) => {
+        this.originalInvoiceDiscountByBookId.clear();
+        (purchase?.items || []).forEach((it: any) => {
+          const bookId = it?.book?.id;
+          if (bookId && it.discount !== null && it.discount !== undefined) {
+            this.originalInvoiceDiscountByBookId.set(Number(bookId), Number(it.discount));
+          }
+        });
+        this.cdr.markForCheck();
+      },
+      // Invoice may not exist yet / typo mid-entry — this is a display nicety, not a
+      // save-blocking validation (the backend re-validates originalInvoiceNo on submit).
+      error: () => {}
+    });
   }
 
   onPoNumberSelected(poNumber: string): void {
@@ -192,19 +280,25 @@ export class PurchaseRecordFormComponent implements OnInit {
 
   bookLabel(book: Book | null): string {
     if (!book) return '';
-    return `${book.title} (SKU: ${book.sku} • Stock: ${book.stock})`;
+    const publisher = book.publisher ? ` • ${book.publisher}` : '';
+    return `${book.title}${publisher} (SKU: ${book.sku} • Stock: ${book.stock})`;
   }
 
   get supplierOptions(): SearchableSelectOption<Party>[] {
     return this.suppliers.map((party) => ({
       value: party,
-      label: party.name || '',
-      sublabel: party.phone || ''
+      label: party.name || ''
     }));
   }
 
   get bookOptions(): SearchableSelectOption<number>[] {
-    return this.books.map((book) => ({ value: book.id, label: this.bookLabel(book) }));
+    // For PO creation, once the supplier's book mapping has loaded, only offer books
+    // that are actually supplied by them — prevents the "book not mapped" save error
+    // from ever happening in the common case (bug #2).
+    const source = this.recordType === 'PURCHASE_ORDER' && this.allowedBookIds
+      ? this.books.filter((b) => this.allowedBookIds!.has(b.id))
+      : this.books;
+    return source.map((book) => ({ value: book.id, label: this.bookLabel(book) }));
   }
 
   get poNumberOptions(): SearchableSelectOption<string>[] {
@@ -325,9 +419,6 @@ export class PurchaseRecordFormComponent implements OnInit {
       case 'RECEIVING_ORDER':
         this.saveReceivingOrder();
         break;
-      case 'PURCHASE_BILL':
-        this.savePurchaseBill();
-        break;
       case 'PURCHASE_RETURN':
         this.savePurchaseReturn();
         break;
@@ -380,46 +471,18 @@ export class PurchaseRecordFormComponent implements OnInit {
 
     this.saving = true;
     this.loadingService.show('Creating receiving order...');
+    // Creating a receiving order atomically creates its linked Purchase Bill on the
+    // backend (ReceivingProcessService), so the response is actually the created
+    // Purchase (id, invoiceNo, grnNumber, grandTotal) — not a bare ReceivingOrder.
     this.purchaseService.createReceivingOrderFromPo(this.poNumber, payload).subscribe({
       next: (created) => {
         this.saving = false;
         this.loadingService.hide();
         this.snackBar.open('Receiving order created successfully!', 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
-        const purchaseId = Number((created as any)?.purchaseId ?? 0) || 0;
-        const grandTotal = (created as any)?.grandTotal ?? null;
-        this.promptRoPayment(purchaseId, this.supplier?.name, grandTotal);
+        const purchaseId = Number(created?.id ?? 0) || 0;
+        this.promptRoPayment(purchaseId, this.supplier?.name, created?.grandTotal ?? null, created?.invoiceNo ?? null, created?.grnNumber ?? null);
       },
       error: (error) => this.onSaveError(error, 'Failed to create receiving order.')
-    });
-  }
-
-  private savePurchaseBill(): void {
-    const totalAmount = this.totalAmount;
-    const payload: PurchaseInvoice = {
-      id: 0,
-      invoiceNo: '',
-      party: this.supplier,
-      date: new Date().toISOString(),
-      totalAmount,
-      taxAmount: 0,
-      roundOff: 0,
-      grandTotal: totalAmount,
-      paidAmount: 0,
-      dueAmount: totalAmount,
-      paymentStatus: 'UNPAID',
-      items: this.validLines.map((l) => ({
-        book: l.book,
-        qty: l.qty,
-        rate: l.rate,
-        amount: this.lineTotal(l)
-      }))
-    };
-
-    this.saving = true;
-    this.loadingService.show('Creating purchase bill...');
-    this.purchaseService.createPurchase(payload).subscribe({
-      next: () => this.onSaveSuccess('Purchase bill created successfully!'),
-      error: (error) => this.onSaveError(error, 'Failed to create purchase bill.')
     });
   }
 
@@ -432,7 +495,8 @@ export class PurchaseRecordFormComponent implements OnInit {
       items: this.validLines.map((l) => ({
         bookId: String(l.book?.sku || l.book?.id || ''),
         qty: l.qty || 0,
-        rate: l.rate || 0
+        rate: l.rate || 0,
+        discountPercent: this.lineDiscountPercent(l) ?? 0
       }))
     };
 
@@ -463,10 +527,10 @@ export class PurchaseRecordFormComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  private promptRoPayment(purchaseId: number, partyName?: string, amount?: number | null): void {
+  private promptRoPayment(purchaseId: number, partyName?: string, amount?: number | null, invoiceNo?: string | null, grnNumber?: string | null): void {
     const dialogRef = this.dialog.open(RoPaymentPromptDialogComponent, {
       width: '380px',
-      data: { purchaseId, partyName: partyName || '-', amount: amount ?? null }
+      data: { purchaseId, partyName: partyName || '-', amount: amount ?? null, invoiceNo: invoiceNo ?? undefined, grnNumber: grnNumber ?? undefined }
     });
 
     dialogRef.afterClosed().subscribe((shouldPay: boolean) => {

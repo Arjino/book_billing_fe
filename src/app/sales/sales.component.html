@@ -233,6 +233,7 @@
             <th>DATE &amp; TIME</th>
             <th class="si-th-num">GRAND TOTAL (₹)</th>
             <th>PAYMENT STATUS</th>
+            <th>TRANSACTION ID</th>
             <th>ACTIONS</th>
           </tr>
         </thead>
@@ -253,6 +254,10 @@
               <span class="si-status-badge" [ngClass]="getStatusBadgeClass(row.paymentStatus)">
                 {{ row.paymentStatus }}
               </span>
+            </td>
+            <td>
+              <span *ngIf="row.originalSale?.transactionId; else noTxn" class="si-txn-id">{{ row.originalSale?.transactionId }}</span>
+              <ng-template #noTxn><span class="si-nil">—</span></ng-template>
             </td>
             <td>
               <div class="si-row-actions">

@@ -15,6 +15,8 @@ import { RouterModule } from '@angular/router';
 import { DataStoreService } from '../services/data-store.service';
 import { LedgerService } from '../services/ledger.service';
 import { InvoicesService } from '../services/invoices.service';
+import { PurchaseService } from '../services/purchase.service';
+import { SalesService } from '../services/sales.service';
 import { buildUTCDateTime, formatDateForAPI, toISODateTimeUTC } from '../utils/date.utils';
 import { LoadingService } from '../services/loading.service';
 import { take } from 'rxjs/operators';
@@ -27,7 +29,7 @@ import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AuthService } from '../services/auth.service';
 import { baseUrl } from '../../environments/environment';
-import { Subject, Subscription } from 'rxjs';
+import { Observable, Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
@@ -72,10 +74,12 @@ export class LedgerComponent implements OnInit, OnDestroy {
 
   /** Entry type options matching screenshot labels */
   readonly entryTypeOptions = [
-    { value: 'All',          label: 'All Transaction Types' },
-    { value: 'SALE_INVOICE', label: 'SALE INVOICES' },
-    { value: 'SALE_RETURN',  label: 'SALE RETURNS' },
-    { value: 'PAYMENT',      label: 'PAYMENT RECEIPTS' }
+    { value: 'All',              label: 'All Transaction Types' },
+    { value: 'SALE_INVOICE',     label: 'SALE INVOICES' },
+    { value: 'SALE_RETURN',      label: 'SALE RETURNS' },
+    { value: 'PURCHASE_INVOICE', label: 'PURCHASE INVOICES' },
+    { value: 'PURCHASE_RETURN',  label: 'PURCHASE RETURNS' },
+    { value: 'PAYMENT',          label: 'PAYMENT RECEIPTS' }
   ];
 
   // ── Pagination ──────────────────────────────────────────────
@@ -90,9 +94,11 @@ export class LedgerComponent implements OnInit, OnDestroy {
     if (chosen === 'all') return this.results;
     return this.results.filter(r => {
       const ref = (r.refType || '').toLowerCase();
-      if (chosen === 'sale_invoice')  return ref.includes('sale') && !ref.includes('return') && !ref.includes('payment');
-      if (chosen === 'sale_return')   return ref.includes('return');
-      if (chosen === 'payment')       return ref.includes('payment');
+      if (chosen === 'sale_invoice')     return ref.includes('sale') && !ref.includes('return') && !ref.includes('payment');
+      if (chosen === 'sale_return')      return ref.includes('sale') && ref.includes('return');
+      if (chosen === 'purchase_invoice') return ref.includes('purchase') && !ref.includes('return') && !ref.includes('payment');
+      if (chosen === 'purchase_return')  return ref.includes('purchase') && ref.includes('return');
+      if (chosen === 'payment')          return ref.includes('payment');
       return ref.includes(chosen);
     });
   }
@@ -157,6 +163,8 @@ export class LedgerComponent implements OnInit, OnDestroy {
     private store: DataStoreService,
     private ledgerService: LedgerService,
     private invoicesService: InvoicesService,
+    private purchaseService: PurchaseService,
+    private salesService: SalesService,
     private location: Location,
     private loadingService: LoadingService,
     private dialog: MatDialog,
@@ -505,6 +513,10 @@ export class LedgerComponent implements OnInit, OnDestroy {
       this.lastBalance = 0;
       this.totalAmount = 0;
       this.loadingService.hide();
+      this.snackBar.open('Failed to load ledger entries for this party. Please try again.', 'Close', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
     });
   }
 
@@ -526,11 +538,14 @@ export class LedgerComponent implements OnInit, OnDestroy {
       const endDateTime = this.toApiDateTime(this.endDate, this.endHour, this.endMinute);
       params.endDateTime = endDateTime;
     }
-    
-    if (this.transactionType && this.transactionType !== 'All') {
-      params.type = this.transactionType;
-    }
-    
+
+    // Entry-type narrowing happens client-side via `filteredResults` (see getter above) —
+    // the backend's `type` filter does an exact match against its own internal refType
+    // strings ("SALE", "PURCHASE_RETURN", "SALE_PAYMENT", ...), which don't line up
+    // one-to-one with these dropdown values (e.g. a plain sale invoice is stored as
+    // "SALE", not "SALE_INVOICE"), so sending it server-side silently returned zero rows
+    // for every type except "All" — this was the actual cause of bug #16.
+
     this.loadingService.show('Filtering ledger...');
     this.ledgerService.getLedgerForPartyByDateRange(params).subscribe(data => {
       this.results = data || [];
@@ -541,7 +556,13 @@ export class LedgerComponent implements OnInit, OnDestroy {
     }, err => {
       console.error('Failed to load ledger:', err);
       this.results = [];
+      this.lastBalance = 0;
+      this.totalAmount = 0;
       this.loadingService.hide();
+      this.snackBar.open('Failed to filter ledger entries. Please try again.', 'Close', {
+        duration: 5000,
+        panelClass: ['error-snackbar']
+      });
     });
   }
 
@@ -628,12 +649,17 @@ export class LedgerComponent implements OnInit, OnDestroy {
     return refType.includes('purchase') ? 'purchase' : 'sale';
   }
 
-  // Sale/purchase returns only ever get their receipt PDF once, as the
-  // synchronous response to the return-creation call — the backend has no
-  // endpoint to re-fetch that PDF afterwards, so ledger rows for a return
-  // can't offer a working preview/download the way invoice rows can.
   isReturnEntry(entry: any): boolean {
     return (entry?.refType || '').toString().toLowerCase().includes('return');
+  }
+
+  // Return-entry refId is the PRN/SRN return number (see LedgerPostingPolicyService.postReturn
+  // call sites), which is exactly what GET /api/purchases|sales/returns/{returnNumber}/pdf expects.
+  private downloadReturnPdf(entry: any): Observable<Blob> {
+    const returnNumber = String(entry?.refId ?? '');
+    return this.getInvoiceType(entry) === 'purchase'
+      ? this.purchaseService.downloadPurchaseReturnPdf(returnNumber)
+      : this.salesService.downloadSaleReturnPdf(returnNumber);
   }
 
   private getPaymentReferenceNumber(entry: any): string | null {
@@ -646,11 +672,18 @@ export class LedgerComponent implements OnInit, OnDestroy {
 
   openInvoicePreview(entry: any): void {
     if (this.isReturnEntry(entry)) {
-      this.snackBar.open(
-        'Return receipts can only be downloaded at the time the return is processed; historical re-download isn\'t supported yet.',
-        'Close',
-        { duration: 6000 }
-      );
+      this.loadingService.show('Opening return receipt...');
+      this.downloadReturnPdf(entry).subscribe({
+        next: (blob) => {
+          this.loadingService.hide();
+          const objectUrl = URL.createObjectURL(blob);
+          window.open(objectUrl, '_blank');
+        },
+        error: () => {
+          this.loadingService.hide();
+          this.snackBar.open('Failed to open return receipt PDF.', 'Close', { duration: 4000 });
+        }
+      });
       return;
     }
 
@@ -685,11 +718,22 @@ export class LedgerComponent implements OnInit, OnDestroy {
 
   downloadInvoice(entry: any): void {
     if (this.isReturnEntry(entry)) {
-      this.snackBar.open(
-        'Return receipts can only be downloaded at the time the return is processed; historical re-download isn\'t supported yet.',
-        'Close',
-        { duration: 6000 }
-      );
+      this.loadingService.show('Downloading return receipt...');
+      this.downloadReturnPdf(entry).subscribe({
+        next: (blob: Blob) => {
+          const link = document.createElement('a');
+          const objectUrl = URL.createObjectURL(blob);
+          link.href = objectUrl;
+          link.download = `${entry?.refId || 'return-receipt'}.pdf`;
+          link.click();
+          URL.revokeObjectURL(objectUrl);
+          this.loadingService.hide();
+        },
+        error: () => {
+          this.loadingService.hide();
+          this.snackBar.open('Failed to download return receipt PDF.', 'Close', { duration: 4000 });
+        }
+      });
       return;
     }
 

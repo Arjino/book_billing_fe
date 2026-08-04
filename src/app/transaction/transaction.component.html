@@ -29,9 +29,13 @@
           </div>
         </div>
         <div class="tx-header-actions">
-          <button type="button" class="tx-btn tx-btn--primary" (click)="addTransaction()">
+          <button type="button" class="tx-btn tx-btn--primary" (click)="addTransaction(undefined, 'SALE')">
             <mat-icon>add</mat-icon>
-            Add Transaction
+            Add Sale Payment
+          </button>
+          <button type="button" class="tx-btn tx-btn--primary" (click)="addTransaction(undefined, 'PURCHASE')">
+            <mat-icon>add</mat-icon>
+            Add Purchase Payment
           </button>
         </div>
       </div>

@@ -87,9 +87,10 @@
 
           <mat-form-field appearance="outline" class="tx-field">
             <mat-label>Amount Received (₹)</mat-label>
-            <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
+            <input matInput type="number" [(ngModel)]="data.paidAmount" name="paidAmount" required #paidAmountModel="ngModel" min="0.01" inputmode="decimal" (ngModelChange)="paidAmountModel.control.markAsTouched()" />
             <mat-error *ngIf="paidAmountModel.invalid && (paidAmountModel.dirty || paidAmountModel.touched)">
               <span *ngIf="paidAmountModel.errors?.['required']">Amount received is required.</span>
+              <span *ngIf="paidAmountModel.errors?.['min']">Paid amount should be greater than 0.</span>
             </mat-error>
             <mat-error *ngIf="isOverpay()">Amount cannot be greater than balance.</mat-error>
           </mat-form-field>

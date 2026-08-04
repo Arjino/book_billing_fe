@@ -90,6 +90,18 @@ export class SalesService {
     );
   }
 
+  downloadSaleReturnPdf(returnNumber: string): Observable<Blob> {
+    return this.http.get(`${enviort.saleReturnsUrl}/${encodeURIComponent(returnNumber)}/pdf`, {
+      headers: this.auth.getAuthHeaders(),
+      responseType: 'blob'
+    }).pipe(
+      catchError((error) => {
+        console.error('Error downloading sale return PDF:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
   getSaleByInvoiceNumber(invoiceNo: string): Observable<Sale> {
     const url = `${enviort.salesUrl}/invoice/${encodeURIComponent(invoiceNo)}`;
     return this.http.get<Sale>(url, { headers: this.auth.getAuthHeaders() }).pipe(

@@ -41,7 +41,8 @@
         <label>Supplier / Publisher *</label>
         <app-searchable-select
           [options]="supplierOptions"
-          [(ngModel)]="supplier"
+          [ngModel]="supplier"
+          (ngModelChange)="supplier = $event; onSupplierSelected()"
           placeholder="Search supplier...">
         </app-searchable-select>
       </div>
@@ -54,7 +55,7 @@
 
     <div class="field" *ngIf="requiresReturnFields">
       <label>Original Invoice No *</label>
-      <input type="text" [(ngModel)]="originalInvoiceNo" placeholder="e.g. PINV-20260725-61DDF09B" />
+      <input type="text" [(ngModel)]="originalInvoiceNo" (blur)="onOriginalInvoiceBlur()" placeholder="e.g. PINV-20260725-61DDF09B" />
     </div>
   </section>
 
@@ -62,7 +63,7 @@
     <div class="lines-header">
       <div class="panel-title">
         <span class="material-icons">menu_book</span>
-        Purchase Book Lines ({{ totalLines }} lines &bull; {{ totalVolume }} Pcs)
+        Purchase Book Lines
       </div>
       <div class="lines-actions">
         <button type="button" class="chip-btn chip-primary" (click)="addLines(1)">
@@ -103,6 +104,10 @@
             <input type="number" min="0" [(ngModel)]="line.rate" placeholder="0" />
           </div>
           <div class="field">
+            <label>Disc %</label>
+            <input type="text" [value]="(lineDiscountPercent(line) ?? 0) + '%'" readonly />
+          </div>
+          <div class="field">
             <label>Line Total</label>
             <div class="line-total">₹{{ lineTotal(line) | number:'1.0-0' }}</div>
           </div>
@@ -111,23 +116,23 @@
         <ng-template #roLineFields>
           <div class="line-card-fields line-card-fields--ro">
             <div class="field">
-              <label>Ordered Qty</label>
+              <label>Ordered</label>
               <input type="number" [value]="line.orderedQty ?? 0" readonly />
             </div>
             <div class="field">
-              <label>Remaining Qty</label>
+              <label>Remaining</label>
               <input type="number" [value]="line.remainingQty ?? 0" readonly />
             </div>
             <div class="field">
-              <label>Received Qty</label>
+              <label>Received</label>
               <input type="number" min="0" [attr.max]="line.orderedQty ?? null" [(ngModel)]="line.qty" placeholder="0" />
             </div>
             <div class="field">
-              <label>Accepted Qty</label>
+              <label>Accepted</label>
               <input type="number" min="0" [(ngModel)]="line.acceptedQty" placeholder="0" />
             </div>
             <div class="field">
-              <label>Rejected Qty</label>
+              <label>Rejected</label>
               <input type="number" min="0" [(ngModel)]="line.rejectedQty" placeholder="0" />
             </div>
           </div>

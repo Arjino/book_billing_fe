@@ -80,6 +80,8 @@
               <th>Reason</th>
               <th>Items</th>
               <th>Total Qty</th>
+              <th>Net Amount</th>
+              <th>PDF</th>
             </tr>
           </thead>
           <tbody>
@@ -92,6 +94,12 @@
               <td>{{ row.returnReason || '-' }}</td>
               <td>{{ getItemsCount(row) }}</td>
               <td>{{ getTotalQuantity(row) }}</td>
+              <td>₹{{ getNetAmount(row) | number:'1.0-2' }}</td>
+              <td>
+                <button mat-icon-button (click)="downloadSaleReturn(row)" class="text-red-300" title="Download SRN PDF">
+                  <mat-icon>download</mat-icon>
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
