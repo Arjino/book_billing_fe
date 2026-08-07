@@ -155,6 +155,16 @@
   gap: 16px;
 }
 
+.filter-row {
+  display: flex;
+  margin-bottom: 14px;
+}
+
+.filter-row .field {
+  width: 100%;
+  max-width: 280px;
+}
+
 .field {
   display: flex;
   flex-direction: column;

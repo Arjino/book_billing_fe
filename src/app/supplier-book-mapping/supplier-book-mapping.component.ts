@@ -20,6 +20,8 @@ interface SupplierPublisherRow {
   discountPercent?: number | null;
   effectiveFrom?: string | null;
   effectiveTo?: string | null;
+  supplierId?: number | null;
+  supplierName?: string | null;
 }
 
 @Component({
@@ -35,6 +37,10 @@ export class SupplierBookMappingComponent implements OnInit {
   suppliers: Party[] = [];
   publishers: string[] = [];
   rows: SupplierPublisherRow[] = [];
+
+  /** All supplier-publisher mappings (every supplier), optionally narrowed by filterPublisher. */
+  allRows: SupplierPublisherRow[] = [];
+  filterPublisher: string | null = null;
 
   selectedSupplierId: number | null = null;
   selectedPublisher: string | null = null;
@@ -54,11 +60,47 @@ export class SupplierBookMappingComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPublishers();
+    this.loadAllMappings();
 
     this.store.getParties().subscribe(parties => {
       const all = parties || [];
       this.suppliers = all.filter(p => (p?.type || '').toString().toUpperCase() === 'SUPPLIER');
     });
+  }
+
+  /** Loads every supplier-publisher mapping (all suppliers), optionally narrowed to one publisher. */
+  loadAllMappings(): void {
+    const params: Record<string, string> = {};
+    if (this.filterPublisher) params['publisher'] = this.filterPublisher;
+
+    this.loadingService.show('Loading publisher mappings...');
+    this.http
+      .get<any>(`${baseUrl}/supplier-publisher-discounts`, {
+        headers: this.auth.getAuthHeaders(),
+        params
+      })
+      .subscribe({
+        next: (response) => {
+          this.loadingService.hide();
+          const payload = Array.isArray(response)
+            ? response
+            : response?.data || response?.result || response?.discounts || response?.items || [];
+          this.allRows = this.resolvePublisherRows(payload);
+        },
+        error: (error) => {
+          this.loadingService.hide();
+          console.error('Failed to load publisher mappings:', error);
+          this.snackBar.open('Failed to load publisher mappings.', 'Close', {
+            duration: 4000,
+            panelClass: ['error-snackbar']
+          });
+        }
+      });
+  }
+
+  onFilterPublisherChange(publisher: string | null): void {
+    this.filterPublisher = publisher;
+    this.loadAllMappings();
   }
 
   onSupplierChange(supplierId: number | null): void {
@@ -157,8 +199,11 @@ export class SupplierBookMappingComponent implements OnInit {
     });
   }
 
-  /** Fills the form from an existing row without a round-trip to the server. */
+  /** Fills the form from an existing row (from the all-mappings table or a supplier's own list) without a round-trip to the server. */
   editMapping(row: SupplierPublisherRow): void {
+    if (row.supplierId != null) {
+      this.selectedSupplierId = row.supplierId;
+    }
     this.selectedPublisher = row.publisher;
     this.selectedDiscountId = row.id;
     this.discountPercent = row.discountPercent ?? null;
@@ -189,7 +234,9 @@ export class SupplierBookMappingComponent implements OnInit {
           publisher,
           discountPercent: item?.discountPercent ?? item?.percentage ?? item?.discount ?? null,
           effectiveFrom: this.toDateInputValue(item?.effectiveFrom),
-          effectiveTo: this.toDateInputValue(item?.effectiveTo)
+          effectiveTo: this.toDateInputValue(item?.effectiveTo),
+          supplierId: item?.supplierId != null ? Number(item.supplierId) : null,
+          supplierName: item?.supplierName ?? null
         } as SupplierPublisherRow;
       })
       .filter((r): r is SupplierPublisherRow => !!r);
@@ -273,6 +320,7 @@ export class SupplierBookMappingComponent implements OnInit {
           panelClass: ['success-snackbar']
         });
         this.onSupplierChange(this.selectedSupplierId);
+        this.loadAllMappings();
       },
       error: (error) => {
         this.loadingService.hide();
@@ -292,6 +340,7 @@ export class SupplierBookMappingComponent implements OnInit {
     const discountId = row.id;
     if (!discountId) {
       this.rows = this.rows.filter(r => this.normalizePublisher(r.publisher) !== this.normalizePublisher(row.publisher));
+      this.allRows = this.allRows.filter(r => this.normalizePublisher(r.publisher) !== this.normalizePublisher(row.publisher));
       return;
     }
     this.loadingService.show('Deleting discount...');
@@ -299,6 +348,7 @@ export class SupplierBookMappingComponent implements OnInit {
       next: () => {
         this.loadingService.hide();
         this.rows = this.rows.filter(r => r.id !== discountId);
+        this.allRows = this.allRows.filter(r => r.id !== discountId);
         if (this.selectedDiscountId === discountId) {
           this.resetForm();
         }

@@ -330,8 +330,16 @@
 
 .line-card-fields {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
+}
+
+.line-card-fields .field {
+  /* .field + .field further up sets margin-top:16px for vertically-stacked fields — but
+     these fields sit side-by-side in one grid row, so that margin instead pushed every
+     field but the first down within its own grid cell, staggering Qty/MRP/Disc%/Amount
+     out of alignment with each other. */
+  margin-top: 0;
 }
 
 .line-card-fields input,
@@ -446,8 +454,7 @@
 
 @media (max-width: 900px) {
   .top-fields,
-  .lines-grid,
-  .line-card-fields {
+  .lines-grid {
     grid-template-columns: 1fr;
   }
 
@@ -459,5 +466,19 @@
   .totals-summary {
     align-items: flex-start;
     text-align: left;
+  }
+}
+
+/* Between full-width and the 900px stack, 4 equal columns get too cramped for
+   Qty/MRP/Disc%/Amount to stay readable — step down to 2 columns first. */
+@media (max-width: 900px) and (min-width: 481px) {
+  .line-card-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .line-card-fields {
+    grid-template-columns: 1fr;
   }
 }

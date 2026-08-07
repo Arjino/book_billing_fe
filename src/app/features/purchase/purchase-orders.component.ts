@@ -514,7 +514,9 @@ export class PurchaseOrdersComponent implements OnInit {
 
   isRowActionVisible = (row: PurchaseRecordRow, actionId: string): boolean => {
     if (actionId === 'preview') {
-      return row.recordType !== 'PURCHASE_RETURN';
+      // PURCHASE_RETURN now also gets an eye icon — opens the return PDF in a new tab
+      // the same way download does, rather than a dedicated in-app preview dialog.
+      return true;
     }
     if (actionId === 'download') {
       // PURCHASE_RETURN is downloadable too (bug #17) — GET /api/purchases/returns/{id}/pdf.
@@ -562,6 +564,23 @@ export class PurchaseOrdersComponent implements OnInit {
     }
     if (row.recordType === 'PURCHASE_BILL') {
       this.dialog.open(InvoicePreviewComponent, { data: { salesId: row.recordNo, type: 'purchase', invoiceNo: row.recordNo }, width: '900px', maxWidth: '95vw', panelClass: 'invoice-dialog' });
+      return;
+    }
+    if (row.recordType === 'PURCHASE_RETURN') {
+      const returnNumber = (row.raw as PurchaseReturn)?.returnNumber || row.recordNo;
+      this.loadingService.show('Opening return PDF...');
+      this.purchaseService.downloadPurchaseReturnPdf(returnNumber).subscribe({
+        next: (blob) => {
+          this.loadingService.hide();
+          const objectUrl = URL.createObjectURL(blob);
+          window.open(objectUrl, '_blank');
+        },
+        error: async (error) => {
+          this.loadingService.hide();
+          const message = await extractHttpErrorMessage(error, 'Failed to open purchase return PDF.');
+          this.snackBar.open(message, 'Close', { duration: 6000, panelClass: ['error-snackbar'] });
+        }
+      });
     }
   }
 

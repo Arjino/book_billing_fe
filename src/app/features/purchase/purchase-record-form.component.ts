@@ -318,6 +318,25 @@ export class PurchaseRecordFormComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
+  /** Blocks decimal point, scientific-notation 'e', and +/- keys so Quantity can only ever be a positive integer. */
+  blockNonIntegerQtyKeys(event: KeyboardEvent): void {
+    if (['e', 'E', '+', '-', '.'].includes(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  /** Safety net for paste/autofill (keydown blocking doesn't catch those): truncates to an integer, clears if <= 0. */
+  onQtyInput(line: FormLine, value: number | string | null): void {
+    if (value === null || value === '') {
+      line.qty = null;
+      this.cdr.markForCheck();
+      return;
+    }
+    const truncated = Math.trunc(Number(value));
+    line.qty = Number.isFinite(truncated) && truncated > 0 ? truncated : null;
+    this.cdr.markForCheck();
+  }
+
   lineTotal(line: FormLine): number {
     return (Number(line.qty) || 0) * (Number(line.rate) || 0);
   }
@@ -374,6 +393,18 @@ export class PurchaseRecordFormComponent implements OnInit {
     return this.lines.filter((l) => l.book && Number(l.qty) > 0);
   }
 
+  /**
+   * Lines with a book picked but a non-positive/non-integer quantity, for PURCHASE_ORDER and
+   * PURCHASE_RETURN (not RECEIVING_ORDER, which has its own Received/Accepted/Rejected fields).
+   * validLines() above silently drops these — that let a PO with a mix of positive and
+   * negative-qty books save successfully, just quietly excluding the bad line. Surfacing this
+   * via canSave() blocks the save entirely instead.
+   */
+  get invalidQuantityLines(): FormLine[] {
+    if (this.recordType === 'RECEIVING_ORDER') return [];
+    return this.lines.filter((l) => l.book && !(Number.isInteger(Number(l.qty)) && Number(l.qty) > 0));
+  }
+
   get totalLines(): number {
     return this.validLines.length;
   }
@@ -397,6 +428,7 @@ export class PurchaseRecordFormComponent implements OnInit {
   get canSave(): boolean {
     if (this.saving) return false;
     if (!this.validLines.length) return false;
+    if (this.invalidQuantityLines.length) return false;
     if (this.requiresPoNumber) return !!this.poNumber && !!this.supplier;
     if (!this.supplier) return false;
     if (this.requiresReturnFields) {

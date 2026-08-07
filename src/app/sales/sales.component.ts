@@ -19,6 +19,7 @@ import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
 import { LoadingService } from '../services/loading.service';
 import { toISODateTimeUTC, formatDateForAPI } from '../utils/date.utils';
+import { extractHttpErrorMessage } from '../utils/http.utils';
 import { Sale } from '../shared/models/sale.model';
 import { SaleReturn } from './sales.models';
 import { SALES_CONSTANTS } from '../constants/sales.constants';
@@ -371,6 +372,46 @@ export class SalesComponent implements OnInit {
   }
   canMakePayment(s:any){
     return s.paymentStatus == "PARTIAL" || s.paymentStatus == "UNPAID"
+  }
+
+  previewSaleReturnPdf(row: SaleDisplayRow): void {
+    const returnNumber = row.originalReturn?.returnNumber;
+    if (!returnNumber) return;
+    this.loadingService.show('Opening return PDF...');
+    this.salesService.downloadSaleReturnPdf(returnNumber).subscribe({
+      next: (blob) => {
+        this.loadingService.hide();
+        const objectUrl = URL.createObjectURL(blob);
+        window.open(objectUrl, '_blank');
+      },
+      error: async (error) => {
+        this.loadingService.hide();
+        const message = await extractHttpErrorMessage(error, 'Failed to open return PDF.');
+        this.snackBar.open(message, 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+      }
+    });
+  }
+
+  downloadSaleReturnPdf(row: SaleDisplayRow): void {
+    const returnNumber = row.originalReturn?.returnNumber;
+    if (!returnNumber) return;
+    this.loadingService.show('Downloading return PDF...');
+    this.salesService.downloadSaleReturnPdf(returnNumber).subscribe({
+      next: (blob) => {
+        this.loadingService.hide();
+        const objectUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = `${returnNumber}.pdf`;
+        link.click();
+        URL.revokeObjectURL(objectUrl);
+      },
+      error: async (error) => {
+        this.loadingService.hide();
+        const message = await extractHttpErrorMessage(error, 'Failed to download return PDF.');
+        this.snackBar.open(message, 'Close', { duration: 5000, panelClass: ['error-snackbar'] });
+      }
+    });
   }
   openPaymentForSale(s:any){
     const saleId = Number((s as any)?.id);

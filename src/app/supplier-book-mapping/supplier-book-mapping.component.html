@@ -89,14 +89,25 @@
     <section class="panel table-panel">
       <div class="panel-title">
         <span class="material-icons">library_books</span>
-        Mapped Publishers
-        <span class="count-pill" *ngIf="selectedSupplierId">{{ rows.length }}</span>
+        All Publisher Mappings
+        <span class="count-pill">{{ allRows.length }}</span>
       </div>
 
-      <div class="table-scroll" *ngIf="rows.length">
+      <div class="filter-row">
+        <div class="field">
+          <label>Filter by Publisher</label>
+          <select [ngModel]="filterPublisher" (ngModelChange)="onFilterPublisherChange($event)">
+            <option [ngValue]="null">All Publishers</option>
+            <option *ngFor="let publisher of publishers" [ngValue]="publisher">{{ publisher }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="table-scroll" *ngIf="allRows.length">
         <table>
           <thead>
             <tr>
+              <th>Supplier</th>
               <th>Publisher</th>
               <th>Discount</th>
               <th>Effective From</th>
@@ -105,7 +116,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of rows" [class.row-active]="row.id === selectedDiscountId">
+            <tr *ngFor="let row of allRows" [class.row-active]="row.id === selectedDiscountId">
+              <td>{{ row.supplierName || '—' }}</td>
               <td class="row-title">{{ row.publisher }}</td>
               <td><span class="discount-chip">{{ row.discountPercent ?? '-' }}%</span></td>
               <td>{{ row.effectiveFrom ? (row.effectiveFrom | date:'dd/MM/yyyy') : '—' }}</td>
@@ -125,13 +137,13 @@
         </table>
       </div>
 
-      <div class="empty-state" *ngIf="!rows.length">
+      <div class="empty-state" *ngIf="!allRows.length">
         <span class="material-icons">library_books</span>
-        <ng-container *ngIf="!selectedSupplierId; else noMappings">
-          <h3>Select a supplier</h3>
-          <p>Choose a supplier above to view and manage their mapped publishers.</p>
+        <ng-container *ngIf="filterPublisher; else noMappingsAtAll">
+          <h3>No mappings for "{{ filterPublisher }}"</h3>
+          <p>No supplier has a discount mapping for this publisher yet.</p>
         </ng-container>
-        <ng-template #noMappings>
+        <ng-template #noMappingsAtAll>
           <h3>No publisher mappings yet</h3>
           <p>Add a publisher discount using the form above to get started.</p>
         </ng-template>

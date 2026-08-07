@@ -278,10 +278,26 @@
                   <mat-icon>payments</mat-icon>
                   Pay
                 </button>
-                <span *ngIf="row.docType === 'RETURN'" class="si-return-ref" title="Original Invoice">
-                  <mat-icon>info_outline</mat-icon>
-                  {{ row.originalInvoiceNo || 'N/A' }}
-                </span>
+                <ng-container *ngIf="row.docType === 'RETURN'">
+                  <button
+                    class="si-icon-btn"
+                    (click)="previewSaleReturnPdf(row)"
+                    title="Preview Return PDF"
+                  >
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <button
+                    class="si-icon-btn"
+                    (click)="downloadSaleReturnPdf(row)"
+                    title="Download Return PDF"
+                  >
+                    <mat-icon>download</mat-icon>
+                  </button>
+                  <span class="si-return-ref" title="Original Invoice">
+                    <mat-icon>info_outline</mat-icon>
+                    {{ row.originalInvoiceNo || 'N/A' }}
+                  </span>
+                </ng-container>
               </div>
             </td>
           </tr>

@@ -1,7 +1,10 @@
 import { Injectable } from '@angular/core';
-import { Observable, combineLatest } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Observable, combineLatest, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 import { DataStoreService } from '../../services/data-store.service';
+import { AuthService } from '../../services/auth.service';
+import { enviort } from '../../../environments/environment';
 import { Sale } from '../../shared/models/sale.model';
 import { Book } from '../../shared/models/book.model';
 import { Party } from '../../shared/models/party.model';
@@ -30,14 +33,23 @@ type PaymentModeBucket = 'cash' | 'upi' | 'bank';
  * no rendering logic and produces the strictly typed `DashboardOverview`
  * contract consumed by the smart `DashboardComponent`.
  *
- * The aggregate is derived entirely client-side from data already loaded by
- * `DataStoreService` (sales, books, parties, transactions) rather than a new
- * backend endpoint, so it stays in sync automatically whenever any of those
- * caches refresh (e.g. after a sale/purchase is recorded elsewhere in the app).
+ * Most of the aggregate is derived client-side from data already loaded by
+ * `DataStoreService` (sales, books, parties, transactions), so it stays in
+ * sync automatically whenever any of those caches refresh (e.g. after a
+ * sale/purchase is recorded elsewhere in the app). `totalStockUnits` is the
+ * one exception: `DataStoreService.getBooks()`/`getHiddenBooks()` are capped
+ * at 1000 rows per call (see `CACHE_ALL_PAGE_SIZE`), which silently undercounts
+ * once the catalog grows past that — so total stock is instead read from the
+ * backend's `GET /stats/dashboard` aggregate (`totalBookStock`, a DB-side
+ * `SUM(stock)` over every book), which has no such cap.
  */
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
-  constructor(private readonly store: DataStoreService) {}
+  constructor(
+    private readonly store: DataStoreService,
+    private readonly http: HttpClient,
+    private readonly auth: AuthService
+  ) {}
 
   getDashboardOverview(options: DashboardOverviewOptions = {}): Observable<DashboardOverview> {
     const resolvedOptions = this.resolveOptions(options);
@@ -47,12 +59,23 @@ export class DashboardService {
       this.store.getBooks(),
       this.store.getParties(),
       this.store.getTransactions(),
-      this.store.getHiddenBooks()
+      this.store.getHiddenBooks(),
+      this.getTotalStockUnits()
     ]).pipe(
-      map(([sales, books, parties, transactions, hiddenBooks]) =>
-        this.buildOverview(sales || [], books || [], parties || [], transactions || [], resolvedOptions, hiddenBooks || [])
+      map(([sales, books, parties, transactions, hiddenBooks, totalStockUnits]) =>
+        this.buildOverview(sales || [], books || [], parties || [], transactions || [], resolvedOptions, hiddenBooks || [], totalStockUnits)
       )
     );
+  }
+
+  /** DB-side aggregate stock total; falls back to `null` (client-side sum) if the call fails. */
+  private getTotalStockUnits(): Observable<number | null> {
+    return this.http
+      .get<{ totalBookStock?: number }>(enviort.statsDashboardUrl, { headers: this.auth.getAuthHeaders() })
+      .pipe(
+        map((res) => (typeof res?.totalBookStock === 'number' ? res.totalBookStock : null)),
+        catchError(() => of(null))
+      );
   }
 
   private resolveOptions(options: DashboardOverviewOptions): ResolvedDashboardOverviewOptions {
@@ -80,12 +103,13 @@ export class DashboardService {
     parties: Party[],
     transactions: Transaction[],
     options: ResolvedDashboardOverviewOptions,
-    hiddenBooks: Book[]
+    hiddenBooks: Book[],
+    totalStockUnitsOverride: number | null
   ): DashboardOverview {
     return {
       revenue: this.buildRevenueSummary(sales),
       outstandingDebt: this.buildOutstandingDebtSummary(sales, parties),
-      stock: this.buildStockSummary(books, options.lowStockThreshold, hiddenBooks),
+      stock: this.buildStockSummary(books, options.lowStockThreshold, hiddenBooks, totalStockUnitsOverride),
       cashbook: this.buildCashbookSummary(transactions),
       recentInvoices: this.buildRecentInvoices(sales, options.recentInvoicesLimit),
       lowStockAlerts: this.buildLowStockAlerts(books, options.lowStockThreshold),
@@ -116,10 +140,18 @@ export class DashboardService {
     };
   }
 
-  private buildStockSummary(books: Book[], lowStockThreshold: number, hiddenBooks: Book[] = []): StockOverviewSummary {
+  private buildStockSummary(
+    books: Book[],
+    lowStockThreshold: number,
+    hiddenBooks: Book[] = [],
+    totalStockUnitsOverride: number | null = null
+  ): StockOverviewSummary {
+    // Prefer the backend's DB-side SUM(stock) aggregate (uncapped) — fall back to summing the
+    // client-side lists (capped at 1000 rows each, see CACHE_ALL_PAGE_SIZE) only if that call failed.
     // getBooks() only returns visible titles, but hidden ones still hold real physical
     // stock — omitting them here is what made the dashboard total undercount (bug #9).
-    const totalStockUnits = [...books, ...hiddenBooks].reduce((sum, book) => sum + (book.stock || 0), 0);
+    const totalStockUnits =
+      totalStockUnitsOverride ?? [...books, ...hiddenBooks].reduce((sum, book) => sum + (book.stock || 0), 0);
     const lowStockTitlesCount = books.filter(
       (book) => this.mapStockLevelStatus(book.stock, lowStockThreshold) !== 'IN_STOCK'
     ).length;
