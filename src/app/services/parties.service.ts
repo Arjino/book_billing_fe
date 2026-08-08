@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { Party } from '../shared/models/party.model';
 import { enviort } from '../../environments/environment';
@@ -21,7 +21,8 @@ export class PartiesService {
   }
 
   getOldParties(): Observable<Party[]> {
-    return this.http.get<Party[]>(enviort.partiesUrl + '/hidden', { headers: this.auth.getAuthHeaders() }).pipe(
+    return this.http.get<any>(enviort.partiesUrl + '/hidden', { headers: this.auth.getAuthHeaders() }).pipe(
+      map((data) => (Array.isArray(data) ? data : (data?.content || []))),
       catchError((error) => {
         console.error('Error loading old parties:', error);
         return throwError(() => error);

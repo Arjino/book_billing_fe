@@ -98,15 +98,6 @@ export function buildAppNavItems(
       description: 'Sales charts & top titles',
       icon: 'bar_chart',
       route: '/analytics'
-    },
-    {
-      id: 'feedback-logs',
-      label: 'Feedback & System Logs',
-      description: 'Operational logs & reviews',
-      icon: 'forum',
-      route: '/feedback',
-      badgeCount: badgeCounts.feedback,
-      showQuickAdd: showQuickAdd('feedback-logs')
     }
   ];
 }

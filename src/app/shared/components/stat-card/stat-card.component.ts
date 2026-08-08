@@ -22,4 +22,6 @@ export class StatCardComponent {
   @Input() iconVariant: UiVariant = 'default';
   @Input() badge: StatCardBadge | null = null;
   @Input() footnote: StatCardFootnote | null = null;
+  /** Compact layout: smaller padding/icon/font so more KPI tiles fit above the fold. */
+  @Input() dense = false;
 }

@@ -26,6 +26,8 @@ export class DataTableComponent<T extends object> {
   @Input() actions: DataTableRowAction[] = [];
   @Input() statusStyles: Record<string, DataTableStatusStyle> = {};
   @Input() emptyMessage = 'No records found.';
+  /** Compact layout: tighter cell padding/font so the table fits in a smaller panel. */
+  @Input() dense = false;
 
   @Output() readonly rowAction = new EventEmitter<DataTableRowActionEvent<T>>();
   @Output() readonly rowClick = new EventEmitter<T>();

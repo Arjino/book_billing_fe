@@ -22,7 +22,8 @@ export class BooksService {
   }
 
   getDiscardedBooks(): Observable<Book[]> {
-    return this.http.get<Book[]>(enviort.bookingUrl + '/hidden', { headers: this.auth.getAuthHeaders() }).pipe(
+    return this.http.get<any>(enviort.bookingUrl + '/hidden', { headers: this.auth.getAuthHeaders() }).pipe(
+      map((data) => (Array.isArray(data) ? data : (data?.content || []))),
       catchError((error) => {
         console.error('Error loading discarded books:', error);
         return throwError(() => error);

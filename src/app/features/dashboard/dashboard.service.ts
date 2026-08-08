@@ -4,11 +4,15 @@ import { Observable, combineLatest, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { DataStoreService } from '../../services/data-store.service';
 import { AuthService } from '../../services/auth.service';
+import { PurchaseService } from '../../services/purchase.service';
+import { BusinessAnalyticsService } from '../analytics/analytics.service';
+import { BusinessAnalyticsOverview } from '../analytics/analytics.types';
 import { enviort } from '../../../environments/environment';
 import { Sale } from '../../shared/models/sale.model';
 import { Book } from '../../shared/models/book.model';
 import { Party } from '../../shared/models/party.model';
 import { Transaction } from '../../shared/models/transaction.model';
+import { PurchaseInvoice, PurchaseOrder } from '../purchase/purchase.models';
 import { InvoiceStatus, StockLevelStatus } from '../../shared/types/status.types';
 import { toTimestamp } from '../../utils/formatters';
 import {
@@ -17,11 +21,16 @@ import {
   DashboardOverviewOptions,
   LowStockAlertItem,
   OutstandingDebtSummary,
+  PurchaseSummary,
   RecentInvoice,
   RevenueSummary,
   StockOverviewSummary
 } from './dashboard.types';
-import { DEFAULT_LOW_STOCK_THRESHOLD, DEFAULT_RECENT_INVOICES_LIMIT } from './dashboard.constants';
+import {
+  DEFAULT_LOW_STOCK_THRESHOLD,
+  DEFAULT_RECENT_INVOICES_LIMIT,
+  DEFAULT_TOP_DEBTORS_LIMIT
+} from './dashboard.constants';
 
 type ResolvedDashboardOverviewOptions = Required<DashboardOverviewOptions>;
 type PaymentModeBucket = 'cash' | 'upi' | 'bank';
@@ -42,13 +51,21 @@ type PaymentModeBucket = 'cash' | 'upi' | 'bank';
  * once the catalog grows past that — so total stock is instead read from the
  * backend's `GET /stats/dashboard` aggregate (`totalBookStock`, a DB-side
  * `SUM(stock)` over every book), which has no such cap.
+ *
+ * Top-debtor and payment-mode-mix figures are not recomputed here — they are
+ * read straight off `BusinessAnalyticsService.getOverview()` so the dashboard
+ * can never disagree with the Analytics page for the same underlying data.
+ * Purchases are today-scoped (`PurchaseService.getPurchasesByDate()`), mirroring
+ * how `DataStoreService.getSales()` already scopes sales to today.
  */
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
   constructor(
     private readonly store: DataStoreService,
     private readonly http: HttpClient,
-    private readonly auth: AuthService
+    private readonly auth: AuthService,
+    private readonly purchaseService: PurchaseService,
+    private readonly analyticsService: BusinessAnalyticsService
   ) {}
 
   getDashboardOverview(options: DashboardOverviewOptions = {}): Observable<DashboardOverview> {
@@ -60,10 +77,26 @@ export class DashboardService {
       this.store.getParties(),
       this.store.getTransactions(),
       this.store.getHiddenBooks(),
-      this.getTotalStockUnits()
+      this.getTotalStockUnits(),
+      // Reused rather than re-derived: keeps "Top Outstanding Parties" and "Payment Collection
+      // Mix" identical to what the Analytics page shows for the same underlying sales/transactions.
+      this.analyticsService.getOverview(),
+      this.getPurchasesToday(),
+      this.getPurchaseOrders()
     ]).pipe(
-      map(([sales, books, parties, transactions, hiddenBooks, totalStockUnits]) =>
-        this.buildOverview(sales || [], books || [], parties || [], transactions || [], resolvedOptions, hiddenBooks || [], totalStockUnits)
+      map(([sales, books, parties, transactions, hiddenBooks, totalStockUnits, analyticsOverview, purchasesToday, purchaseOrders]) =>
+        this.buildOverview(
+          sales || [],
+          books || [],
+          parties || [],
+          transactions || [],
+          resolvedOptions,
+          hiddenBooks || [],
+          totalStockUnits,
+          analyticsOverview,
+          purchasesToday || [],
+          purchaseOrders || []
+        )
       )
     );
   }
@@ -76,6 +109,16 @@ export class DashboardService {
         map((res) => (typeof res?.totalBookStock === 'number' ? res.totalBookStock : null)),
         catchError(() => of(null))
       );
+  }
+
+  /** Today's purchase bills (mirrors how `DataStoreService.getSales()` scopes sales to today). */
+  private getPurchasesToday(): Observable<PurchaseInvoice[]> {
+    return this.purchaseService.getPurchasesByDate().pipe(catchError(() => of([])));
+  }
+
+  /** All purchase orders, used only to count how many are still open (not `COMPLETED`). */
+  private getPurchaseOrders(): Observable<PurchaseOrder[]> {
+    return this.purchaseService.getPurchaseOrders().pipe(catchError(() => of([])));
   }
 
   private resolveOptions(options: DashboardOverviewOptions): ResolvedDashboardOverviewOptions {
@@ -104,16 +147,40 @@ export class DashboardService {
     transactions: Transaction[],
     options: ResolvedDashboardOverviewOptions,
     hiddenBooks: Book[],
-    totalStockUnitsOverride: number | null
+    totalStockUnitsOverride: number | null,
+    analyticsOverview: BusinessAnalyticsOverview,
+    purchasesToday: PurchaseInvoice[],
+    purchaseOrders: PurchaseOrder[]
   ): DashboardOverview {
     return {
       revenue: this.buildRevenueSummary(sales),
       outstandingDebt: this.buildOutstandingDebtSummary(sales, parties),
       stock: this.buildStockSummary(books, options.lowStockThreshold, hiddenBooks, totalStockUnitsOverride),
       cashbook: this.buildCashbookSummary(transactions),
+      purchases: this.buildPurchaseSummary(purchasesToday, purchaseOrders),
+      topDebtors: analyticsOverview.topDebtors.slice(0, DEFAULT_TOP_DEBTORS_LIMIT),
+      paymentModeBreakdown: analyticsOverview.paymentModeBreakdown,
+      collectionRatePercent: analyticsOverview.kpis.collectionRatePercent,
+      revenueTrend7d: analyticsOverview.revenueTrend7d,
       recentInvoices: this.buildRecentInvoices(sales, options.recentInvoicesLimit),
       lowStockAlerts: this.buildLowStockAlerts(books, options.lowStockThreshold),
       lastUpdatedAt: new Date().toISOString()
+    };
+  }
+
+  private buildPurchaseSummary(purchasesToday: PurchaseInvoice[], purchaseOrders: PurchaseOrder[]): PurchaseSummary {
+    const totalPurchaseAmount = purchasesToday.reduce((sum, purchase) => sum + (purchase.grandTotal || 0), 0);
+    const totalPurchaseDue = purchasesToday.reduce((sum, purchase) => {
+      const due = typeof purchase.dueAmount === 'number' ? purchase.dueAmount : (purchase.grandTotal || 0) - (purchase.paidAmount || 0);
+      return sum + Math.max(due, 0);
+    }, 0);
+    const openOrdersCount = purchaseOrders.filter((po) => (po.status || 'PENDING').toUpperCase() !== 'COMPLETED').length;
+
+    return {
+      totalPurchaseAmount,
+      billsCount: purchasesToday.length,
+      totalPurchaseDue,
+      openOrdersCount
     };
   }
 

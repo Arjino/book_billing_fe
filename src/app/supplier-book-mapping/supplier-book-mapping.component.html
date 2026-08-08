@@ -87,19 +87,21 @@
     </section>
 
     <section class="panel table-panel">
-      <div class="panel-title">
-        <span class="material-icons">library_books</span>
-        All Publisher Mappings
-        <span class="count-pill">{{ allRows.length }}</span>
-      </div>
+      <div class="panel-header-row">
+        <div class="panel-title">
+          <span class="material-icons">library_books</span>
+          All Publisher Mappings
+          <span class="count-pill">{{ allRows.length }}</span>
+        </div>
 
-      <div class="filter-row">
-        <div class="field">
-          <label>Filter by Publisher</label>
-          <select [ngModel]="filterPublisher" (ngModelChange)="onFilterPublisherChange($event)">
-            <option [ngValue]="null">All Publishers</option>
-            <option *ngFor="let publisher of publishers" [ngValue]="publisher">{{ publisher }}</option>
-          </select>
+        <div class="filter-row">
+          <div class="field">
+            <label>Filter by Publisher</label>
+            <select [ngModel]="filterPublisher" (ngModelChange)="onFilterPublisherChange($event)">
+              <option [ngValue]="null">All Publishers</option>
+              <option *ngFor="let publisher of publishers" [ngValue]="publisher">{{ publisher }}</option>
+            </select>
+          </div>
         </div>
       </div>
 

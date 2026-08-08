@@ -1,4 +1,5 @@
 import { InvoiceStatus, StockLevelStatus } from '../../shared/types/status.types';
+import { PaymentModeShare, RevenueTrendPoint, TopDebtorParty } from '../analytics/analytics.types';
 
 /**
  * Strict data contracts for the redesigned Dashboard (Overview) screen.
@@ -36,6 +37,14 @@ export interface CashbookSummary {
   bankAmount: number;
 }
 
+/** "Purchases" KPI cards — today's purchase bills plus open (not-yet-completed) purchase orders. */
+export interface PurchaseSummary {
+  totalPurchaseAmount: number;
+  billsCount: number;
+  totalPurchaseDue: number;
+  openOrdersCount: number;
+}
+
 /** One row of the "Recent Sales Invoices" table. */
 export interface RecentInvoice {
   id: number;
@@ -62,6 +71,12 @@ export interface DashboardOverview {
   outstandingDebt: OutstandingDebtSummary;
   stock: StockOverviewSummary;
   cashbook: CashbookSummary;
+  purchases: PurchaseSummary;
+  /** Reused from `BusinessAnalyticsService` so the dashboard and the Analytics page never disagree. */
+  topDebtors: TopDebtorParty[];
+  paymentModeBreakdown: PaymentModeShare[];
+  collectionRatePercent: number;
+  revenueTrend7d: RevenueTrendPoint[];
   recentInvoices: RecentInvoice[];
   lowStockAlerts: LowStockAlertItem[];
   lastUpdatedAt: string | null;

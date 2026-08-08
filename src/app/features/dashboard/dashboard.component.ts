@@ -14,6 +14,7 @@ import { SidebarNavComponent } from '../../shared/ui/sidebar-nav/sidebar-nav.com
 import { buildAppNavItems, AppNavBadgeCounts, AppNavQuickAddId } from '../../shared/nav-items';
 import { NavBadgeCountsService } from '../../shared/nav-badge-counts.service';
 import { NavItem } from '../../shared/models/common.models';
+import { UiVariant } from '../../shared/types/status.types';
 import { StatCardComponent } from '../../shared/components/stat-card/stat-card.component';
 import { DataTableComponent } from '../../shared/components/data-table/data-table.component';
 import {
@@ -25,6 +26,7 @@ import {
 
 import { DashboardService } from './dashboard.service';
 import { DashboardOverview, RecentInvoice } from './dashboard.types';
+import { DEFAULT_LOW_STOCK_ALERTS_LIMIT } from './dashboard.constants';
 import { formatCurrency, formatDateTimeDisplay, formatUnitLabel } from '../../utils/formatters';
 
 import { AuthService } from '../../services/auth.service';
@@ -107,10 +109,17 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly overview = signal<DashboardOverview | null>(null);
   readonly lastUpdatedDisplay = computed(() => formatDateTimeDisplay(this.overview()?.lastUpdatedAt ?? null));
 
+  /** Mirrors `BusinessAnalyticsComponent`'s trend-bar scaling so the two pages read the same way. */
+  readonly trendMaxAmount = computed(() => {
+    const points = this.overview()?.revenueTrend7d ?? [];
+    return points.reduce((max, point) => Math.max(max, point.amount), 0);
+  });
+
   readonly navItems: Signal<ReadonlyArray<NavItem>>;
 
   readonly formatCurrency = formatCurrency;
   readonly formatUnitLabel = formatUnitLabel;
+  readonly lowStockAlertsLimit = DEFAULT_LOW_STOCK_ALERTS_LIMIT;
 
   private overviewSubscription: Subscription | null = null;
 
@@ -184,6 +193,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (event.actionId === 'print') {
       this.router.navigate(['/invoice', event.row.id]);
     }
+  }
+
+  trackByPartyId(_index: number, item: { partyId: number }): number {
+    return item.partyId;
+  }
+
+  trackByMode(_index: number, item: { mode: string }): string {
+    return item.mode;
+  }
+
+  trackByBookId(_index: number, item: { bookId: number }): number {
+    return item.bookId;
+  }
+
+  /** Mirrors the collection-rate color thresholds used on the Analytics page. */
+  collectionRateVariant(ratePercent: number): UiVariant {
+    if (ratePercent >= 70) return 'success';
+    if (ratePercent >= 40) return 'warning';
+    return 'danger';
+  }
+
+  purchaseDueVariant(totalPurchaseDue: number): UiVariant {
+    return totalPurchaseDue > 0 ? 'danger' : 'success';
+  }
+
+  barHeightPercent(amount: number): number {
+    const max = this.trendMaxAmount();
+    if (max <= 0) return 4;
+    return Math.max(4, (amount / max) * 100);
   }
 
   copyAccessToken(): void {

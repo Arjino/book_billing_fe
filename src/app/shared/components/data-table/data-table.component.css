@@ -117,3 +117,21 @@
   height: 16px;
   line-height: 16px;
 }
+
+/* Dense variant: compact rows so more of the table fits without scrolling */
+.data-table-wrapper--dense .data-table {
+  font-size: 12px;
+}
+
+.data-table-wrapper--dense .data-table thead th {
+  padding: 8px 12px;
+  font-size: 10px;
+}
+
+.data-table-wrapper--dense .data-table tbody td {
+  padding: 8px 12px;
+}
+
+.data-table-wrapper--dense .row-action-btn {
+  padding: 4px 8px;
+}

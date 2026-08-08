@@ -27,45 +27,74 @@
     </header>
 
     <ng-container *ngIf="overview() as data; else loadingState">
+      <!-- Compact KPI strip: sales, collections, receivables, purchases, payables, stock, cashbook -->
       <section class="stat-grid">
         <app-stat-card
-          title="Total Billed Revenue"
+          [dense]="true"
+          title="Billed Revenue"
           [value]="formatCurrency(data.revenue.totalBilledRevenue)"
           icon="trending_up"
           iconVariant="primary"
           [badge]="{ text: data.revenue.billsCount + ' Bills', variant: 'primary' }"
-          [footnote]="{ text: '↗ ' + formatCurrency(data.revenue.cashReceivedAmount) + ' Cash Received', variant: 'success' }"
         ></app-stat-card>
 
         <app-stat-card
-          title="Parties Outstanding Debt"
+          [dense]="true"
+          title="Cash Collected"
+          [value]="formatCurrency(data.revenue.cashReceivedAmount)"
+          icon="payments"
+          iconVariant="success"
+          [badge]="{ text: (data.collectionRatePercent | number: '1.0-0') + '% Collected', variant: collectionRateVariant(data.collectionRatePercent) }"
+        ></app-stat-card>
+
+        <app-stat-card
+          [dense]="true"
+          title="Outstanding Dues"
           [value]="formatCurrency(data.outstandingDebt.totalOutstandingDebt)"
           icon="groups"
           iconVariant="warning"
-          [badge]="{ text: data.outstandingDebt.activePartiesCount + ' Active', variant: 'warning' }"
-          [footnote]="{ text: 'Manage client ledgers & credits' }"
+          [badge]="{ text: data.outstandingDebt.activePartiesCount + ' Parties', variant: 'warning' }"
         ></app-stat-card>
 
         <app-stat-card
-          title="Total Books Stock Units"
+          [dense]="true"
+          title="Purchases Today"
+          [value]="formatCurrency(data.purchases.totalPurchaseAmount)"
+          icon="local_shipping"
+          iconVariant="info"
+          [badge]="{ text: data.purchases.billsCount + ' Bills', variant: 'info' }"
+        ></app-stat-card>
+
+        <app-stat-card
+          [dense]="true"
+          title="Purchase Due"
+          [value]="formatCurrency(data.purchases.totalPurchaseDue)"
+          icon="request_quote"
+          [iconVariant]="purchaseDueVariant(data.purchases.totalPurchaseDue)"
+          [badge]="{ text: data.purchases.openOrdersCount + ' Open PO', variant: 'default' }"
+        ></app-stat-card>
+
+        <app-stat-card
+          [dense]="true"
+          title="Stock Units"
           [value]="formatUnitLabel(data.stock.totalStockUnits, 'Pc', 'Pcs')"
           icon="menu_book"
           iconVariant="info"
           [badge]="{ text: data.stock.totalTitlesCount + ' Titles', variant: 'info' }"
           [footnote]="
             data.stock.lowStockTitlesCount
-              ? { text: data.stock.lowStockTitlesCount + ' titles below stock alert', variant: 'danger' }
+              ? { text: data.stock.lowStockTitlesCount + ' low', variant: 'danger' }
               : null
           "
         ></app-stat-card>
 
         <app-stat-card
+          [dense]="true"
           title="Payments Recorded"
           [value]="formatUnitLabel(data.cashbook.receiptsCount, 'Receipt', 'Receipts')"
           icon="account_balance_wallet"
           iconVariant="success"
           [badge]="{ text: 'Cashbook', variant: 'success' }"
-          [footnote]="{ text: 'Cash, UPI & Bank Settlements' }"
         ></app-stat-card>
       </section>
 
@@ -79,6 +108,7 @@
             <a routerLink="/sales" class="view-all-link">View All <mat-icon>chevron_right</mat-icon></a>
           </div>
           <app-data-table
+            [dense]="true"
             [columns]="invoiceColumns"
             [rows]="data.recentInvoices"
             [actions]="invoiceActions"
@@ -88,33 +118,113 @@
           ></app-data-table>
         </div>
 
-        <div class="side-panels">
-          <div class="panel alert-panel" *ngIf="data.lowStockAlerts.length">
-            <div class="alert-panel-header">
-              <mat-icon>error</mat-icon>
-              <h2>Low Stock Inventory Alert</h2>
+        <div class="panel stock-panel">
+          <div class="panel-header">
+            <div>
+              <h2><mat-icon class="panel-header-icon panel-header-icon--danger">error</mat-icon> Low Stock Alerts</h2>
+              <p>Titles at or below the restock threshold</p>
             </div>
-            <p class="alert-panel-subtitle">The following book titles need restocking:</p>
-            <div class="alert-item" *ngFor="let item of data.lowStockAlerts">
+          </div>
+
+          <div class="mini-list" *ngIf="data.lowStockAlerts.length; else noLowStockState">
+            <div
+              class="alert-item"
+              *ngFor="let item of data.lowStockAlerts | slice: 0:lowStockAlertsLimit; trackBy: trackByBookId"
+            >
               <div class="alert-item-info">
                 <p class="alert-item-title">{{ item.title }}</p>
-                <p class="alert-item-meta">SKU: {{ item.sku }} &bull; MRP &#8377;{{ item.mrp }}</p>
+                <p class="alert-item-meta">SKU: {{ item.sku }} &bull; MRP {{ formatCurrency(item.mrp) }}</p>
               </div>
               <span class="alert-item-badge">{{ item.unitsLeft }} left</span>
             </div>
           </div>
+          <ng-template #noLowStockState>
+            <p class="empty-state">All titles are healthy — nothing below the restock threshold.</p>
+          </ng-template>
 
-          <div class="panel ledger-panel">
+          <a
+            *ngIf="data.lowStockAlerts.length > lowStockAlertsLimit"
+            routerLink="/booking"
+            class="panel-cta panel-cta--ghost"
+          >
+            View all {{ data.lowStockAlerts.length }} low-stock titles
+            <mat-icon>chevron_right</mat-icon>
+          </a>
+        </div>
+
+        <div class="side-panels">
+          <div class="panel mini-panel">
             <div class="panel-header">
               <div>
-                <h2>Party Ledger Quick Search</h2>
-                <p>Directly view ledger statements for book depots and publishers.</p>
+                <h2>Payment Collection Mix</h2>
+                <p>Recorded receipts by settlement mode</p>
               </div>
             </div>
-            <a routerLink="/ledger" class="ledger-panel-button">
+            <div class="mode-list" *ngIf="data.paymentModeBreakdown.length; else noPaymentsState">
+              <div class="mode-row" *ngFor="let mode of data.paymentModeBreakdown; trackBy: trackByMode">
+                <div class="mode-row-top">
+                  <span class="mode-row-label">{{ mode.mode }}</span>
+                  <span class="mode-row-value">{{ formatCurrency(mode.amount) }}</span>
+                </div>
+                <div class="mode-row-track">
+                  <div class="mode-row-fill" [style.width.%]="mode.percent"></div>
+                </div>
+              </div>
+            </div>
+            <ng-template #noPaymentsState>
+              <p class="empty-state">No payments recorded yet.</p>
+            </ng-template>
+          </div>
+
+          <div class="panel mini-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Top Outstanding Parties</h2>
+                <p>Total due: {{ formatCurrency(data.outstandingDebt.totalOutstandingDebt) }}</p>
+              </div>
+            </div>
+            <div class="debtor-list" *ngIf="data.topDebtors.length; else noDebtorsState">
+              <a
+                *ngFor="let debtor of data.topDebtors; trackBy: trackByPartyId"
+                class="debtor-row"
+                [routerLink]="['/ledger']"
+                [queryParams]="{ partyId: debtor.partyId }"
+              >
+                <div class="debtor-row-info">
+                  <p class="debtor-row-name">{{ debtor.name }}</p>
+                  <p class="debtor-row-meta">{{ formatUnitLabel(debtor.invoiceCount, 'invoice') }} pending</p>
+                </div>
+                <span class="debtor-row-amount">{{ formatCurrency(debtor.outstandingAmount) }}</span>
+              </a>
+            </div>
+            <ng-template #noDebtorsState>
+              <p class="empty-state">All client invoices are fully settled.</p>
+            </ng-template>
+            <a routerLink="/ledger" class="panel-cta">
               Open Party Statement Ledger
               <mat-icon>open_in_new</mat-icon>
             </a>
+          </div>
+
+          <div class="panel mini-panel trend-panel-mini">
+            <div class="panel-header">
+              <div>
+                <h2>7-Day Revenue Trend</h2>
+                <p>Daily sales &bull; <a routerLink="/analytics">Full analytics</a></p>
+              </div>
+            </div>
+            <div class="mini-trend-chart">
+              <div class="mini-trend-bar-col" *ngFor="let point of data.revenueTrend7d">
+                <div class="mini-trend-bar-track">
+                  <div
+                    class="mini-trend-bar-fill"
+                    [style.height.%]="barHeightPercent(point.amount)"
+                    [attr.title]="point.label + ': ' + formatCurrency(point.amount)"
+                  ></div>
+                </div>
+                <span class="mini-trend-bar-label">{{ point.label }}</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
