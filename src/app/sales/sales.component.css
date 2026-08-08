@@ -618,21 +618,6 @@
   background: var(--color-sky-100);
 }
 
-.si-return-ref {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.78rem;
-  color: var(--color-violet-600);
-  font-style: italic;
-}
-
-.si-return-ref mat-icon {
-  font-size: 15px;
-  width: 15px;
-  height: 15px;
-}
-
 /* Empty row */
 .si-empty-cell {
   text-align: center;

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, HostListener, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { Router, ActivatedRoute } from '@angular/router';
@@ -302,6 +302,13 @@ export class BookingComponent implements OnInit {
     if (this.currentPage > 0) {
       this.currentPage--;
       this.loadBooksByStatus();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.selectedBook) {
+      this.closeStockDetails();
     }
   }
 

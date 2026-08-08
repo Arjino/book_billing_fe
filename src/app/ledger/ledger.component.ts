@@ -132,6 +132,17 @@ export class LedgerComponent implements OnInit, OnDestroy {
     };
   }
 
+  // Balance = previous + debit − credit (see LedgerService.createEntry on the backend), a
+  // standard running T-account balance: positive means net debit (the party owes us — Dr),
+  // negative means net credit (we owe the party — Cr).
+  isDebitBalance(balance: number): boolean {
+    return (balance || 0) >= 0;
+  }
+
+  absBalance(balance: number): number {
+    return Math.abs(balance || 0);
+  }
+
   partyId: any = null;
   parties: any[] = [];
   partyState: PartyDropdownState | null = null;

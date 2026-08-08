@@ -93,7 +93,15 @@
         <div class="line-card-fields">
           <div class="field">
             <label>Qty (Pcs)</label>
-            <input type="number" min="0" [(ngModel)]="line.qty" placeholder="0" />
+            <input
+              type="number"
+              min="0"
+              [(ngModel)]="line.qty"
+              placeholder="0"
+              [class.has-error]="lineExceedsStock(line)" />
+            <div class="field-error" *ngIf="lineExceedsStock(line)">
+              Only {{ line.book?.stock }} in stock.
+            </div>
           </div>
           <div class="field">
             <label>MRP (₹)</label>

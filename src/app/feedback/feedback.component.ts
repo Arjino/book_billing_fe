@@ -91,6 +91,7 @@ export class FeedbackComponent implements OnInit {
           this.snackBar.open(FEEDBACK_CONSTANTS.MESSAGES.SUBMIT_SUCCESS, 'Close', {
             duration: FEEDBACK_CONSTANTS.SNACKBAR_DURATION.SHORT
           });
+          this.loadingService.hide();
           this.loadFeedback();
         },
         error: () => {

@@ -87,6 +87,8 @@
             [options]="bookOptions"
             [ngModel]="line.book?.id ?? null"
             (ngModelChange)="onBookSelected(line, $event)"
+            [disabled]="recordType === 'RECEIVING_ORDER' && !!poNumber"
+            [title]="recordType === 'RECEIVING_ORDER' && !!poNumber ? 'Books are fixed from the selected PO and cannot be changed here.' : ''"
             placeholder="Search book title or SKU...">
           </app-searchable-select>
           <button type="button" class="icon-btn danger" (click)="removeLine(i)" title="Remove line">

@@ -53,6 +53,7 @@ export class SalesComponent implements OnInit {
   navItems: ReadonlyArray<NavItem> = buildAppNavItems();
   sales: Sale[] = [];
   saleReturns: SaleReturn[] = [];
+  private partyNameById = new Map<string, string>();
 
   // ── Filters ────────────────────────────────────────────────
   searchText = '';
@@ -110,6 +111,9 @@ export class SalesComponent implements OnInit {
     this.minutes = this.buildMinuteOptions();
     this.loadSales();
     this.loadSaleReturns();
+    this.store.getParties().subscribe(parties => {
+      this.partyNameById = new Map(parties.map(p => [String(p.id), p.name]));
+    });
   }
 
   loadSales() {
@@ -149,9 +153,9 @@ export class SalesComponent implements OnInit {
     const returnRows: SaleDisplayRow[] = this.saleReturns.map(r => ({
       id: r.id,
       invoiceNo: r.returnNumber || r.originalInvoiceNo || `RET-${r.id}`,
-      partyName: r.party?.name || r.partyName || '—',
+      partyName: r.party?.name || r.partyName || this.partyNameById.get(String(r.partyId)) || (r.partyId ? String(r.partyId) : '—'),
       dateStr: r.returnDate || '',
-      grandTotal: 0,
+      grandTotal: this.getSaleReturnTotal(r),
       paymentStatus: 'RETURN',
       docType: 'RETURN' as const,
       originalInvoiceNo: r.originalInvoiceNo,
@@ -159,6 +163,13 @@ export class SalesComponent implements OnInit {
     }));
 
     return [...saleRows, ...returnRows];
+  }
+
+  private getSaleReturnTotal(r: SaleReturn): number {
+    return (r.items || []).reduce((total, item) => {
+      if (item.netAmount != null) return total + Number(item.netAmount);
+      return total + (Number(item.qty) || 0) * (Number(item.rate) || 0);
+    }, 0);
   }
 
   get filteredRows(): SaleDisplayRow[] {

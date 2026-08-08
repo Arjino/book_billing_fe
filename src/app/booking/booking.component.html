@@ -212,86 +212,88 @@
       </div>
     </section>
 
-    <section *ngIf="selectedBook" class="card-shell stock-panel">
-      <div class="stock-panel-header">
-        <div>
-          <h3>Stock Details</h3>
-          <p>{{ selectedBook.title }} (SKU: {{ selectedBook.sku }})</p>
-        </div>
-        <div class="stock-panel-actions">
-          <button type="button" class="secondary-action" (click)="loadStockDetails()">
-            <mat-icon>refresh</mat-icon>
-            Refresh
-          </button>
-          <button type="button" class="close-btn" (click)="closeStockDetails()" aria-label="Close stock details">
-            <mat-icon>close</mat-icon>
-          </button>
-        </div>
-      </div>
-
-      <div class="message-box error-box" *ngIf="stockError">{{ stockError }}</div>
-      <div class="loading-note" *ngIf="stockLoading">Loading stock data...</div>
-
-      <div class="stat-grid" *ngIf="stockSummary && !stockLoading">
-        <div class="stat-tile stat-tile--info">
-          <span class="stat-label">On Hand Stock</span>
-          <span class="stat-value">{{ stockSummary.onHandStock }}</span>
-        </div>
-        <div class="stat-tile stat-tile--warning">
-          <span class="stat-label">Reserved Stock</span>
-          <span class="stat-value">{{ stockSummary.reservedStock }}</span>
-        </div>
-        <div class="stat-tile stat-tile--success">
-          <span class="stat-label">Available To Sell</span>
-          <span class="stat-value">{{ stockSummary.availableToSell }}</span>
-        </div>
-      </div>
-
-      <div class="adjustment-panel">
-        <h4>Manual Adjustment</h4>
-        <div class="adjustment-grid">
+    <div class="stock-modal-backdrop" *ngIf="selectedBook" (click)="closeStockDetails()">
+      <section class="card-shell stock-panel" (click)="$event.stopPropagation()">
+        <div class="stock-panel-header">
           <div>
-            <label>Adjustment Qty (+/-)</label>
-            <input type="number" [(ngModel)]="adjustmentQty" name="adjustmentQty" placeholder="e.g. 5 or -3" />
+            <h3>Stock Details</h3>
+            <p>{{ selectedBook.title }} (SKU: {{ selectedBook.sku }})</p>
           </div>
-          <div>
-            <label>Source Reference (optional)</label>
-            <input type="text" [(ngModel)]="adjustmentSourceRef" name="adjustmentSourceRef" />
+          <div class="stock-panel-actions">
+            <button type="button" class="secondary-action" (click)="loadStockDetails()">
+              <mat-icon>refresh</mat-icon>
+              Refresh
+            </button>
+            <button type="button" class="close-btn" (click)="closeStockDetails()" aria-label="Close stock details">
+              <mat-icon>close</mat-icon>
+            </button>
           </div>
-          <button type="button" class="primary-action" (click)="submitAdjustment()" [disabled]="adjustmentSubmitting">
-            {{ adjustmentSubmitting ? 'Applying...' : 'Apply Adjustment' }}
-          </button>
         </div>
-      </div>
 
-      <h4 class="ledger-title">Stock Ledger</h4>
-      <p class="empty-note" *ngIf="!stockLedger.length && !stockLoading">No stock ledger entries found for this book.</p>
-      <div class="table-scroll" *ngIf="stockLedger.length">
-        <table class="ledger-table">
-          <thead>
-            <tr>
-              <th>Date/Time</th>
-              <th>Type</th>
-              <th>Qty</th>
-              <th>Source</th>
-              <th>On Hand</th>
-              <th>Reserved</th>
-              <th>Available</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let row of stockLedger">
-              <td>{{ row.createdAt | date:'dd/MM/yyyy hh:mm a' }}</td>
-              <td><span [class]="movementTypeClass(row.movementType)">{{ row.movementType }}</span></td>
-              <td>{{ row.qty }}</td>
-              <td>{{ row.sourceType || '-' }} / {{ row.sourceRef || '-' }}</td>
-              <td>{{ row.onHandBalance }}</td>
-              <td>{{ row.reservedBalance }}</td>
-              <td>{{ row.availableBalance }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+        <div class="message-box error-box" *ngIf="stockError">{{ stockError }}</div>
+        <div class="loading-note" *ngIf="stockLoading">Loading stock data...</div>
+
+        <div class="stat-grid" *ngIf="stockSummary && !stockLoading">
+          <div class="stat-tile stat-tile--info">
+            <span class="stat-label">On Hand Stock</span>
+            <span class="stat-value">{{ stockSummary.onHandStock }}</span>
+          </div>
+          <div class="stat-tile stat-tile--warning">
+            <span class="stat-label">Reserved Stock</span>
+            <span class="stat-value">{{ stockSummary.reservedStock }}</span>
+          </div>
+          <div class="stat-tile stat-tile--success">
+            <span class="stat-label">Available To Sell</span>
+            <span class="stat-value">{{ stockSummary.availableToSell }}</span>
+          </div>
+        </div>
+
+        <div class="adjustment-panel">
+          <h4>Manual Adjustment</h4>
+          <div class="adjustment-grid">
+            <div>
+              <label>Adjustment Qty (+/-)</label>
+              <input type="number" [(ngModel)]="adjustmentQty" name="adjustmentQty" placeholder="e.g. 5 or -3" />
+            </div>
+            <div>
+              <label>Source Reference (optional)</label>
+              <input type="text" [(ngModel)]="adjustmentSourceRef" name="adjustmentSourceRef" />
+            </div>
+            <button type="button" class="primary-action" (click)="submitAdjustment()" [disabled]="adjustmentSubmitting">
+              {{ adjustmentSubmitting ? 'Applying...' : 'Apply Adjustment' }}
+            </button>
+          </div>
+        </div>
+
+        <h4 class="ledger-title">Stock Ledger</h4>
+        <p class="empty-note" *ngIf="!stockLedger.length && !stockLoading">No stock ledger entries found for this book.</p>
+        <div class="table-scroll" *ngIf="stockLedger.length">
+          <table class="ledger-table">
+            <thead>
+              <tr>
+                <th>Date/Time</th>
+                <th>Type</th>
+                <th>Qty</th>
+                <th>Source</th>
+                <th>On Hand</th>
+                <th>Reserved</th>
+                <th>Available</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of stockLedger">
+                <td>{{ row.createdAt | date:'dd/MM/yyyy hh:mm a' }}</td>
+                <td><span [class]="movementTypeClass(row.movementType)">{{ row.movementType }}</span></td>
+                <td>{{ row.qty }}</td>
+                <td>{{ row.sourceType || '-' }} / {{ row.sourceRef || '-' }}</td>
+                <td>{{ row.onHandBalance }}</td>
+                <td>{{ row.reservedBalance }}</td>
+                <td>{{ row.availableBalance }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </main>
 </div>

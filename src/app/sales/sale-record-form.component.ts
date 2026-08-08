@@ -124,7 +124,8 @@ export class SaleRecordFormComponent implements OnInit {
 
   bookLabel(book: Book | null): string {
     if (!book) return '';
-    return `${book.title} (SKU: ${book.sku} • Stock: ${book.stock} • MRP ₹${book.mrp})`;
+    const publisher = book.publisher ? ` • ${book.publisher}` : '';
+    return `${book.title}${publisher} (SKU: ${book.sku})`;
   }
 
   get partyOptions(): SearchableSelectOption<Party>[] {
@@ -145,6 +146,16 @@ export class SaleRecordFormComponent implements OnInit {
     line.mrp = book ? (typeof book.mrp === 'number' ? book.mrp : Number(book.mrp) || 0) : null;
     if (line.qty === null) line.qty = 1;
     this.cdr.markForCheck();
+  }
+
+  /** A sale (not a return) can't ship more units than are currently in stock. */
+  lineExceedsStock(line: SaleLine): boolean {
+    if (this.isReturn || !line.book) return false;
+    return (Number(line.qty) || 0) > (Number(line.book.stock) || 0);
+  }
+
+  get hasStockErrors(): boolean {
+    return this.lines.some((l) => this.lineExceedsStock(l));
   }
 
   lineSubtotal(line: SaleLine): number {
@@ -252,6 +263,7 @@ export class SaleRecordFormComponent implements OnInit {
     if (this.saving) return false;
     if (!this.validLines.length) return false;
     if (!this.party) return false;
+    if (this.hasStockErrors) return false;
 
     if (this.isReturn) {
       return !!this.originalInvoiceNo.trim() && !!this.returnReason.trim();
@@ -281,6 +293,7 @@ export class SaleRecordFormComponent implements OnInit {
     const payload: any = {
       id: 0,
       invoiceNo: '',
+      type: 'SALE',
       party: this.party,
       createdAt: new Date(),
       totalAmount: this.taxableAmount,

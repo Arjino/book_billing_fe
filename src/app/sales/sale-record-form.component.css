@@ -354,6 +354,14 @@
   background: var(--color-surface);
 }
 
+.line-card-fields input.has-error {
+  border-color: var(--color-danger);
+}
+
+.line-card-fields .field-error {
+  margin-top: 4px;
+}
+
 .line-total {
   display: flex;
   align-items: center;
