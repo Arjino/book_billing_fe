@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, forwardRef } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, QueryList, ViewChildren, forwardRef } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 export interface SearchableSelectOption<T = any> {
@@ -34,6 +34,7 @@ export class SearchableSelectComponent implements ControlValueAccessor {
   @Input() emptyMessage = 'No matches found';
   @Input() compareWith: (a: any, b: any) => boolean = (a, b) => a === b;
   @Output() selected = new EventEmitter<SearchableSelectOption | null>();
+  @ViewChildren('optionEl') private optionEls!: QueryList<ElementRef<HTMLElement>>;
 
   disabled = false;
   open = false;
@@ -82,7 +83,12 @@ export class SearchableSelectComponent implements ControlValueAccessor {
     if (this.disabled) return;
     this.open = true;
     this.query = '';
-    this.activeIndex = -1;
+    // Pre-highlight the already-selected option (if any) instead of always
+    // starting at -1, so arrow keys continue from the current selection.
+    this.activeIndex = this.selectedOption
+      ? this.filteredOptions.findIndex((o) => this.compareWith(o.value, this.value))
+      : -1;
+    this.scrollActiveIntoView();
   }
 
   onBlur(): void {
@@ -123,9 +129,11 @@ export class SearchableSelectComponent implements ControlValueAccessor {
       event.preventDefault();
       this.open = true;
       this.activeIndex = Math.min(this.activeIndex + 1, opts.length - 1);
+      this.scrollActiveIntoView();
     } else if (event.key === 'ArrowUp') {
       event.preventDefault();
       this.activeIndex = Math.max(this.activeIndex - 1, 0);
+      this.scrollActiveIntoView();
     } else if (event.key === 'Enter') {
       if (this.open && this.activeIndex >= 0 && opts[this.activeIndex]) {
         event.preventDefault();
@@ -134,5 +142,13 @@ export class SearchableSelectComponent implements ControlValueAccessor {
     } else if (event.key === 'Escape') {
       this.open = false;
     }
+  }
+
+  /** Deferred so it runs after Angular has rendered the (freshly opened, or newly filtered) options panel. */
+  private scrollActiveIntoView(): void {
+    setTimeout(() => {
+      const el = this.optionEls?.toArray()[this.activeIndex]?.nativeElement;
+      el?.scrollIntoView({ block: 'nearest' });
+    });
   }
 }

@@ -3,34 +3,36 @@
 
   <main class="main-content">
     <div class="content-header">
-      <div class="heading">
-        <div class="heading-icon">
-          <span class="material-icons">shopping_bag</span>
+      <div class="header-top">
+        <div class="heading">
+          <div class="heading-icon">
+            <span class="material-icons">shopping_bag</span>
+          </div>
+          <div>
+            <h1>Purchase &amp; Stock Inbound Orders</h1>
+            <p>Total {{ filteredCount }} records &bull; Net Value: {{ formatCurrency(netValue) }}</p>
+          </div>
         </div>
-        <div>
-          <h1>Purchase &amp; Stock Inbound Orders</h1>
-          <p>Total {{ filteredCount }} records &bull; Net Value: {{ formatCurrency(netValue) }}</p>
+
+        <div class="header-actions">
+          <button type="button" class="btn btn-primary" (click)="openNewRecordForm()">
+            <span class="material-icons">add</span>
+            {{ newRecordButtonLabel }}
+          </button>
         </div>
       </div>
 
-      <div class="header-actions">
-        <button type="button" class="btn btn-primary" (click)="openNewRecordForm()">
-          <span class="material-icons">add</span>
-          {{ newRecordButtonLabel }}
+      <nav class="tabs-bar">
+        <button
+          type="button"
+          *ngFor="let tab of tabs"
+          class="tab-item"
+          [class.active]="activeTab === tab.id"
+          (click)="onTabChange(tab.id)">
+          {{ tab.label }} ({{ tabCount(tab) }})
         </button>
-      </div>
+      </nav>
     </div>
-
-    <nav class="tabs-bar">
-      <button
-        type="button"
-        *ngFor="let tab of tabs"
-        class="tab-item"
-        [class.active]="activeTab === tab.id"
-        (click)="onTabChange(tab.id)">
-        {{ tab.label }} ({{ tabCount(tab) }})
-      </button>
-    </nav>
 
     <section class="panel filters-panel">
       <div class="filters-title-row">

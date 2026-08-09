@@ -10,7 +10,6 @@ export const enviort = {
 
   // Resources
   bookingUrl: baseUrl + '/books',
-  bookSkuUrl: baseUrl + '/books/sku',
   updateBookUrl: (id: number) => baseUrl + `/books/${id}`,
   deleteBookUrl: (id: number) => baseUrl + `/books/${id}`,
   partiesUrl: baseUrl + '/parties',

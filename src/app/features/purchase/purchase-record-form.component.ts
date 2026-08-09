@@ -405,6 +405,18 @@ export class PurchaseRecordFormComponent implements OnInit {
     return this.lines.filter((l) => l.book && !(Number.isInteger(Number(l.qty)) && Number(l.qty) > 0));
   }
 
+  /** RO lines (with a book and a positive Received qty) where Accepted + Rejected doesn't equal Received. */
+  get roQtyMismatchLines(): FormLine[] {
+    if (this.recordType !== 'RECEIVING_ORDER') return [];
+    return this.validLines.filter((l) => (Number(l.acceptedQty) || 0) + (Number(l.rejectedQty) || 0) !== Number(l.qty));
+  }
+
+  /** Per-row check used to red-highlight a specific RO line card in the template. */
+  lineHasQtyMismatch(line: FormLine): boolean {
+    if (this.recordType !== 'RECEIVING_ORDER' || !line.book || !(Number(line.qty) > 0)) return false;
+    return (Number(line.acceptedQty) || 0) + (Number(line.rejectedQty) || 0) !== Number(line.qty);
+  }
+
   get totalLines(): number {
     return this.validLines.length;
   }
@@ -429,7 +441,10 @@ export class PurchaseRecordFormComponent implements OnInit {
     if (this.saving) return false;
     if (!this.validLines.length) return false;
     if (this.invalidQuantityLines.length) return false;
-    if (this.requiresPoNumber) return !!this.poNumber && !!this.supplier;
+    if (this.requiresPoNumber) {
+      if (this.roQtyMismatchLines.length) return false;
+      return !!this.poNumber && !!this.supplier;
+    }
     if (!this.supplier) return false;
     if (this.requiresReturnFields) {
       return !!this.originalInvoiceNo.trim() && !!this.reason.trim();
@@ -511,6 +526,10 @@ export class PurchaseRecordFormComponent implements OnInit {
         this.saving = false;
         this.loadingService.hide();
         this.snackBar.open('Receiving order created successfully!', 'Close', { duration: 3000, panelClass: ['success-snackbar'] });
+        // Receiving stock is what actually bumps book.stock on the backend — without this,
+        // the shared books cache (read by Sales, etc.) stays stale until something else
+        // happens to refresh it, e.g. a re-login (bug: "stock shows 0 in Sale until logout").
+        this.store.refreshBooks();
         const purchaseId = Number(created?.id ?? 0) || 0;
         this.promptRoPayment(purchaseId, this.supplier?.name, created?.grandTotal ?? null, created?.invoiceNo ?? null, created?.grnNumber ?? null);
       },

@@ -132,11 +132,12 @@ export class LedgerComponent implements OnInit, OnDestroy {
     };
   }
 
-  // Balance = previous + debit − credit (see LedgerService.createEntry on the backend), a
-  // standard running T-account balance: positive means net debit (the party owes us — Dr),
-  // negative means net credit (we owe the party — Cr).
+  // Balance = previous + debit − credit (see LedgerService.createEntry on the backend).
+  // A purchase invoice posts as credit, which subtracts and pushes the balance negative
+  // (a payable/loan — we owe the party), so the tag reads Dr for negative balances and
+  // Cr for positive/zero balances.
   isDebitBalance(balance: number): boolean {
-    return (balance || 0) >= 0;
+    return (balance || 0) < 0;
   }
 
   absBalance(balance: number): number {

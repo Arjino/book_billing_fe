@@ -579,11 +579,16 @@ export class PurchaseDialogComponent implements OnInit, OnDestroy {
     this.closeAllDropdownsExcept(index);
     if (!state.open) {
       state.open = true;
-      state.activeIndex = -1;
+      // Pre-highlight the already-selected book instead of always starting at -1.
+      // If options haven't loaded yet, the fetch below re-derives this once the
+      // (search-prefilled-with-the-book's-title) results come back.
+      const selectedBookId = item.book?.id;
+      state.activeIndex = selectedBookId != null ? state.options.findIndex((b) => b.id === selectedBookId) : -1;
       if (!state.options.length) {
         this.resetAndFetchBooks(index, state.search.trim());
       } else {
         this.setupBookObserver(index);
+        this.scrollActiveBookIntoView(index);
       }
     }
   }
@@ -789,6 +794,18 @@ export class PurchaseDialogComponent implements OnInit, OnDestroy {
           state.page = response?.number ?? page;
           state.last = response?.last ?? true;
           state.loading = false;
+
+          // Pre-highlighting an already-selected book relies on the search box having
+          // been pre-filled with its title (see getBookDropdownState), which normally
+          // surfaces it in this first page of results.
+          if (item.book?.id != null) {
+            const selectedBookId = item.book.id;
+            const activeIdx = state.options.findIndex((b) => b.id === selectedBookId);
+            if (activeIdx >= 0) {
+              state.activeIndex = activeIdx;
+              setTimeout(() => this.scrollActiveBookIntoView(index));
+            }
+          }
 
           setTimeout(() => this.setupBookObserver(index), 0);
         },

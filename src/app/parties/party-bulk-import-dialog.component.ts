@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { MatDialogRef, MatDialogModule } from '@angular/material/dialog';
+import { Component, Inject, OnInit, Optional } from '@angular/core';
+import { MatDialogRef, MatDialogModule, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Party } from '../shared/models/party.model';
 import { PARTIES_CONSTANTS } from '../constants/parties.constants';
+import { partitionDuplicateParties } from '../utils/duplicate.utils';
 
 @Component({
   selector: 'app-party-bulk-import-dialog',
@@ -22,13 +23,20 @@ export class PartyBulkImportDialogComponent implements OnInit {
   extractedParties: Party[] = [];
   previewMode = false;
   validationErrors: string[] = [];
+  duplicateCount = 0;
 
   readonly ALLOWED_EXTENSIONS = ['.xlsx', '.xls', '.csv'];
   readonly MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   readonly REQUIRED_COLUMNS = ['name', 'type', 'phone', 'address'];
   readonly PARTY_TYPES = PARTIES_CONSTANTS.PARTY_TYPES.map((t) => t.value);
+  private readonly existingParties: Party[];
 
-  constructor(public dialogRef: MatDialogRef<PartyBulkImportDialogComponent>) {}
+  constructor(
+    public dialogRef: MatDialogRef<PartyBulkImportDialogComponent>,
+    @Optional() @Inject(MAT_DIALOG_DATA) existingParties: Party[] | null
+  ) {
+    this.existingParties = existingParties || [];
+  }
 
   ngOnInit(): void {}
 
@@ -101,6 +109,8 @@ export class PartyBulkImportDialogComponent implements OnInit {
   validateAndTransformData(data: any[]): void {
     this.validationErrors = [];
     this.extractedParties = [];
+    this.duplicateCount = 0;
+    const parsedParties: Party[] = [];
 
     if (data.length === 0) {
       this.fileError = 'No data found in Excel file.';
@@ -157,7 +167,7 @@ export class PartyBulkImportDialogComponent implements OnInit {
           address,
           gstin: row?.gstin ? String(row?.gstin).trim() : ''
         };
-        this.extractedParties.push(party);
+        parsedParties.push(party);
       }
     });
 
@@ -165,6 +175,9 @@ export class PartyBulkImportDialogComponent implements OnInit {
       this.fileError = `Validation failed. ${this.validationErrors.length} error(s) found.`;
       this.extractedParties = [];
     } else {
+      const { unique, duplicates } = partitionDuplicateParties(parsedParties, this.existingParties);
+      this.extractedParties = unique;
+      this.duplicateCount = duplicates.length;
       this.previewMode = true;
     }
   }
@@ -188,5 +201,6 @@ export class PartyBulkImportDialogComponent implements OnInit {
     this.extractedParties = [];
     this.validationErrors = [];
     this.previewMode = false;
+    this.duplicateCount = 0;
   }
 }

@@ -238,15 +238,11 @@
               </td>
               <td><strong class="ld-ref-id">{{ r.refId || '—' }}</strong></td>
               <td class="ld-td-num ld-debit">
-                <ng-container *ngIf="r.debit; else noDebit">
-                  ₹{{ r.debit }} <span class="ld-dr-cr-tag ld-dr-cr-tag--dr">DR</span>
-                </ng-container>
+                <ng-container *ngIf="r.debit; else noDebit">₹{{ r.debit }}</ng-container>
                 <ng-template #noDebit><span class="ld-nil">—</span></ng-template>
               </td>
               <td class="ld-td-num ld-credit">
-                <ng-container *ngIf="r.credit; else noCredit">
-                  ₹{{ r.credit }} <span class="ld-dr-cr-tag ld-dr-cr-tag--cr">CR</span>
-                </ng-container>
+                <ng-container *ngIf="r.credit; else noCredit">₹{{ r.credit }}</ng-container>
                 <ng-template #noCredit><span class="ld-nil">—</span></ng-template>
               </td>
               <td class="ld-td-num ld-balance">

@@ -13,6 +13,7 @@ import { PARTIES_CONSTANTS } from '../constants/parties.constants';
 import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
 import { buildAppNavItems } from '../shared/nav-items';
 import { NavItem } from '../shared/models/common.models';
+import { findDuplicateParty } from '../utils/duplicate.utils';
 
 @Component({
   selector: 'app-party-form',
@@ -101,27 +102,40 @@ export class PartyFormComponent implements OnInit {
       return;
     }
 
-    this.loadingService.show('Adding party...');
-    this.store.createParty(this.data as Party).subscribe({
-      next: () => {
+    this.loadingService.show('Checking for duplicates...');
+    this.store.getAllPartiesSnapshot().subscribe((existingParties) => {
+      if (findDuplicateParty(this.data, existingParties || [])) {
         this.saving = false;
         this.loadingService.hide();
-        this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Party added successfully!', 'Close', {
-          duration: 3000,
-          panelClass: ['success-snackbar']
-        });
-        this.store.getPartiesLoaded();
-        this.router.navigate(['/parties']);
-      },
-      error: (err) => {
-        this.saving = false;
-        this.loadingService.hide();
-        const errorMessage = err?.error?.message || err?.message || PARTIES_CONSTANTS.MESSAGES.ADD_ERROR;
-        this.snackBar.open(errorMessage, 'Close', {
+        this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.DUPLICATE_ERROR, 'Close', {
           duration: 5000,
           panelClass: ['error-snackbar']
         });
+        return;
       }
+
+      this.loadingService.show('Adding party...');
+      this.store.createParty(this.data as Party).subscribe({
+        next: () => {
+          this.saving = false;
+          this.loadingService.hide();
+          this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ADD_SUCCESS || 'Party added successfully!', 'Close', {
+            duration: 3000,
+            panelClass: ['success-snackbar']
+          });
+          this.store.getPartiesLoaded();
+          this.router.navigate(['/parties']);
+        },
+        error: (err) => {
+          this.saving = false;
+          this.loadingService.hide();
+          const errorMessage = err?.error?.message || err?.message || PARTIES_CONSTANTS.MESSAGES.ADD_ERROR;
+          this.snackBar.open(errorMessage, 'Close', {
+            duration: 5000,
+            panelClass: ['error-snackbar']
+          });
+        }
+      });
     });
   }
 }

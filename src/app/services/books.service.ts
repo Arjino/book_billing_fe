@@ -31,20 +31,6 @@ export class BooksService {
     );
   }
 
-  generateSku(): Observable<string> {
-    return this.http.get<any>(enviort.bookSkuUrl, { headers: this.auth.getAuthHeaders() }).pipe(
-      map((response) => {
-        // Handle different JSON response formats
-        if (typeof response === 'string') return response;
-        return response?.sku || response?.skuId || response?.id || response?.data || '';
-      }),
-      catchError((error) => {
-        console.error('Error generating SKU:', error);
-        return throwError(() => error);
-      })
-    );
-  }
-
   getStockSummary(bookId: string): Observable<StockSummary> {
     return this.http.get<StockSummary>(enviort.stockSummaryUrl(bookId), { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {

@@ -72,6 +72,7 @@ export const PARTIES_CONSTANTS = {
     LOAD_ERROR: 'Failed to load parties!',
     ADD_ERROR: 'Failed to add party!',
     UPDATE_ERROR: 'Failed to update party!',
+    DUPLICATE_ERROR: 'Duplicate entry: a party with the same Name, Mobile Number, and Type already exists.',
     DELETE_ERROR: 'Failed to delete party!',
     LOAD_OLD_ERROR: 'Failed to load old parties',
     ENABLE_SUCCESS: 'Party enabled successfully',

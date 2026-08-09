@@ -65,7 +65,7 @@
         <span class="material-icons">menu_book</span>
         Purchase Book Lines
       </div>
-      <div class="lines-actions">
+      <div class="lines-actions" *ngIf="recordType !== 'RECEIVING_ORDER'">
         <button type="button" class="chip-btn chip-primary" (click)="addLines(1)">
           <span class="material-icons">add</span> +1 Line
         </button>
@@ -79,7 +79,7 @@
     </div>
 
     <div class="lines-grid">
-      <div class="line-card" *ngFor="let line of lines; let i = index">
+      <div class="line-card" [class.line-card--error]="lineHasQtyMismatch(line)" *ngFor="let line of lines; let i = index">
         <div class="line-card-head">
           <span class="line-index">#{{ i + 1 }}</span>
           <app-searchable-select
@@ -154,6 +154,10 @@
               <input type="number" min="0" [(ngModel)]="line.rejectedQty" placeholder="0" />
             </div>
           </div>
+          <div class="line-qty-error" *ngIf="lineHasQtyMismatch(line)">
+            <span class="material-icons">error_outline</span>
+            Accepted ({{ line.acceptedQty || 0 }}) + Rejected ({{ line.rejectedQty || 0 }}) must equal Received ({{ line.qty || 0 }}).
+          </div>
         </ng-template>
       </div>
     </div>
@@ -169,6 +173,11 @@
   <div class="invalid-qty-banner" *ngIf="invalidQuantityLines.length">
     <span class="material-icons">error_outline</span>
     {{ invalidQuantityLines.length }} line{{ invalidQuantityLines.length > 1 ? 's have' : ' has' }} an invalid quantity (must be a positive whole number) — fix or remove {{ invalidQuantityLines.length > 1 ? 'them' : 'it' }} before saving.
+  </div>
+
+  <div class="invalid-qty-banner" *ngIf="roQtyMismatchLines.length">
+    <span class="material-icons">error_outline</span>
+    {{ roQtyMismatchLines.length }} line{{ roQtyMismatchLines.length > 1 ? 's have' : ' has' }} Accepted + Rejected not equal to Received — fix {{ roQtyMismatchLines.length > 1 ? 'them' : 'it' }} before saving.
   </div>
 
   <div class="form-footer">

@@ -76,7 +76,7 @@
           </div>
         </div>
 
-        <div class="form-row three-col">
+        <div class="form-row two-col">
           <div>
             <label for="bookMrp">MRP (&#8377;) *</label>
             <input
@@ -112,24 +112,6 @@
               <span *ngIf="stockModel.errors?.['required']">Stock is required.</span>
               <span *ngIf="stockModel.errors?.['min']">Stock cannot be negative.</span>
             </small>
-          </div>
-
-          <div>
-            <label for="bookSku">SKU Code *</label>
-            <div class="sku-field">
-              <input id="bookSku" [(ngModel)]="data.sku" name="sku" required readonly #skuModel="ngModel" />
-              <button
-                type="button"
-                class="sku-refresh-btn"
-                (click)="fetchSku()"
-                [disabled]="isEditMode || isFetchingSku"
-                title="Refresh SKU"
-              >
-                <mat-icon [class.spinning]="isFetchingSku">refresh</mat-icon>
-              </button>
-            </div>
-            <small class="hint" *ngIf="!isEditMode">Auto-generated. Click refresh to regenerate.</small>
-            <small class="hint" *ngIf="isEditMode">SKU cannot be changed in edit mode.</small>
           </div>
         </div>
 

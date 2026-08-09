@@ -5,7 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { BulkImportDialogComponent } from './bulk-import-dialog.component';
@@ -14,7 +14,6 @@ import { BooksService } from '../services/books.service';
 import { LoadingService } from '../services/loading.service';
 import { Book } from '../shared/models/book.model';
 import { BOOKING_CONSTANTS } from '../constants/booking.constants';
-import { firstValueFrom } from 'rxjs';
 import { StockSummary, StockLedgerEntry, StockReconciliationReport } from '../shared/models/stock.model';
 import { extractHttpErrorMessage } from '../utils/http.utils';
 import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
@@ -166,63 +165,52 @@ export class BookingComponent implements OnInit {
     this.router.navigate(['/booking/new']);
   }
 
-  async bulkImport() {
-    const dialogRef = this.dialog.open(BulkImportDialogComponent, {
-      width: '900px',
-      maxWidth: '95vw',
-      maxHeight: '90vh',
-      data: null
-    });
+  bulkImport() {
+    this.store.getAllBooksSnapshot().subscribe((existingBooks) => {
+      const dialogRef = this.dialog.open(BulkImportDialogComponent, {
+        width: '900px',
+        maxWidth: '95vw',
+        maxHeight: '90vh',
+        data: existingBooks || []
+      });
 
-    dialogRef.afterClosed().subscribe(async (result: Book[] | undefined) => {
+      this.handleBulkImportDialog(dialogRef);
+    });
+  }
+
+  private handleBulkImportDialog(dialogRef: MatDialogRef<BulkImportDialogComponent>) {
+    dialogRef.afterClosed().subscribe((result: Book[] | undefined) => {
       if (result && result.length > 0) {
         this.loadingService.show(`Importing ${result.length} book(s)...`);
 
-        try {
-          for (const result1 of result) {
-            result1.sku = await this.fetchSku();
-
-            const response: any = await firstValueFrom(
-              this.booksService.createBook([result1])
-            );
-
-            const successMessage =
-              response?.message || 'Book imported successfully';
-
-            this.snackBar.open(successMessage, 'Close', {
+        // Single batch request for the whole file — the backend assigns SKUs
+        // sequentially and saves all rows in one all-or-nothing transaction.
+        this.booksService.createBook(result).subscribe({
+          next: () => {
+            this.snackBar.open(`${result.length} book(s) imported successfully`, 'Close', {
               duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
               panelClass: ['success-snackbar']
             });
-          }
+            this.store.loadBooks(true);
+            this.loadBooks(true);
+          },
+          error: (err: any) => {
+            const errorMessage =
+              err?.error?.message ||
+              err?.message ||
+              'Failed to import books. Please check the file and try again.';
 
-          
-        } catch (err: any) {
-          const errorMessage =
-            err?.error?.message ||
-            err?.message ||
-            'Failed to import books. Please check the file and try again.';
+            this.snackBar.open(errorMessage, 'Close', {
+              duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.LONG,
+              panelClass: ['error-snackbar']
+            });
 
-          this.snackBar.open(errorMessage, 'Close', {
-            duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.LONG,
-            panelClass: ['error-snackbar']
-          });
-
-          console.error('Bulk import error:', err);
-        } finally {
-          this.loadBooks(true);
-          this.loadingService.hide();
-        }
+            console.error('Bulk import error:', err);
+          },
+          complete: () => this.loadingService.hide()
+        });
       }
     });
-  }
-  async fetchSku(): Promise<string> {
-    try {
-      const response = await firstValueFrom(this.booksService.generateSku());
-      return response ? String(response).trim() : '';
-    } catch (error) {
-      console.error('Error fetching SKU:', error);
-      return '';
-    }
   }
   editBook(book: Book) {
     this.router.navigate(['/booking/edit', book.id]);

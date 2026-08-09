@@ -14,6 +14,7 @@ import { BOOKING_CONSTANTS } from '../constants/booking.constants';
 import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
 import { buildAppNavItems } from '../shared/nav-items';
 import { NavItem } from '../shared/models/common.models';
+import { findDuplicateBook } from '../utils/duplicate.utils';
 
 @Component({
   selector: 'app-book-form',
@@ -27,7 +28,6 @@ export class BookFormComponent implements OnInit {
 
   data: BookDialogData = { id: 0, sku: '', title: '', publisher: '', hsn: '', mrp: 0, stock: 0 };
   isEditMode = false;
-  isFetchingSku = false;
   saving = false;
 
   constructor(
@@ -49,25 +49,7 @@ export class BookFormComponent implements OnInit {
           this.data = { ...found } as BookDialogData;
         }
       });
-    } else {
-      this.fetchSku();
     }
-  }
-
-  fetchSku(): void {
-    if (this.isEditMode || this.isFetchingSku) return;
-
-    this.isFetchingSku = true;
-    this.booksService.generateSku().subscribe({
-      next: (sku) => {
-        this.data.sku = sku;
-        this.isFetchingSku = false;
-      },
-      error: (error) => {
-        console.error('Error fetching SKU:', error);
-        this.isFetchingSku = false;
-      }
-    });
   }
 
   onCancel(): void {
@@ -103,27 +85,40 @@ export class BookFormComponent implements OnInit {
       return;
     }
 
-    this.loadingService.show('Adding book...');
-    this.booksService.createBook(this.data as any).subscribe({
-      next: () => {
+    this.loadingService.show('Checking for duplicates...');
+    this.store.getAllBooksSnapshot().subscribe((existingBooks) => {
+      if (findDuplicateBook(this.data, existingBooks || [])) {
         this.saving = false;
         this.loadingService.hide();
-        this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', {
-          duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
-          panelClass: ['success-snackbar']
-        });
-        this.store.loadBooks(true);
-        this.router.navigate(['/booking']);
-      },
-      error: (err) => {
-        this.saving = false;
-        this.loadingService.hide();
-        const errorMessage = err?.error?.message || err?.message || BOOKING_CONSTANTS.MESSAGES.ADD_ERROR;
-        this.snackBar.open(errorMessage, 'Close', {
+        this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.DUPLICATE_ERROR, 'Close', {
           duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
           panelClass: ['error-snackbar']
         });
+        return;
       }
+
+      this.loadingService.show('Adding book...');
+      this.booksService.createBook(this.data as any).subscribe({
+        next: () => {
+          this.saving = false;
+          this.loadingService.hide();
+          this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', {
+            duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.SHORT,
+            panelClass: ['success-snackbar']
+          });
+          this.store.loadBooks(true);
+          this.router.navigate(['/booking']);
+        },
+        error: (err) => {
+          this.saving = false;
+          this.loadingService.hide();
+          const errorMessage = err?.error?.message || err?.message || BOOKING_CONSTANTS.MESSAGES.ADD_ERROR;
+          this.snackBar.open(errorMessage, 'Close', {
+            duration: BOOKING_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+            panelClass: ['error-snackbar']
+          });
+        }
+      });
     });
   }
 }

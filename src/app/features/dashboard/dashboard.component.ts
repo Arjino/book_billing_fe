@@ -52,6 +52,7 @@ import { SALES_CONSTANTS } from '../../constants/sales.constants';
 import { PURCHASE_CONSTANTS } from '../../constants/purchase.constants';
 import { TRANSACTION_CONSTANTS } from '../../constants/transaction.constants';
 import { FEEDBACK_CONSTANTS } from '../../constants/feedback.constants';
+import { findDuplicateBook, findDuplicateParty } from '../../utils/duplicate.utils';
 
 /** Dashboard is the "hub" page: every addable entity gets a sidebar quick-add shortcut. */
 const DASHBOARD_QUICK_ADD_IDS: ReadonlyArray<AppNavQuickAddId> = [
@@ -245,24 +246,36 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe((result: BookDialogData) => {
       if (!result) return;
-      this.loadingService.show('Adding book...');
-      this.store.createBook(result as any).subscribe({
-        next: () => {
+      this.loadingService.show('Checking for duplicates...');
+      this.store.getAllBooksSnapshot().subscribe((existingBooks) => {
+        if (findDuplicateBook(result, existingBooks || [])) {
           this.loadingService.hide();
-          this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-          this.store.refreshBooks();
-        },
-        error: (error: unknown) => {
-          this.loadingService.hide();
-          console.error('Failed to add book:', error);
-          this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
+          this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.DUPLICATE_ERROR, 'Close', {
             duration: 5000,
             panelClass: ['error-snackbar']
           });
+          return;
         }
+
+        this.loadingService.show('Adding book...');
+        this.store.createBook(result as any).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', {
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.store.refreshBooks();
+          },
+          error: (error: unknown) => {
+            this.loadingService.hide();
+            console.error('Failed to add book:', error);
+            this.snackBar.open(BOOKING_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
       });
     });
   }
@@ -282,24 +295,36 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
     dialogRef.afterClosed().subscribe((result: PartyDialogData) => {
       if (!result) return;
-      this.loadingService.show('Adding party...');
-      this.store.createParty(result as any).subscribe({
-        next: () => {
+      this.loadingService.show('Checking for duplicates...');
+      this.store.getAllPartiesSnapshot().subscribe((existingParties) => {
+        if (findDuplicateParty(result, existingParties || [])) {
           this.loadingService.hide();
-          this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', {
-            duration: 3000,
-            panelClass: ['success-snackbar']
-          });
-          this.store.refreshParties();
-        },
-        error: (error: unknown) => {
-          this.loadingService.hide();
-          console.error('Failed to add party:', error);
-          this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
+          this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.DUPLICATE_ERROR, 'Close', {
             duration: 5000,
             panelClass: ['error-snackbar']
           });
+          return;
         }
+
+        this.loadingService.show('Adding party...');
+        this.store.createParty(result as any).subscribe({
+          next: () => {
+            this.loadingService.hide();
+            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ADD_SUCCESS, 'Close', {
+              duration: 3000,
+              panelClass: ['success-snackbar']
+            });
+            this.store.refreshParties();
+          },
+          error: (error: unknown) => {
+            this.loadingService.hide();
+            console.error('Failed to add party:', error);
+            this.snackBar.open(PARTIES_CONSTANTS.MESSAGES.ADD_ERROR, 'Close', {
+              duration: 5000,
+              panelClass: ['error-snackbar']
+            });
+          }
+        });
       });
     });
   }

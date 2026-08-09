@@ -27,6 +27,7 @@
     <div
       class="searchable-select-option"
       *ngFor="let option of filteredOptions; let i = index"
+      #optionEl
       [class.active]="i === activeIndex"
       (mousedown)="selectOption(option)">
       <span class="searchable-select-option-label">{{ option.label }}</span>

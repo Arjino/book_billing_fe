@@ -165,48 +165,6 @@ input[readonly] {
   font-weight: 700;
 }
 
-.sku-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.sku-field input {
-  flex: 1;
-}
-
-.sku-refresh-btn {
-  width: 42px;
-  height: 42px;
-  flex-shrink: 0;
-  border-radius: 10px;
-  border: 1px solid var(--color-border);
-  background: var(--color-white);
-  color: var(--color-primary);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-
-.sku-refresh-btn:hover {
-  background: var(--color-primary-soft);
-}
-
-.sku-refresh-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.spinning {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
 .hint {
   display: block;
   margin-top: 4px;

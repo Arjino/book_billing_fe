@@ -68,6 +68,10 @@
         <p><strong>Ready to import:</strong> {{ extractedBooks.length }} book(s)</p>
       </div>
 
+      <div class="message-box error-box" *ngIf="duplicateCount > 0">
+        <p>{{ duplicateCount }} duplicate book(s) skipped — same Title and Publisher already exist and will not be imported.</p>
+      </div>
+
       <div class="preview-table-wrap">
         <table>
           <thead>

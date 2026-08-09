@@ -65,6 +65,7 @@ export const BOOKING_CONSTANTS = {
     LOAD_ERROR: 'Failed to load books!',
     ADD_ERROR: 'Failed to add book!',
     UPDATE_ERROR: 'Failed to update book!',
+    DUPLICATE_ERROR: 'Duplicate entry: a book with the same Title and Publisher already exists.',
     DELETE_ERROR: 'Failed to delete book!',
     LOAD_DISCARDED_ERROR: 'Failed to load discarded books',
     ENABLE_SUCCESS: 'Book enabled successfully',

@@ -217,6 +217,24 @@ export class DataStoreService {
     return this.booksCount$.asObservable();
   }
 
+  /** One-shot fetch of the full active book list, always fresh (not cached) — used for duplicate checks before creating a book. */
+  getAllBooksSnapshot(): Observable<Book[]> {
+    const params = new HttpParams().set('size', String(CACHE_ALL_PAGE_SIZE));
+    return this.http.get<any>(enviort.bookingUrl, { headers: this.auth.getAuthHeaders(), params }).pipe(
+      map((data) => (Array.isArray(data) ? data : (data?.content || []))),
+      catchError(() => of([]))
+    );
+  }
+
+  /** One-shot fetch of the full active party list, always fresh (not cached) — used for duplicate checks before creating a party. */
+  getAllPartiesSnapshot(): Observable<Party[]> {
+    const params = new HttpParams().set('size', String(CACHE_ALL_PAGE_SIZE));
+    return this.http.get<any>(enviort.partiesUrl, { headers: this.auth.getAuthHeaders(), params }).pipe(
+      map((data) => (Array.isArray(data) ? data : (data?.content || []))),
+      catchError(() => of([]))
+    );
+  }
+
   updateBook(id: number, book: Book): Observable<Book> {
     return this.http.put<Book>(enviort.updateBookUrl(id), book, { headers: this.auth.getAuthHeaders() }).pipe(
       tap(() => console.log('Book updated successfully')),

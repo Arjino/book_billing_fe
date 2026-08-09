@@ -59,6 +59,10 @@
         <p><strong>Ready to import:</strong> {{ extractedParties.length }} party(s)</p>
       </div>
 
+      <div class="message-box error-box" *ngIf="duplicateCount > 0">
+        <p>{{ duplicateCount }} duplicate party(s) skipped — same Name, Mobile Number, and Type already exist and will not be imported.</p>
+      </div>
+
       <div class="preview-table-wrap">
         <table>
           <thead>

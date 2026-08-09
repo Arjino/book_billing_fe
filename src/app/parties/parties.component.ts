@@ -4,7 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { FormsModule } from '@angular/forms';
 import { PartyBulkImportDialogComponent } from './party-bulk-import-dialog.component';
@@ -140,13 +140,19 @@ export class PartiesComponent implements OnInit {
   }
 
   bulkImport(): void {
-    const dialogRef = this.dialog.open(PartyBulkImportDialogComponent, {
-      width: '900px',
-      maxWidth: '95vw',
-      maxHeight: '90vh',
-      data: null
-    });
+    this.store.getAllPartiesSnapshot().subscribe((existingParties) => {
+      const dialogRef = this.dialog.open(PartyBulkImportDialogComponent, {
+        width: '900px',
+        maxWidth: '95vw',
+        maxHeight: '90vh',
+        data: existingParties || []
+      });
 
+      this.handleBulkImportDialog(dialogRef);
+    });
+  }
+
+  private handleBulkImportDialog(dialogRef: MatDialogRef<PartyBulkImportDialogComponent>): void {
     dialogRef.afterClosed().subscribe((result: Party[] | undefined) => {
       if (result && result.length > 0) {
         this.loadingService.show(`Importing ${result.length} party(s)...`);
