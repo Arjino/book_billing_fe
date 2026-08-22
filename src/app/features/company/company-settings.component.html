@@ -1,0 +1,60 @@
+<div class="page-shell">
+  <app-sidebar-nav [items]="navItems"></app-sidebar-nav>
+
+  <main class="main-content">
+    <div class="cs-card cs-header-card">
+      <div class="cs-header-left">
+        <div class="cs-header-icon"><mat-icon>domain</mat-icon></div>
+        <div>
+          <h1 class="cs-title">Company Settings</h1>
+          <p class="cs-subtitle">This information appears on the main page, invoices, and ledger statements.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="cs-card cs-join-card">
+      <div>
+        <p class="cs-join-label">Join code</p>
+        <p class="cs-join-hint">Share this with suppliers/consumers so they can sign up for a read-only account.</p>
+      </div>
+      <div class="cs-join-value">
+        <code>{{ joinCode }}</code>
+        <button type="button" class="cs-btn-secondary" (click)="copyJoinCode()">
+          <mat-icon>content_copy</mat-icon> Copy
+        </button>
+      </div>
+    </div>
+
+    <form class="cs-card cs-form" [formGroup]="form" (ngSubmit)="save()">
+      <div class="cs-field">
+        <label for="name">Company name</label>
+        <input id="name" formControlName="name" type="text" />
+      </div>
+      <div class="cs-field">
+        <label for="address">Address</label>
+        <input id="address" formControlName="address" type="text" />
+      </div>
+      <div class="cs-field-row">
+        <div class="cs-field">
+          <label for="gstin">GSTIN</label>
+          <input id="gstin" formControlName="gstin" type="text" />
+        </div>
+        <div class="cs-field">
+          <label for="phone">Phone</label>
+          <input id="phone" formControlName="phone" type="text" />
+        </div>
+      </div>
+      <div class="cs-field-row">
+        <div class="cs-field">
+          <label for="email">Email</label>
+          <input id="email" formControlName="email" type="email" />
+        </div>
+        <div class="cs-field">
+          <label for="logoUrl">Logo URL</label>
+          <input id="logoUrl" formControlName="logoUrl" type="text" placeholder="https://..." />
+        </div>
+      </div>
+      <button type="submit" class="cs-btn-submit" [disabled]="form.invalid">Save changes</button>
+    </form>
+  </main>
+</div>

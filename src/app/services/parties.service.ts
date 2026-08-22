@@ -29,4 +29,15 @@ export class PartiesService {
       })
     );
   }
+
+  searchDropdown(q: string): Observable<Party[]> {
+    const params = q ? `?q=${encodeURIComponent(q)}` : '';
+    return this.http.get<any>(enviort.partiesUrl + '/dropdown' + params, { headers: this.auth.getAuthHeaders() }).pipe(
+      map((data) => data?.content || []),
+      catchError((error) => {
+        console.error('Error searching parties:', error);
+        return throwError(() => error);
+      })
+    );
+  }
 }

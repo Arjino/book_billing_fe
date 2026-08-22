@@ -7,6 +7,19 @@ export const enviort = {
   forgotPasswordUrl: baseUrl + '/auth/forgot',
   resetPasswordUrl: baseUrl + '/auth/reset',
   refreshTokenUrl: baseUrl + '/auth/refresh',
+  meUrl: baseUrl + '/auth/me',
+  registerUserUrl: baseUrl + '/auth/register-user',
+  joinCodeLookupUrl: baseUrl + '/public/companies/lookup',
+
+  // Company / RBAC
+  companyMeUrl: baseUrl + '/company/me',
+  employeesUrl: baseUrl + '/company/employees',
+  deactivateEmployeeUrl: (id: number) => baseUrl + `/company/employees/${id}/deactivate`,
+  activateEmployeeUrl: (id: number) => baseUrl + `/company/employees/${id}/activate`,
+  pendingApprovalsUrl: baseUrl + '/company/pending-approvals',
+  approveLinkRequestUrl: (id: number) => baseUrl + `/company/pending-approvals/${id}/approve`,
+  rejectLinkRequestUrl: (id: number) => baseUrl + `/company/pending-approvals/${id}/reject`,
+  myLedgerUrl: baseUrl + '/self/ledger',
 
   // Resources
   bookingUrl: baseUrl + '/books',

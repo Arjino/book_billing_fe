@@ -1,0 +1,70 @@
+<div class="page-shell">
+  <app-sidebar-nav [items]="navItems"></app-sidebar-nav>
+
+  <main class="main-content">
+    <div class="em-card em-header-card">
+      <div class="em-header-left">
+        <div class="em-header-icon"><mat-icon>badge</mat-icon></div>
+        <div>
+          <h1 class="em-title">Employees</h1>
+          <p class="em-subtitle">Employees can create/update sales, purchases, ledger entries and parties for your company.</p>
+        </div>
+      </div>
+      <button type="button" class="em-btn-submit" (click)="toggleForm()">
+        <mat-icon>{{ showForm ? 'close' : 'add' }}</mat-icon>
+        {{ showForm ? 'Cancel' : 'Add employee' }}
+      </button>
+    </div>
+
+    @if (showForm) {
+      <form class="em-card em-form" [formGroup]="form" (ngSubmit)="createEmployee()">
+        <div class="em-field">
+          <label for="username">Username</label>
+          <input id="username" formControlName="username" type="text" />
+        </div>
+        <div class="em-field">
+          <label for="email">Email</label>
+          <input id="email" formControlName="email" type="email" />
+        </div>
+        <div class="em-field">
+          <label for="password">Initial password</label>
+          <input id="password" formControlName="password" type="password" />
+        </div>
+        <button type="submit" class="em-btn-submit" [disabled]="form.invalid">Create employee</button>
+      </form>
+    }
+
+    <div class="em-card em-table-card">
+      <table class="em-table">
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (employee of employees; track employee.id) {
+            <tr>
+              <td>{{ employee.username }}</td>
+              <td>{{ employee.email }}</td>
+              <td>
+                <span class="em-status" [class.em-status--active]="employee.active" [class.em-status--inactive]="!employee.active">
+                  {{ employee.active ? 'Active' : 'Deactivated' }}
+                </span>
+              </td>
+              <td>
+                <button type="button" class="em-btn-secondary" (click)="toggleActive(employee)">
+                  {{ employee.active ? 'Deactivate' : 'Activate' }}
+                </button>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="4" class="em-empty">No employees yet.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>

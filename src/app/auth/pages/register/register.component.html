@@ -59,11 +59,29 @@
       </div>
 
       <div class="auth-heading">
-        <h1>Create your account</h1>
-        <p>Join us today and get started</p>
+        <h1>Supplier / Consumer sign-up</h1>
+        <p>Ask your company admin for a join code, then sign up to view your own ledger and balance.</p>
       </div>
 
       <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="auth-form">
+        <!-- Join Code Field -->
+        <div class="field">
+          <label for="joinCode">Company join code</label>
+          <div class="input-wrap">
+            <span class="material-icons input-icon">vpn_key</span>
+            <input
+              id="joinCode"
+              formControlName="joinCode"
+              type="text"
+              placeholder="e.g. MAAKALIKA-AB12CD"
+              [class.invalid]="registerForm.get('joinCode')?.invalid && registerForm.get('joinCode')?.touched"
+            />
+          </div>
+          @if (registerForm.get('joinCode')?.hasError('required') && registerForm.get('joinCode')?.touched) {
+            <span class="field-error">Join code is required</span>
+          }
+        </div>
+
         <!-- Email Field -->
         <div class="field">
           <label for="email">Email</label>
@@ -187,6 +205,29 @@
           }
         </div>
 
+        <!-- Party matching (optional -- helps your admin find your ledger record faster) -->
+        <div class="field">
+          <label for="claimedName">Your name / business name on file (optional)</label>
+          <div class="input-wrap">
+            <span class="material-icons input-icon">badge</span>
+            <input id="claimedName" formControlName="claimedName" type="text" placeholder="As it appears on your invoices" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="claimedPhone">Your phone number on file (optional)</label>
+          <div class="input-wrap">
+            <span class="material-icons input-icon">call</span>
+            <input id="claimedPhone" formControlName="claimedPhone" type="text" placeholder="Registered phone number" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="claimedGstin">GSTIN (optional)</label>
+          <div class="input-wrap">
+            <span class="material-icons input-icon">badge</span>
+            <input id="claimedGstin" formControlName="claimedGstin" type="text" placeholder="If applicable" />
+          </div>
+        </div>
+
         <!-- Terms Checkbox -->
         <div class="terms-row">
           <input id="agreeToTerms" type="checkbox" formControlName="agreeToTerms" />
@@ -201,7 +242,7 @@
 
         <!-- Sign Up Button -->
         <button type="submit" class="btn-submit" [disabled]="registerForm.invalid">
-          Create Account
+          Submit sign-up request
         </button>
       </form>
 

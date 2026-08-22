@@ -7,6 +7,11 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../../../services/auth.service';
 import { AUTH_CONSTANTS } from '../../../constants/auth.constants';
 
+/**
+ * Public sign-up for Supplier/Consumer accounts only -- there is no public sign-up for a new
+ * company or for Employee accounts (those are created by a Super Admin, or by the developer
+ * for a brand-new company). A join code, shared out-of-band by the company's admin, is required.
+ */
 @Component({
   selector: 'app-register',
   standalone: true,
@@ -24,6 +29,7 @@ export class RegisterComponent {
   hidePassword = signal(true);
   hideConfirmPassword = signal(true);
   passwordStrength = signal<'weak' | 'fair' | 'good' | 'strong'>('weak');
+  submitted = signal(false);
 
   constructor(
     private fb: FormBuilder,
@@ -38,6 +44,10 @@ export class RegisterComponent {
         username: ['', [Validators.required, Validators.minLength(3)]],
         password: ['', [Validators.required, Validators.minLength(6)]],
         confirmPassword: ['', [Validators.required]],
+        joinCode: ['', [Validators.required]],
+        claimedName: [''],
+        claimedPhone: [''],
+        claimedGstin: [''],
         agreeToTerms: [false, [Validators.requiredTrue]]
       },
       { validators: this.passwordMatchValidator }
@@ -108,17 +118,26 @@ export class RegisterComponent {
       });
       return;
     }
-    this.loadingService.show('Creating account...');
-    const { email, username, password } = this.registerForm.value;
+    this.loadingService.show('Submitting sign-up...');
+    const { email, username, password, joinCode, claimedName, claimedPhone, claimedGstin } = this.registerForm.value;
 
-    this.authService.register(username, password, email).subscribe({
+    this.authService.registerConsumerUser({
+      username,
+      email,
+      password,
+      joinCode,
+      claimedName: claimedName || undefined,
+      claimedPhone: claimedPhone || undefined,
+      claimedGstin: claimedGstin || undefined
+    }).subscribe({
       next: () => {
         this.loadingService.hide();
-        this.snackBar.open(AUTH_CONSTANTS.MESSAGES.REGISTER_SUCCESS, 'Close', {
-          duration: AUTH_CONSTANTS.SNACKBAR_DURATION.MEDIUM,
+        this.submitted.set(true);
+        this.snackBar.open(AUTH_CONSTANTS.MESSAGES.SIGNUP_PENDING_APPROVAL, 'Close', {
+          duration: AUTH_CONSTANTS.SNACKBAR_DURATION.LONG,
           panelClass: ['success-snackbar']
         });
-        this.router.navigate(['/dashboard']);
+        this.router.navigate(['/auth/login']);
       },
       error: (error: any) => {
         this.loadingService.hide();

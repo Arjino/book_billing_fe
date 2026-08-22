@@ -3,8 +3,18 @@ import { HttpClient, HttpHeaders, HttpContext } from '@angular/common/http';
 import { Observable, BehaviorSubject, throwError } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { SKIP_AUTH_RETRY } from './auth.tokens';
+import { CompanyService } from './company.service';
 import { enviort } from '../../environments/environment';
-import { AuthRequest, AuthResponse, ForgotPasswordRequest, ForgotPasswordResponse } from '../auth/auth.models';
+import { AuthRequest, AuthResponse, ForgotPasswordRequest, ForgotPasswordResponse, RegisterUserRequest, UserProfile } from '../auth/auth.models';
+import { Role } from '../auth/role.model';
+
+interface StoredProfile {
+  username?: string;
+  role?: Role;
+  companyId?: number;
+  companyName?: string;
+  partyId?: number;
+}
 
 // If the tab is truly idle for longer than this, a silent refresh is skipped
 // and the session is left to expire naturally at its real deadline.
@@ -22,6 +32,9 @@ export class AuthService {
   public accessToken$ = this.accessTokenSubject.asObservable();
   private tokenExpiryIntervalId: number | null = null;
 
+  private profileSubject = new BehaviorSubject<StoredProfile | null>(null);
+  public profile$ = this.profileSubject.asObservable();
+
   // Session expiry countdown + activity-based silent refresh (keeps an active
   // user logged in indefinitely; an idle user is left to expire naturally).
   private sessionExpiresAtSubject = new BehaviorSubject<number | null>(null);
@@ -37,12 +50,14 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private companyService: CompanyService
   ) {
     // Initialize token from localStorage only if available (not on SSR)
     if (typeof localStorage !== 'undefined') {
       const token = localStorage.getItem('accessToken');
       this.accessTokenSubject.next(token);
+      this.profileSubject.next(this.readStoredProfile());
       this.checkTokenExpiry();
       if (token) {
         this.ensureTokenExpiryCheckStarted();
@@ -52,17 +67,26 @@ export class AuthService {
     }
   }
 
-  register(username: string, password: string, email?: string): Observable<AuthResponse> {
-    const payload: AuthRequest = { username, password, email };
-    return this.http.post<AuthResponse>(this.apiUrl.registerUrl, payload).pipe(
-      tap(response => this.setTokens(response))
-    );
+  /**
+   * Public company sign-up no longer exists (companies are created by the developer via a
+   * gated backend endpoint) -- this now only supports the Supplier/Consumer join-code flow.
+   * It intentionally does NOT call setTokens(): the backend returns a plain "awaiting approval"
+   * message here, not a token pair.
+   */
+  registerConsumerUser(req: RegisterUserRequest): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(this.apiUrl.registerUserUrl, req);
   }
 
   login(username: string, password: string): Observable<AuthResponse> {
     const payload: AuthRequest = { username, password };
     return this.http.post<AuthResponse>(this.apiUrl.loginUrl, payload).pipe(
       tap(response => this.setTokens(response))
+    );
+  }
+
+  me(): Observable<UserProfile> {
+    return this.http.get<UserProfile>(this.apiUrl.meUrl).pipe(
+      tap(profile => this.setProfile(profile))
     );
   }
 
@@ -96,6 +120,7 @@ export class AuthService {
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('authProfile');
     }
     if (this.tokenExpiryIntervalId !== null && typeof window !== 'undefined') {
       window.clearInterval(this.tokenExpiryIntervalId);
@@ -105,6 +130,29 @@ export class AuthService {
     this.stopActivityTracking();
     this.sessionExpiresAtSubject.next(null);
     this.accessTokenSubject.next(null);
+    this.profileSubject.next(null);
+    this.companyService.clear();
+  }
+
+  getRole(): Role | null {
+    return this.profileSubject.value?.role ?? null;
+  }
+
+  getCompanyId(): number | null {
+    return this.profileSubject.value?.companyId ?? null;
+  }
+
+  getCompanyName(): string | null {
+    return this.profileSubject.value?.companyName ?? null;
+  }
+
+  getPartyId(): number | null {
+    return this.profileSubject.value?.partyId ?? null;
+  }
+
+  hasRole(...roles: Role[]): boolean {
+    const role = this.getRole();
+    return role !== null && roles.includes(role);
   }
 
   isLoggedIn(): boolean {
@@ -141,9 +189,35 @@ export class AuthService {
       localStorage.setItem('refreshToken', response.refreshToken);
     }
     this.accessTokenSubject.next(response.accessToken);
+    this.setProfile(response);
     this.ensureTokenExpiryCheckStarted();
     this.startActivityTracking();
     this.scheduleSilentRefresh();
+  }
+
+  private setProfile(profile: StoredProfile): void {
+    const stored: StoredProfile = {
+      username: profile.username,
+      role: profile.role,
+      companyId: profile.companyId,
+      companyName: profile.companyName,
+      partyId: profile.partyId
+    };
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('authProfile', JSON.stringify(stored));
+    }
+    this.profileSubject.next(stored);
+  }
+
+  private readStoredProfile(): StoredProfile | null {
+    if (typeof localStorage === 'undefined') return null;
+    const raw = localStorage.getItem('authProfile');
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as StoredProfile;
+    } catch {
+      return null;
+    }
   }
 
   private checkTokenExpiry(): void {

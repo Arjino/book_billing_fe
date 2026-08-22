@@ -13,6 +13,17 @@
           <mat-icon>account_circle</mat-icon>
         </button>
         <mat-menu #accountMenu="matMenu">
+          @if (isSuperAdmin()) {
+            <button mat-menu-item routerLink="/company/settings">
+              <mat-icon>domain</mat-icon>
+              <span>Company Settings</span>
+            </button>
+            <button mat-menu-item routerLink="/company/employees">
+              <mat-icon>badge</mat-icon>
+              <span>Employees</span>
+            </button>
+            <mat-divider></mat-divider>
+          }
           <button mat-menu-item (click)="copyAccessToken()">
             <mat-icon>content_copy</mat-icon>
             <span>Copy Access Token</span>

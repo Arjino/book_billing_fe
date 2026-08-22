@@ -1,0 +1,94 @@
+<div class="page-shell">
+  <app-sidebar-nav [items]="navItems"></app-sidebar-nav>
+
+  <main class="main-content">
+    <div class="pa-card pa-header-card">
+      <div class="pa-header-left">
+        <div class="pa-header-icon"><mat-icon>how_to_reg</mat-icon></div>
+        <div>
+          <h1 class="pa-title">Pending Approvals</h1>
+          <p class="pa-subtitle">Supplier/Consumer sign-ups awaiting a link to their party record.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pa-list">
+      @for (request of requests; track request.id) {
+        <div class="pa-card pa-item">
+          <div class="pa-item-summary" (click)="toggleExpand(request)">
+            <div>
+              <p class="pa-item-name">{{ request.claimedName || 'Unnamed sign-up' }}</p>
+              <p class="pa-item-meta">
+                @if (request.claimedPhone) { <span>{{ request.claimedPhone }}</span> }
+                @if (request.claimedGstin) { <span>GSTIN: {{ request.claimedGstin }}</span> }
+              </p>
+            </div>
+            <mat-icon>{{ expandedId === request.id ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </div>
+
+          @if (expandedId === request.id) {
+            <div class="pa-item-detail">
+              <div class="pa-search">
+                <input
+                  type="text"
+                  placeholder="Search existing parties by name/phone/gstin"
+                  [(ngModel)]="state(request.id).query"
+                  (ngModelChange)="search(request.id)"
+                />
+              </div>
+
+              @if (!state(request.id).creatingNew) {
+                <div class="pa-results">
+                  @for (party of state(request.id).results; track party.id) {
+                    <button
+                      type="button"
+                      class="pa-result-item"
+                      [class.pa-result-item--selected]="state(request.id).selectedPartyId === party.id"
+                      (click)="selectParty(request.id, party.id)"
+                    >
+                      {{ party.name }} <span class="pa-result-meta">{{ party.phone }} · {{ party.type }}</span>
+                    </button>
+                  } @empty {
+                    <p class="pa-empty-hint">No matches. Try a different search, or create a new party below.</p>
+                  }
+                </div>
+              }
+
+              <button type="button" class="pa-btn-link" (click)="toggleCreateNew(request.id)">
+                {{ state(request.id).creatingNew ? 'Cancel new party' : '+ Create a new party instead' }}
+              </button>
+
+              @if (state(request.id).creatingNew) {
+                <div class="pa-new-party">
+                  <input type="text" placeholder="Name" [(ngModel)]="state(request.id).newParty.name" />
+                  <input type="text" placeholder="Phone" [(ngModel)]="state(request.id).newParty.phone" />
+                  <input type="text" placeholder="Address" [(ngModel)]="state(request.id).newParty.address" />
+                  <input type="text" placeholder="GSTIN" [(ngModel)]="state(request.id).newParty.gstin" />
+                  <select [(ngModel)]="state(request.id).newParty.type">
+                    <option value="Consumer">Consumer</option>
+                    <option value="Supplier">Supplier</option>
+                  </select>
+                </div>
+              }
+
+              <div class="pa-actions">
+                <button type="button" class="pa-btn-approve" [disabled]="!canApprove(request.id)" (click)="approve(request)">
+                  Approve &amp; link
+                </button>
+                <div class="pa-reject">
+                  <input type="text" placeholder="Rejection reason (optional)" [(ngModel)]="state(request.id).rejectReason" />
+                  <button type="button" class="pa-btn-reject" (click)="reject(request)">Reject</button>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @empty {
+        <div class="pa-card pa-empty">
+          <mat-icon>how_to_reg</mat-icon>
+          <p>No pending sign-ups right now.</p>
+        </div>
+      }
+    </div>
+  </main>
+</div>

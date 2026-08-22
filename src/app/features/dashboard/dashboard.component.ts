@@ -140,7 +140,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const navBadgeCountsValue = toSignal(this.navBadgeCounts.counts$, {
       initialValue: {} as AppNavBadgeCounts
     });
-    this.navItems = computed(() => buildAppNavItems(navBadgeCountsValue(), DASHBOARD_QUICK_ADD_IDS));
+    this.navItems = computed(() => buildAppNavItems(navBadgeCountsValue(), DASHBOARD_QUICK_ADD_IDS, this.authService.getRole() ?? undefined));
   }
 
   ngOnInit(): void {
@@ -223,6 +223,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const max = this.trendMaxAmount();
     if (max <= 0) return 4;
     return Math.max(4, (amount / max) * 100);
+  }
+
+  isSuperAdmin(): boolean {
+    return this.authService.hasRole('ROLE_SUPER_ADMIN');
   }
 
   copyAccessToken(): void {

@@ -1,4 +1,5 @@
 import { NavItem } from './models/common.models';
+import { Role } from '../auth/role.model';
 
 export interface AppNavBadgeCounts {
   readonly books?: number;
@@ -27,10 +28,25 @@ export type AppNavQuickAddId =
  */
 export function buildAppNavItems(
   badgeCounts: AppNavBadgeCounts = {},
-  quickAddIds: ReadonlyArray<AppNavQuickAddId> = []
+  quickAddIds: ReadonlyArray<AppNavQuickAddId> = [],
+  role?: Role
 ): ReadonlyArray<NavItem> {
   const showQuickAdd = (id: AppNavQuickAddId): boolean | undefined =>
     quickAddIds.includes(id) ? true : undefined;
+
+  // Company Settings and Employees are administrative/config screens -- they live in the
+  // account dropdown menu (next to Logout) instead of the main sidebar. Pending Approvals
+  // stays here since it's a regular working queue used day-to-day, like Feedback or Ledger.
+  const companyItems: NavItem[] = [];
+  if (role === 'ROLE_SUPER_ADMIN' || role === 'ROLE_EMPLOYEE') {
+    companyItems.push({
+      id: 'company-approvals',
+      label: 'Pending Approvals',
+      description: 'Supplier/Consumer sign-up requests',
+      icon: 'how_to_reg',
+      route: '/company/approvals'
+    });
+  }
 
   return [
     {
@@ -98,6 +114,7 @@ export function buildAppNavItems(
       description: 'Sales charts & top titles',
       icon: 'bar_chart',
       route: '/analytics'
-    }
+    },
+    ...companyItems
   ];
 }

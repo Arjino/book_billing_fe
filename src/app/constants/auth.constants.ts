@@ -35,6 +35,7 @@ export const AUTH_CONSTANTS = {
   MESSAGES: {
     LOGIN_SUCCESS: 'Login successful!',
     REGISTER_SUCCESS: 'Registration successful! Please log in.',
+    SIGNUP_PENDING_APPROVAL: 'Sign-up received. Your company admin needs to approve your account before you can log in.',
     LOGOUT_SUCCESS: 'Logged out successfully!',
     PASSWORD_RESET_SUCCESS: 'Password reset successful! Please log in with your new password.',
     FORGOT_PASSWORD_SUCCESS: 'Password reset link has been sent to your email!',
