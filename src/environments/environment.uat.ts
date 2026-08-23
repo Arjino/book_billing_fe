@@ -20,6 +20,12 @@ export const enviort = {
   approveLinkRequestUrl: (id: number) => baseUrl + `/company/pending-approvals/${id}/approve`,
   rejectLinkRequestUrl: (id: number) => baseUrl + `/company/pending-approvals/${id}/reject`,
   myLedgerUrl: baseUrl + '/self/ledger',
+  myLedgerPdfUrl: baseUrl + '/self/ledger/report/pdf',
+  mySaleInvoicePdfUrl: (invoiceNo: string) => baseUrl + `/self/sales/${encodeURIComponent(invoiceNo)}/invoice/download`,
+  myPurchaseInvoicePdfUrl: (invoiceNo: string) => baseUrl + `/self/purchases/${encodeURIComponent(invoiceNo)}/invoice/download`,
+  mySaleReturnPdfUrl: (returnNumber: string) => baseUrl + `/self/sales/returns/${encodeURIComponent(returnNumber)}/pdf`,
+  myPurchaseReturnPdfUrl: (returnNumber: string) => baseUrl + `/self/purchases/returns/${encodeURIComponent(returnNumber)}/pdf`,
+  myPaymentReceiptPdfUrl: (referenceNumber: string) => baseUrl + `/self/payment/receipt/${encodeURIComponent(referenceNumber)}`,
 
   // Resources
   bookingUrl: baseUrl + '/books',

@@ -188,29 +188,66 @@
 .sidebar-footer {
   display: flex;
   flex-direction: column;
-  gap: 10px;
   padding: 12px 8px 4px;
   border-top: 1px solid var(--color-border-light);
   font-size: 12px;
   color: var(--color-text-muted);
 }
 
-.sidebar-footer-status {
+.account-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--color-gray-700);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
 }
 
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: var(--color-green-500);
+.account-row:hover {
+  background: var(--color-surface-hover);
 }
 
-.version-text {
-  margin-left: auto;
+.account-row-icon {
+  font-size: 32px;
   color: var(--color-text-subtle);
+  flex-shrink: 0;
+}
+
+.account-row-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.account-row-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-row-role {
+  font-size: 11px;
+  color: var(--color-text-subtle);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.account-row-caret {
+  font-size: 18px;
+  color: var(--color-text-subtle);
+  flex-shrink: 0;
 }
 
 .feedback-tab {

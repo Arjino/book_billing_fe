@@ -43,17 +43,6 @@
   color: var(--color-text-muted);
 }
 
-.dashboard-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.last-updated {
-  font-size: 12px;
-  color: var(--color-text-subtle);
-}
-
 .account-btn {
   display: flex;
   align-items: center;

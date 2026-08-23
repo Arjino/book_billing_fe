@@ -21,13 +21,11 @@
           [(ngModel)]="data.title"
           name="title"
           required
-          pattern="^[A-Za-z0-9 ]+$"
           #titleModel="ngModel"
           placeholder="e.g. Hindi - 8 (Bhasha Rachna)"
         />
         <small class="error" *ngIf="titleModel.invalid && (titleModel.dirty || titleModel.touched)">
           <span *ngIf="titleModel.errors?.['required']">Title is required.</span>
-          <span *ngIf="titleModel.errors?.['pattern']">Only letters, numbers, and spaces are allowed.</span>
         </small>
       </div>
 
@@ -57,16 +55,10 @@
             [(ngModel)]="data.hsn"
             name="hsn"
             inputmode="numeric"
-            min="100000"
-            max="9999999999"
             #hsnModel="ngModel"
             placeholder="e.g. 490110"
           />
           <small class="hint">Numeric; normally 6 digits (can be 6-10 digits).</small>
-          <small class="error" *ngIf="hsnModel.invalid && (hsnModel.dirty || hsnModel.touched)">
-            <span *ngIf="hsnModel.errors?.['min']">HSN must be at least 6 digits.</span>
-            <span *ngIf="hsnModel.errors?.['max']">HSN cannot exceed 10 digits.</span>
-          </small>
         </div>
       </div>
 

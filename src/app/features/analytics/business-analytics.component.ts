@@ -1,9 +1,7 @@
 import { Component, OnDestroy, OnInit, Signal, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Subscription } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -32,8 +30,6 @@ import { AuthService } from '../../services/auth.service';
     CommonModule,
     RouterLink,
     MatIconModule,
-    MatMenuModule,
-    MatDividerModule,
     MatSnackBarModule,
     SidebarNavComponent
   ],
@@ -68,7 +64,6 @@ export class BusinessAnalyticsComponent implements OnInit, OnDestroy {
 
   constructor(
     private readonly authService: AuthService,
-    private readonly router: Router,
     private readonly analyticsService: BusinessAnalyticsService,
     private readonly snackBar: MatSnackBar,
     private readonly navBadgeCounts: NavBadgeCountsService
@@ -76,7 +71,7 @@ export class BusinessAnalyticsComponent implements OnInit, OnDestroy {
     const navBadgeCountsValue = toSignal(this.navBadgeCounts.counts$, {
       initialValue: {} as AppNavBadgeCounts
     });
-    this.navItems = computed(() => buildAppNavItems(navBadgeCountsValue()));
+    this.navItems = computed(() => buildAppNavItems(navBadgeCountsValue(), [], this.authService.getRole() ?? undefined));
   }
 
   ngOnInit(): void {
@@ -120,10 +115,5 @@ export class BusinessAnalyticsComponent implements OnInit, OnDestroy {
 
   trackByMode(_index: number, item: { mode: string }): string {
     return item.mode;
-  }
-
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/auth/login']);
   }
 }

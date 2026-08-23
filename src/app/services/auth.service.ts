@@ -1,7 +1,7 @@
 import { Injectable, NgZone } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpContext } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
+import { tap, map, catchError, finalize, shareReplay } from 'rxjs/operators';
 import { SKIP_AUTH_RETRY } from './auth.tokens';
 import { CompanyService } from './company.service';
 import { enviort } from '../../environments/environment';
@@ -31,6 +31,7 @@ export class AuthService {
   private accessTokenSubject = new BehaviorSubject<string | null>(null);
   public accessToken$ = this.accessTokenSubject.asObservable();
   private tokenExpiryIntervalId: number | null = null;
+  private refreshInFlight$: Observable<AuthResponse> | null = null;
 
   private profileSubject = new BehaviorSubject<StoredProfile | null>(null);
   public profile$ = this.profileSubject.asObservable();
@@ -54,17 +55,27 @@ export class AuthService {
     private companyService: CompanyService
   ) {
     // Initialize token from localStorage only if available (not on SSR)
-    if (typeof localStorage !== 'undefined') {
-      const token = localStorage.getItem('accessToken');
-      this.accessTokenSubject.next(token);
-      this.profileSubject.next(this.readStoredProfile());
-      this.checkTokenExpiry();
-      if (token) {
-        this.ensureTokenExpiryCheckStarted();
-        this.startActivityTracking();
-        this.scheduleSilentRefresh();
-      }
+    if (typeof localStorage === 'undefined') return;
+
+    const token = localStorage.getItem('accessToken');
+    this.accessTokenSubject.next(token);
+    this.profileSubject.next(this.readStoredProfile());
+
+    if (!token) return;
+
+    if (this.isTokenExpired(token)) {
+      // The access token's TTL lapsed while the tab was closed/reloaded (it's
+      // typically much shorter-lived than the refresh token). Don't nuke the
+      // session here -- ensureValidSession() (called by AuthGuard / app root
+      // right after bootstrap) will try the refresh token first. setTokens()
+      // re-arms expiry checking/activity tracking/silent refresh once that
+      // succeeds.
+      return;
     }
+
+    this.ensureTokenExpiryCheckStarted();
+    this.startActivityTracking();
+    this.scheduleSilentRefresh();
   }
 
   /**
@@ -101,18 +112,56 @@ export class AuthService {
 
   // Exchanges the stored refresh token for a new access/refresh token pair.
   // Marked to skip the interceptor's own refresh-retry so a failing refresh
-  // call can't recurse into itself.
+  // call can't recurse into itself. Concurrent callers (guard, silent-refresh
+  // timer, visibility regained, interceptor 401 handling) share a single
+  // in-flight request instead of each spending the (often single-use,
+  // rotating) refresh token.
   refreshAccessToken(): Observable<AuthResponse> {
+    if (this.refreshInFlight$) {
+      return this.refreshInFlight$;
+    }
+
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
       return throwError(() => new Error('No refresh token available'));
     }
-    return this.http.post<AuthResponse>(
+
+    const request$ = this.http.post<AuthResponse>(
       this.apiUrl.refreshTokenUrl,
       { refreshToken },
       { context: new HttpContext().set(SKIP_AUTH_RETRY, true) }
     ).pipe(
-      tap(response => this.setTokens(response))
+      tap(response => this.setTokens(response)),
+      finalize(() => { this.refreshInFlight$ = null; }),
+      shareReplay(1)
+    );
+    this.refreshInFlight$ = request$;
+    return request$;
+  }
+
+  // Resolves whether the session is currently usable, transparently
+  // refreshing the access token first if it's missing/expired but a refresh
+  // token is still around. This is the check AuthGuard and the app root use
+  // on bootstrap/navigation so a lapsed access token (e.g. the tab was closed
+  // past its TTL) isn't treated as a logout while the refresh token could
+  // still restore the session.
+  ensureValidSession(): Observable<boolean> {
+    const token = this.getAccessToken();
+    if (token && !this.isTokenExpired(token)) {
+      return of(true);
+    }
+
+    if (!this.getRefreshToken()) {
+      if (token) this.logout();
+      return of(false);
+    }
+
+    return this.refreshAccessToken().pipe(
+      map(() => true),
+      catchError(() => {
+        this.logout();
+        return of(false);
+      })
     );
   }
 
@@ -148,6 +197,10 @@ export class AuthService {
 
   getPartyId(): number | null {
     return this.profileSubject.value?.partyId ?? null;
+  }
+
+  getUsername(): string | null {
+    return this.profileSubject.value?.username ?? null;
   }
 
   hasRole(...roles: Role[]): boolean {
@@ -223,7 +276,10 @@ export class AuthService {
   private checkTokenExpiry(): void {
     const token = this.getAccessToken();
     if (token && this.isTokenExpired(token)) {
-      this.logout();
+      // Try the refresh token before giving up -- normally the scheduled
+      // silent refresh catches this first, but this periodic poll is the
+      // fallback for e.g. a long system sleep where timers ran late.
+      this.ensureValidSession().subscribe();
     }
   }
 

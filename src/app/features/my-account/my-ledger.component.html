@@ -18,6 +18,10 @@
             <span class="ml-balance-tag">{{ isDebitBalance(balance) ? 'DR' : 'CR' }}</span>
           </span>
         </div>
+        <button type="button" class="ml-btn-export" (click)="downloadStatementPdf()" aria-label="Download PDF statement">
+          <mat-icon>picture_as_pdf</mat-icon>
+          Download PDF Statement
+        </button>
         <button type="button" class="ml-btn-logout" (click)="logout()" aria-label="Logout">
           <mat-icon>logout</mat-icon>
           Logout
@@ -35,6 +39,7 @@
             <th class="ml-num">Debit</th>
             <th class="ml-num">Credit</th>
             <th class="ml-num">Balance</th>
+            <th class="ml-actions-col">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -49,9 +54,21 @@
                 {{ absBalance(entry.balance) | number:'1.2-2' }}
                 <span class="ml-tag">{{ isDebitBalance(entry.balance) ? 'DR' : 'CR' }}</span>
               </td>
+              <td>
+                @if (hasDocument(entry)) {
+                  <div class="ml-row-actions">
+                    <button type="button" class="ml-icon-btn" (click)="viewDocument(entry)" title="View PDF" aria-label="View PDF">
+                      <mat-icon>picture_as_pdf</mat-icon>
+                    </button>
+                    <button type="button" class="ml-icon-btn" (click)="downloadDocument(entry)" title="Download PDF" aria-label="Download PDF">
+                      <mat-icon>download</mat-icon>
+                    </button>
+                  </div>
+                }
+              </td>
             </tr>
           } @empty {
-            <tr><td colspan="6" class="ml-empty">No transactions yet.</td></tr>
+            <tr><td colspan="7" class="ml-empty">No transactions yet.</td></tr>
           }
         </tbody>
       </table>

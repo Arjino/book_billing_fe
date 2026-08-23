@@ -24,7 +24,14 @@ export const serverRoutes: ServerRoute[] = [
     renderMode: RenderMode.Client
   },
   {
+    // Every route's content depends on the auth/session state stored in the
+    // browser's localStorage (access + refresh tokens), which the server has
+    // no access to. Prerendering (or SSR-ing) them bakes in a permanent
+    // "logged out" snapshot -- e.g. /dashboard would always serve the
+    // build-time "redirected to login" HTML regardless of the visitor's
+    // real session, making every hard refresh look like a logout. Render
+    // everything client-side so AuthService's real, live token state decides.
     path: '**',
-    renderMode: RenderMode.Prerender
+    renderMode: RenderMode.Client
   }
 ];

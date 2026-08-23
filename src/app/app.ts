@@ -21,8 +21,12 @@ export class App implements OnInit {
   ngOnInit(): void {
     // Covers page refresh / direct deep-link navigation, where login.component's post-login
     // fetch never runs -- branding still needs to load from the already-stored session.
-    if (this.authService.isLoggedIn()) {
-      this.companyService.fetchMe().subscribe({ error: () => {} });
-    }
+    // ensureValidSession() refreshes an expired access token via the refresh token first,
+    // instead of treating a lapsed access token as a logout.
+    this.authService.ensureValidSession().subscribe(valid => {
+      if (valid) {
+        this.companyService.fetchMe().subscribe({ error: () => {} });
+      }
+    });
   }
 }

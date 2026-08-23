@@ -7,34 +7,6 @@
         <h1>Dashboard Overview</h1>
         <p>Billing &amp; revenue hub</p>
       </div>
-      <div class="dashboard-header-actions">
-        <span class="last-updated">Last updated: {{ lastUpdatedDisplay() }}</span>
-        <button type="button" class="account-btn" [matMenuTriggerFor]="accountMenu" aria-label="Account menu">
-          <mat-icon>account_circle</mat-icon>
-        </button>
-        <mat-menu #accountMenu="matMenu">
-          @if (isSuperAdmin()) {
-            <button mat-menu-item routerLink="/company/settings">
-              <mat-icon>domain</mat-icon>
-              <span>Company Settings</span>
-            </button>
-            <button mat-menu-item routerLink="/company/employees">
-              <mat-icon>badge</mat-icon>
-              <span>Employees</span>
-            </button>
-            <mat-divider></mat-divider>
-          }
-          <button mat-menu-item (click)="copyAccessToken()">
-            <mat-icon>content_copy</mat-icon>
-            <span>Copy Access Token</span>
-          </button>
-          <mat-divider></mat-divider>
-          <button mat-menu-item (click)="logout()">
-            <mat-icon>logout</mat-icon>
-            <span>Logout</span>
-          </button>
-        </mat-menu>
-      </div>
     </header>
 
     <ng-container *ngIf="overview() as data; else loadingState">

@@ -3,9 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Subscription } from 'rxjs';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -27,7 +25,7 @@ import {
 import { DashboardService } from './dashboard.service';
 import { DashboardOverview, RecentInvoice } from './dashboard.types';
 import { DEFAULT_LOW_STOCK_ALERTS_LIMIT } from './dashboard.constants';
-import { formatCurrency, formatDateTimeDisplay, formatUnitLabel } from '../../utils/formatters';
+import { formatCurrency, formatUnitLabel } from '../../utils/formatters';
 
 import { AuthService } from '../../services/auth.service';
 import { DataStoreService } from '../../services/data-store.service';
@@ -79,9 +77,7 @@ const DASHBOARD_QUICK_ADD_IDS: ReadonlyArray<AppNavQuickAddId> = [
     CommonModule,
     RouterLink,
     MatIconModule,
-    MatMenuModule,
     MatButtonModule,
-    MatDividerModule,
     MatSnackBarModule,
     SidebarNavComponent,
     StatCardComponent,
@@ -108,7 +104,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
   };
 
   readonly overview = signal<DashboardOverview | null>(null);
-  readonly lastUpdatedDisplay = computed(() => formatDateTimeDisplay(this.overview()?.lastUpdatedAt ?? null));
 
   /** Mirrors `BusinessAnalyticsComponent`'s trend-bar scaling so the two pages read the same way. */
   readonly trendMaxAmount = computed(() => {
@@ -223,23 +218,6 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const max = this.trendMaxAmount();
     if (max <= 0) return 4;
     return Math.max(4, (amount / max) * 100);
-  }
-
-  isSuperAdmin(): boolean {
-    return this.authService.hasRole('ROLE_SUPER_ADMIN');
-  }
-
-  copyAccessToken(): void {
-    const token = this.authService.getAccessToken();
-    if (!token) return;
-    navigator.clipboard.writeText(token).then(() => {
-      this.snackBar.open('Access token copied to clipboard!', 'Close', { duration: 3000 });
-    });
-  }
-
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/auth/login']);
   }
 
   private openBookingDialog(): void {

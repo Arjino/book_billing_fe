@@ -83,7 +83,8 @@
   border-radius: 10px;
 }
 
-.ml-btn-logout {
+.ml-btn-logout,
+.ml-btn-export {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -97,10 +98,17 @@
   font-weight: 600;
 }
 
-.ml-btn-logout mat-icon {
+.ml-btn-logout mat-icon,
+.ml-btn-export mat-icon {
   font-size: 18px;
   width: 18px;
   height: 18px;
+}
+
+.ml-btn-export {
+  background: var(--gradient-primary);
+  color: var(--color-text-inverse);
+  border-color: transparent;
 }
 
 .ml-balance--dr {
@@ -173,4 +181,40 @@
   text-align: center;
   color: var(--color-text-secondary);
   padding: 32px;
+}
+
+.ml-actions-col {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.ml-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ml-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0;
+}
+
+.ml-icon-btn:hover {
+  color: var(--color-text-primary);
+  border-color: var(--color-text-secondary);
+}
+
+.ml-icon-btn mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
 }

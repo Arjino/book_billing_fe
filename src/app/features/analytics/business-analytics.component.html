@@ -12,20 +12,9 @@
       </div>
       <div class="analytics-header-actions">
         <span class="last-updated">Last updated: {{ lastUpdatedDisplay() }}</span>
-        <button type="button" class="account-btn" [matMenuTriggerFor]="accountMenu" aria-label="Account menu">
-          <mat-icon>account_circle</mat-icon>
-        </button>
-        <mat-menu #accountMenu="matMenu">
-          <button mat-menu-item routerLink="/dashboard">
-            <mat-icon>dashboard</mat-icon>
-            <span>Back to Dashboard</span>
-          </button>
-          <mat-divider></mat-divider>
-          <button mat-menu-item (click)="logout()">
-            <mat-icon>logout</mat-icon>
-            <span>Logout</span>
-          </button>
-        </mat-menu>
+        <a routerLink="/dashboard" class="account-btn" aria-label="Back to Dashboard" title="Back to Dashboard">
+          <mat-icon>dashboard</mat-icon>
+        </a>
       </div>
     </header>
 

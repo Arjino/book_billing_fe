@@ -41,12 +41,34 @@
   </nav>
 
   <div class="sidebar-footer">
-    <div class="sidebar-footer-status">
-      <span class="status-dot"></span>
-      <span class="status-text">{{ statusText }}</span>
-      <span class="version-text">{{ versionText }}</span>
-    </div>
-    <app-session-timer></app-session-timer>
+    <button type="button" class="account-row" [matMenuTriggerFor]="accountMenu" aria-label="Account menu">
+      <span class="material-icons account-row-icon">account_circle</span>
+      <span class="account-row-text">
+        <span class="account-row-name">{{ username }}</span>
+        <span class="account-row-role">{{ roleLabel }}</span>
+      </span>
+      <span class="material-icons account-row-caret">expand_more</span>
+    </button>
+    <mat-menu #accountMenu="matMenu">
+      @if (isSuperAdmin()) {
+        <a mat-menu-item routerLink="/company/settings">
+          <span class="material-icons">domain</span>
+          <span>Company Settings</span>
+        </a>
+        <a mat-menu-item routerLink="/company/employees">
+          <span class="material-icons">badge</span>
+          <span>Employees</span>
+        </a>
+      }
+      <button mat-menu-item (click)="copyAccessToken()">
+        <span class="material-icons">content_copy</span>
+        <span>Copy Access Token</span>
+      </button>
+      <button mat-menu-item (click)="logout()">
+        <span class="material-icons">logout</span>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
   </div>
 </aside>
 
