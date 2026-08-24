@@ -34,7 +34,10 @@ export class EmployeeManagementComponent implements OnInit {
     this.form = this.fb.group({
       username: ['', [Validators.required, Validators.minLength(3)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]]
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      mobile: ['', [Validators.required, Validators.pattern(/^[6-9]\d{9}$/)]],
+      aadhar: ['', [Validators.required, Validators.pattern(/^\d{12}$/)]],
+      address: ['', [Validators.required, Validators.minLength(5)]]
     });
   }
 
@@ -61,8 +64,53 @@ export class EmployeeManagementComponent implements OnInit {
     if (!this.showForm) this.form.reset();
   }
 
+  onMobileInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    let value = target.value.replace(/[^0-9]/g, '');
+    if (value.length > 10) value = value.slice(0, 10);
+    this.form.get('mobile')?.setValue(value, { emitEvent: false });
+    target.value = value;
+  }
+
+  onAadharInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    let value = target.value.replace(/[^0-9]/g, '');
+    if (value.length > 12) value = value.slice(0, 12);
+    this.form.get('aadhar')?.setValue(value, { emitEvent: false });
+    target.value = value;
+  }
+
+  /** Client-side pre-check against the already-loaded employee list, so an obvious duplicate
+   *  gets an immediate, specific message instead of a round trip to the backend. */
+  private findDuplicateField(): string | null {
+    const { username, email, mobile, aadhar } = this.form.value;
+    const normalize = (value: string | null | undefined): string => (value || '').trim().toLowerCase();
+    const usernameN = normalize(username);
+    const emailN = normalize(email);
+    const mobileN = (mobile || '').trim();
+    const aadharN = (aadhar || '').trim();
+
+    for (const employee of this.employees) {
+      if (normalize(employee.username) === usernameN) return 'An employee with this username already exists';
+      if (normalize(employee.email) === emailN) return 'An employee with this email already exists';
+      if (employee.mobile && employee.mobile.trim() === mobileN) return 'An employee with this mobile number already exists';
+      if (employee.aadhar && employee.aadhar.trim() === aadharN) return 'An employee with this Aadhar number already exists';
+    }
+    return null;
+  }
+
   createEmployee(): void {
-    if (this.form.invalid) return;
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    const duplicateMessage = this.findDuplicateField();
+    if (duplicateMessage) {
+      this.snackBar.open(duplicateMessage, 'Close', { duration: 3500 });
+      return;
+    }
+
     this.loadingService.show('Creating employee...');
     this.employeeService.create(this.form.value).subscribe({
       next: () => {

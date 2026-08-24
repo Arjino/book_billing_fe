@@ -98,6 +98,20 @@
   color: var(--color-text-primary);
 }
 
+.em-field input.invalid {
+  border-color: var(--color-danger, #b91c1c);
+}
+
+.em-field-error {
+  color: var(--color-danger, #b91c1c);
+  font-size: 0.78rem;
+}
+
+.em-field-hint {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+}
+
 .em-table-card {
   padding: 8px 0;
   overflow-x: auto;

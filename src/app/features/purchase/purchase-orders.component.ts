@@ -20,6 +20,7 @@ import { PurchaseService } from '../../services/purchase.service';
 import { LoadingService } from '../../services/loading.service';
 import { buildAppNavItems } from '../../shared/nav-items';
 import { NavBadgeCountsService } from '../../shared/nav-badge-counts.service';
+import { AuthService } from '../../services/auth.service';
 import { extractHttpErrorMessage } from '../../utils/http.utils';
 import { formatCurrency, formatDateTimeDisplay } from '../../utils/formatters';
 import { formatDateForAPI, toISODateTimeUTC } from '../../utils/date.utils';
@@ -157,10 +158,11 @@ export class PurchaseOrdersComponent implements OnInit {
     private readonly loadingService: LoadingService,
     private readonly snackBar: MatSnackBar,
     private readonly cdr: ChangeDetectorRef,
-    private readonly navBadgeCounts: NavBadgeCountsService
+    private readonly navBadgeCounts: NavBadgeCountsService,
+    private readonly authService: AuthService
   ) {
     this.navBadgeCounts.counts$.pipe(takeUntilDestroyed()).subscribe((counts) => {
-      this.navItems = buildAppNavItems(counts, ['purchase-orders']);
+      this.navItems = buildAppNavItems(counts, ['purchase-orders'], this.authService.getRole() ?? undefined);
       this.cdr.markForCheck();
     });
   }

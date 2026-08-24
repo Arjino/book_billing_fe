@@ -9,6 +9,7 @@ import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.compon
 import { buildAppNavItems } from '../shared/nav-items';
 import { NavBadgeCountsService } from '../shared/nav-badge-counts.service';
 import { NavItem } from '../shared/models/common.models';
+import { AuthService } from '../services/auth.service';
 import { FeedbackDialogComponent } from './feedback-dialog.component';
 import { FeedbackService } from '../services/feedback.service';
 import { LoadingService } from '../services/loading.service';
@@ -35,10 +36,11 @@ export class FeedbackComponent implements OnInit {
     private feedbackService: FeedbackService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar,
-    private navBadgeCounts: NavBadgeCountsService
+    private navBadgeCounts: NavBadgeCountsService,
+    private authService: AuthService
   ) {
     this.navBadgeCounts.counts$.pipe(takeUntilDestroyed()).subscribe((counts) => {
-      this.navItems = buildAppNavItems(counts, ['feedback-logs']);
+      this.navItems = buildAppNavItems(counts, ['feedback-logs'], this.authService.getRole() ?? undefined);
     });
   }
 

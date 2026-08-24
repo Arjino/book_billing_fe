@@ -27,6 +27,7 @@ import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.compon
 import { buildAppNavItems } from '../shared/nav-items';
 import { NavBadgeCountsService } from '../shared/nav-badge-counts.service';
 import { NavItem } from '../shared/models/common.models';
+import { AuthService } from '../services/auth.service';
 
 
 @Component({
@@ -82,10 +83,11 @@ export class TransactionComponent implements OnInit {
     private transactionsService: TransactionsService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar,
-    private navBadgeCounts: NavBadgeCountsService
+    private navBadgeCounts: NavBadgeCountsService,
+    private authService: AuthService
   ) {
     this.navBadgeCounts.counts$.pipe(takeUntilDestroyed()).subscribe((counts) => {
-      this.navItems = buildAppNavItems(counts, ['transactions-cashbook']);
+      this.navItems = buildAppNavItems(counts, ['transactions-cashbook'], this.authService.getRole() ?? undefined);
     });
   }
 

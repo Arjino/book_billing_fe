@@ -15,6 +15,7 @@ import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.compon
 import { buildAppNavItems } from '../shared/nav-items';
 import { NavItem } from '../shared/models/common.models';
 import { findDuplicateBook } from '../utils/duplicate.utils';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-book-form',
@@ -24,7 +25,7 @@ import { findDuplicateBook } from '../utils/duplicate.utils';
   styleUrls: ['./book-form.component.css']
 })
 export class BookFormComponent implements OnInit {
-  readonly navItems: ReadonlyArray<NavItem> = buildAppNavItems();
+  navItems: ReadonlyArray<NavItem> = [];
 
   data: BookDialogData = { id: 0, sku: '', title: '', publisher: '', hsn: '', mrp: 0, stock: 0 };
   isEditMode = false;
@@ -36,8 +37,11 @@ export class BookFormComponent implements OnInit {
     private store: DataStoreService,
     private booksService: BooksService,
     private loadingService: LoadingService,
-    private snackBar: MatSnackBar
-  ) {}
+    private snackBar: MatSnackBar,
+    private authService: AuthService
+  ) {
+    this.navItems = buildAppNavItems({}, [], this.authService.getRole() ?? undefined);
+  }
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -97,6 +101,7 @@ export class BookFormComponent implements OnInit {
         return;
       }
 
+      this.loadingService.hide();
       this.loadingService.show('Adding book...');
       this.booksService.createBook(this.data as any).subscribe({
         next: () => {

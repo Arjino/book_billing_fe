@@ -205,7 +205,7 @@
           }
         </div>
 
-        <!-- Party matching (optional -- helps your admin find your ledger record faster) -->
+        <!-- Party matching -- helps your admin find your ledger record faster -->
         <div class="field">
           <label for="claimedName">Your name / business name on file (optional)</label>
           <div class="input-wrap">
@@ -214,11 +214,27 @@
           </div>
         </div>
         <div class="field">
-          <label for="claimedPhone">Your phone number on file (optional)</label>
+          <label for="claimedPhone">Your phone number on file</label>
           <div class="input-wrap">
             <span class="material-icons input-icon">call</span>
-            <input id="claimedPhone" formControlName="claimedPhone" type="text" placeholder="Registered phone number" />
+            <input
+              id="claimedPhone"
+              formControlName="claimedPhone"
+              type="text"
+              inputmode="numeric"
+              maxlength="10"
+              autocomplete="tel"
+              placeholder="10-digit mobile number"
+              (input)="onPhoneInput($event)"
+              [class.invalid]="registerForm.get('claimedPhone')?.invalid && registerForm.get('claimedPhone')?.touched"
+            />
           </div>
+          @if (registerForm.get('claimedPhone')?.hasError('required') && registerForm.get('claimedPhone')?.touched) {
+            <span class="field-error">Phone number is required</span>
+          }
+          @if (registerForm.get('claimedPhone')?.hasError('pattern') && registerForm.get('claimedPhone')?.touched) {
+            <span class="field-error">Enter a valid 10-digit mobile number</span>
+          }
         </div>
         <div class="field">
           <label for="claimedGstin">GSTIN (optional)</label>

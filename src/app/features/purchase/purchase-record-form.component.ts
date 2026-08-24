@@ -18,6 +18,7 @@ import { SidebarNavComponent } from '../../shared/ui/sidebar-nav/sidebar-nav.com
 import { SearchableSelectComponent, SearchableSelectOption } from '../../shared/ui/searchable-select/searchable-select.component';
 import { buildAppNavItems } from '../../shared/nav-items';
 import { NavItem } from '../../shared/models/common.models';
+import { AuthService } from '../../services/auth.service';
 
 type RecordType = 'PURCHASE_ORDER' | 'RECEIVING_ORDER' | 'PURCHASE_RETURN';
 
@@ -112,11 +113,12 @@ export class PurchaseRecordFormComponent implements OnInit {
     private readonly purchaseService: PurchaseService,
     private readonly loadingService: LoadingService,
     private readonly snackBar: MatSnackBar,
-    private readonly cdr: ChangeDetectorRef
+    private readonly cdr: ChangeDetectorRef,
+    private readonly authService: AuthService
   ) {}
 
   ngOnInit(): void {
-    this.navItems = buildAppNavItems();
+    this.navItems = buildAppNavItems({}, [], this.authService.getRole() ?? undefined);
 
     // Arriving via a tab's "+ New ..." button (e.g. from the Receiving Orders
     // tab) should land straight on that record type instead of the generic default.

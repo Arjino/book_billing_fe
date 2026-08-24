@@ -14,6 +14,7 @@ import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.compon
 import { buildAppNavItems } from '../shared/nav-items';
 import { NavBadgeCountsService } from '../shared/nav-badge-counts.service';
 import { NavItem } from '../shared/models/common.models';
+import { AuthService } from '../services/auth.service';
 import { SalesBulkImportDialogComponent } from './sales-bulk-import-dialog.component';
 import { DataStoreService } from '../services/data-store.service';
 import { SalesService } from '../services/sales.service';
@@ -87,10 +88,11 @@ export class SalesComponent implements OnInit {
     private salesService: SalesService,
     private loadingService: LoadingService,
     private snackBar: MatSnackBar,
-    private navBadgeCounts: NavBadgeCountsService
+    private navBadgeCounts: NavBadgeCountsService,
+    private authService: AuthService
   ) {
     this.navBadgeCounts.counts$.pipe(takeUntilDestroyed()).subscribe((counts) => {
-      this.navItems = buildAppNavItems(counts, ['sales-billing']);
+      this.navItems = buildAppNavItems(counts, ['sales-billing'], this.authService.getRole() ?? undefined);
     });
   }
 

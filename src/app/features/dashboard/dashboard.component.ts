@@ -239,6 +239,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           return;
         }
 
+        this.loadingService.hide();
         this.loadingService.show('Adding book...');
         this.store.createBook(result as any).subscribe({
           next: () => {
@@ -288,6 +289,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           return;
         }
 
+        this.loadingService.hide();
         this.loadingService.show('Adding party...');
         this.store.createParty(result as any).subscribe({
           next: () => {

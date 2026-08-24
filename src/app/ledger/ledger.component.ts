@@ -185,7 +185,7 @@ export class LedgerComponent implements OnInit, OnDestroy {
     private navBadgeCounts: NavBadgeCountsService
   ) {
     this.navBadgeCounts.counts$.pipe(takeUntilDestroyed()).subscribe((counts) => {
-      this.navItems = buildAppNavItems(counts);
+      this.navItems = buildAppNavItems(counts, [], this.auth.getRole() ?? undefined);
     });
   }
 

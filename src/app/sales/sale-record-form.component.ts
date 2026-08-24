@@ -15,6 +15,7 @@ import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.compon
 import { SearchableSelectComponent, SearchableSelectOption } from '../shared/ui/searchable-select/searchable-select.component';
 import { buildAppNavItems } from '../shared/nav-items';
 import { NavItem } from '../shared/models/common.models';
+import { AuthService } from '../services/auth.service';
 
 type SaleDocumentType = 'SALE' | 'SALE_RETURN';
 
@@ -60,7 +61,7 @@ export class SaleRecordFormComponent implements OnInit {
   readonly quickAddCounts = QUICK_ADD_COUNTS;
   readonly taxRatePercent = TAX_RATE * 100;
 
-  readonly navItems: ReadonlyArray<NavItem> = buildAppNavItems();
+  navItems: ReadonlyArray<NavItem> = [];
 
   documentType: SaleDocumentType = 'SALE';
   party: Party | null = null;
@@ -85,8 +86,11 @@ export class SaleRecordFormComponent implements OnInit {
     private readonly salesService: SalesService,
     private readonly loadingService: LoadingService,
     private readonly snackBar: MatSnackBar,
-    private readonly cdr: ChangeDetectorRef
-  ) {}
+    private readonly cdr: ChangeDetectorRef,
+    private readonly authService: AuthService
+  ) {
+    this.navItems = buildAppNavItems({}, [], this.authService.getRole() ?? undefined);
+  }
 
   ngOnInit(): void {
     const requestedType = (this.route.snapshot.queryParamMap.get('type') || '').toUpperCase();

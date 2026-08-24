@@ -7,6 +7,9 @@ export interface Employee {
   id: number;
   username: string;
   email: string;
+  mobile: string;
+  aadhar: string;
+  address: string;
   active: boolean;
 }
 
@@ -14,6 +17,9 @@ export interface CreateEmployeeRequest {
   username: string;
   email: string;
   password: string;
+  mobile: string;
+  aadhar: string;
+  address: string;
 }
 
 @Injectable({

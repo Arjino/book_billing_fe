@@ -46,7 +46,7 @@ export class RegisterComponent {
         confirmPassword: ['', [Validators.required]],
         joinCode: ['', [Validators.required]],
         claimedName: [''],
-        claimedPhone: [''],
+        claimedPhone: ['', [Validators.required, Validators.pattern(/^[6-9]\d{9}$/)]],
         claimedGstin: [''],
         agreeToTerms: [false, [Validators.requiredTrue]]
       },
@@ -92,6 +92,14 @@ export class RegisterComponent {
     this.passwordStrength.set(strength);
   }
 
+  onPhoneInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    let value = target.value.replace(/[^0-9]/g, '');
+    if (value.length > 10) value = value.slice(0, 10);
+    this.registerForm.get('claimedPhone')?.setValue(value, { emitEvent: false });
+    target.value = value;
+  }
+
   togglePasswordVisibility(): void {
     this.hidePassword.set(!this.hidePassword());
   }
@@ -127,7 +135,7 @@ export class RegisterComponent {
       password,
       joinCode,
       claimedName: claimedName || undefined,
-      claimedPhone: claimedPhone || undefined,
+      claimedPhone,
       claimedGstin: claimedGstin || undefined
     }).subscribe({
       next: () => {

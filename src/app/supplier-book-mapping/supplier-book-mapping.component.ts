@@ -32,7 +32,7 @@ interface SupplierPublisherRow {
   styleUrls: ['./supplier-book-mapping.component.css']
 })
 export class SupplierBookMappingComponent implements OnInit {
-  readonly navItems: ReadonlyArray<NavItem> = buildAppNavItems();
+  navItems: ReadonlyArray<NavItem> = [];
 
   suppliers: Party[] = [];
   publishers: string[] = [];
@@ -56,7 +56,9 @@ export class SupplierBookMappingComponent implements OnInit {
     private loadingService: LoadingService,
     private snackBar: MatSnackBar,
     private router: Router
-  ) {}
+  ) {
+    this.navItems = buildAppNavItems({}, [], this.auth.getRole() ?? undefined);
+  }
 
   ngOnInit(): void {
     this.loadPublishers();

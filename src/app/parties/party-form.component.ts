@@ -14,6 +14,7 @@ import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.compon
 import { buildAppNavItems } from '../shared/nav-items';
 import { NavItem } from '../shared/models/common.models';
 import { findDuplicateParty } from '../utils/duplicate.utils';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-party-form',
@@ -23,7 +24,7 @@ import { findDuplicateParty } from '../utils/duplicate.utils';
   styleUrls: ['./party-form.component.css']
 })
 export class PartyFormComponent implements OnInit {
-  readonly navItems: ReadonlyArray<NavItem> = buildAppNavItems();
+  navItems: ReadonlyArray<NavItem> = [];
 
   data: PartyDialogData = {
     id: 0,
@@ -41,8 +42,11 @@ export class PartyFormComponent implements OnInit {
     private route: ActivatedRoute,
     private store: DataStoreService,
     private loadingService: LoadingService,
-    private snackBar: MatSnackBar
-  ) {}
+    private snackBar: MatSnackBar,
+    private authService: AuthService
+  ) {
+    this.navItems = buildAppNavItems({}, [], this.authService.getRole() ?? undefined);
+  }
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
@@ -114,6 +118,7 @@ export class PartyFormComponent implements OnInit {
         return;
       }
 
+      this.loadingService.hide();
       this.loadingService.show('Adding party...');
       this.store.createParty(this.data as Party).subscribe({
         next: () => {

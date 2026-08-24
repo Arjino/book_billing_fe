@@ -20,15 +20,106 @@
       <form class="em-card em-form" [formGroup]="form" (ngSubmit)="createEmployee()">
         <div class="em-field">
           <label for="username">Username</label>
-          <input id="username" formControlName="username" type="text" />
+          <input
+            id="username"
+            formControlName="username"
+            type="text"
+            [class.invalid]="form.get('username')?.invalid && form.get('username')?.touched"
+          />
+          @if (form.get('username')?.hasError('required') && form.get('username')?.touched) {
+            <span class="em-field-error">Username is required</span>
+          } @else if (form.get('username')?.hasError('minlength') && form.get('username')?.touched) {
+            <span class="em-field-error">Username must be at least 3 characters</span>
+          } @else {
+            <span class="em-field-hint">At least 3 characters</span>
+          }
         </div>
         <div class="em-field">
           <label for="email">Email</label>
-          <input id="email" formControlName="email" type="email" />
+          <input
+            id="email"
+            formControlName="email"
+            type="email"
+            [class.invalid]="form.get('email')?.invalid && form.get('email')?.touched"
+          />
+          @if (form.get('email')?.hasError('required') && form.get('email')?.touched) {
+            <span class="em-field-error">Email is required</span>
+          } @else if (form.get('email')?.hasError('email') && form.get('email')?.touched) {
+            <span class="em-field-error">Enter a valid email</span>
+          } @else {
+            <span class="em-field-hint">Must be unique</span>
+          }
         </div>
         <div class="em-field">
           <label for="password">Initial password</label>
-          <input id="password" formControlName="password" type="password" />
+          <input
+            id="password"
+            formControlName="password"
+            type="password"
+            [class.invalid]="form.get('password')?.invalid && form.get('password')?.touched"
+          />
+          @if (form.get('password')?.hasError('required') && form.get('password')?.touched) {
+            <span class="em-field-error">Password is required</span>
+          } @else if (form.get('password')?.hasError('minlength') && form.get('password')?.touched) {
+            <span class="em-field-error">Password must be at least 6 characters</span>
+          } @else {
+            <span class="em-field-hint">At least 6 characters</span>
+          }
+        </div>
+        <div class="em-field">
+          <label for="mobile">Mobile number</label>
+          <input
+            id="mobile"
+            formControlName="mobile"
+            type="text"
+            inputmode="numeric"
+            maxlength="10"
+            placeholder="10-digit mobile number"
+            (input)="onMobileInput($event)"
+            [class.invalid]="form.get('mobile')?.invalid && form.get('mobile')?.touched"
+          />
+          @if (form.get('mobile')?.hasError('required') && form.get('mobile')?.touched) {
+            <span class="em-field-error">Mobile number is required</span>
+          } @else if (form.get('mobile')?.hasError('pattern') && form.get('mobile')?.touched) {
+            <span class="em-field-error">Enter a valid 10-digit mobile number</span>
+          } @else {
+            <span class="em-field-hint">Must be unique</span>
+          }
+        </div>
+        <div class="em-field">
+          <label for="aadhar">Aadhar number</label>
+          <input
+            id="aadhar"
+            formControlName="aadhar"
+            type="text"
+            inputmode="numeric"
+            maxlength="12"
+            placeholder="12-digit Aadhar number"
+            (input)="onAadharInput($event)"
+            [class.invalid]="form.get('aadhar')?.invalid && form.get('aadhar')?.touched"
+          />
+          @if (form.get('aadhar')?.hasError('required') && form.get('aadhar')?.touched) {
+            <span class="em-field-error">Aadhar number is required</span>
+          } @else if (form.get('aadhar')?.hasError('pattern') && form.get('aadhar')?.touched) {
+            <span class="em-field-error">Enter a valid 12-digit Aadhar number</span>
+          } @else {
+            <span class="em-field-hint">Must be unique</span>
+          }
+        </div>
+        <div class="em-field">
+          <label for="address">Address</label>
+          <input
+            id="address"
+            formControlName="address"
+            type="text"
+            placeholder="Residential address"
+            [class.invalid]="form.get('address')?.invalid && form.get('address')?.touched"
+          />
+          @if (form.get('address')?.hasError('required') && form.get('address')?.touched) {
+            <span class="em-field-error">Address is required</span>
+          } @else if (form.get('address')?.hasError('minlength') && form.get('address')?.touched) {
+            <span class="em-field-error">Address must be at least 5 characters</span>
+          }
         </div>
         <button type="submit" class="em-btn-submit" [disabled]="form.invalid">Create employee</button>
       </form>
@@ -40,6 +131,9 @@
           <tr>
             <th>Username</th>
             <th>Email</th>
+            <th>Mobile</th>
+            <th>Aadhar</th>
+            <th>Address</th>
             <th>Status</th>
             <th></th>
           </tr>
@@ -49,6 +143,9 @@
             <tr>
               <td>{{ employee.username }}</td>
               <td>{{ employee.email }}</td>
+              <td>{{ employee.mobile || '-' }}</td>
+              <td>{{ employee.aadhar || '-' }}</td>
+              <td>{{ employee.address || '-' }}</td>
               <td>
                 <span class="em-status" [class.em-status--active]="employee.active" [class.em-status--inactive]="!employee.active">
                   {{ employee.active ? 'Active' : 'Deactivated' }}
@@ -61,7 +158,7 @@
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="4" class="em-empty">No employees yet.</td></tr>
+            <tr><td colspan="7" class="em-empty">No employees yet.</td></tr>
           }
         </tbody>
       </table>

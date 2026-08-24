@@ -20,6 +20,7 @@ import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.compon
 import { buildAppNavItems } from '../shared/nav-items';
 import { NavBadgeCountsService } from '../shared/nav-badge-counts.service';
 import { NavItem } from '../shared/models/common.models';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-booking',
@@ -70,10 +71,11 @@ export class BookingComponent implements OnInit {
     private booksService: BooksService,
     private snackBar: MatSnackBar,
     private loadingService: LoadingService,
-    private navBadgeCounts: NavBadgeCountsService
+    private navBadgeCounts: NavBadgeCountsService,
+    private authService: AuthService
   ) {
     this.navBadgeCounts.counts$.pipe(takeUntilDestroyed()).subscribe((counts) => {
-      this.navItems = buildAppNavItems(counts, ['books-inventory']);
+      this.navItems = buildAppNavItems(counts, ['books-inventory'], this.authService.getRole() ?? undefined);
     });
   }
 
