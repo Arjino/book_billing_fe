@@ -53,6 +53,8 @@ export class BookingComponent implements OnInit {
   stockLedger: StockLedgerEntry[] = [];
   stockLoading = false;
   stockError = '';
+  stockDateFrom: string | null = null;
+  stockDateTo: string | null = null;
   adjustmentQty: number | null = null;
   adjustmentSourceRef = '';
   adjustmentSubmitting = false;
@@ -307,6 +309,8 @@ export class BookingComponent implements OnInit {
     this.stockSummary = null;
     this.stockLedger = [];
     this.stockError = '';
+    this.stockDateFrom = null;
+    this.stockDateTo = null;
     this.loadStockDetails();
   }
 
@@ -315,8 +319,31 @@ export class BookingComponent implements OnInit {
     this.stockSummary = null;
     this.stockLedger = [];
     this.stockError = '';
+    this.stockDateFrom = null;
+    this.stockDateTo = null;
     this.adjustmentQty = null;
     this.adjustmentSourceRef = '';
+  }
+
+  /** Stock ledger entries narrowed to [stockDateFrom, stockDateTo] (inclusive, by calendar day).
+   * The stock ledger endpoint has no date-range params, so this filters client-side over the
+   * full list already fetched in loadStockDetails(). */
+  get filteredStockLedger(): StockLedgerEntry[] {
+    if (!this.stockDateFrom && !this.stockDateTo) return this.stockLedger;
+    const from = this.stockDateFrom ? new Date(this.stockDateFrom + 'T00:00:00') : null;
+    const to = this.stockDateTo ? new Date(this.stockDateTo + 'T23:59:59.999') : null;
+    return this.stockLedger.filter((row) => {
+      const ts = row.createdAt ? new Date(row.createdAt) : null;
+      if (!ts) return false;
+      if (from && ts < from) return false;
+      if (to && ts > to) return false;
+      return true;
+    });
+  }
+
+  resetStockDateFilter(): void {
+    this.stockDateFrom = null;
+    this.stockDateTo = null;
   }
 
   loadStockDetails(): void {

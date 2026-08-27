@@ -266,8 +266,22 @@
         </div>
 
         <h4 class="ledger-title">Stock Ledger</h4>
+        <div class="stock-date-filter" *ngIf="stockLedger.length">
+          <div>
+            <label>From</label>
+            <input type="date" [(ngModel)]="stockDateFrom" name="stockDateFrom" />
+          </div>
+          <div>
+            <label>To</label>
+            <input type="date" [(ngModel)]="stockDateTo" name="stockDateTo" />
+          </div>
+          <button type="button" class="secondary-action" (click)="resetStockDateFilter()" [disabled]="!stockDateFrom && !stockDateTo">
+            Reset
+          </button>
+        </div>
         <p class="empty-note" *ngIf="!stockLedger.length && !stockLoading">No stock ledger entries found for this book.</p>
-        <div class="table-scroll" *ngIf="stockLedger.length">
+        <p class="empty-note" *ngIf="stockLedger.length && !filteredStockLedger.length">No stock movements in the selected date range.</p>
+        <div class="table-scroll" *ngIf="filteredStockLedger.length">
           <table class="ledger-table">
             <thead>
               <tr>
@@ -281,7 +295,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let row of stockLedger">
+              <tr *ngFor="let row of filteredStockLedger">
                 <td>{{ row.createdAt | date:'dd/MM/yyyy hh:mm a' }}</td>
                 <td><span [class]="movementTypeClass(row.movementType)">{{ row.movementType }}</span></td>
                 <td>{{ row.qty }}</td>

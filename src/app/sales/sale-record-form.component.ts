@@ -37,7 +37,6 @@ interface SaleLine {
 }
 
 const QUICK_ADD_COUNTS = [1, 5, 20] as const;
-const TAX_RATE = 0.05;
 
 function emptyLine(): SaleLine {
   return { book: null, qty: null, mrp: null, discPercent: 0 };
@@ -59,7 +58,6 @@ function emptyLine(): SaleLine {
 export class SaleRecordFormComponent implements OnInit {
   readonly docTypeOptions = DOC_TYPE_OPTIONS;
   readonly quickAddCounts = QUICK_ADD_COUNTS;
-  readonly taxRatePercent = TAX_RATE * 100;
 
   navItems: ReadonlyArray<NavItem> = [];
 
@@ -245,12 +243,8 @@ export class SaleRecordFormComponent implements OnInit {
     return this.subtotal - this.discountTotal;
   }
 
-  get estimatedTax(): number {
-    return this.taxableAmount * TAX_RATE;
-  }
-
   get grandTotal(): number {
-    return this.taxableAmount + this.estimatedTax;
+    return this.taxableAmount;
   }
 
   get paidAmount(): number {
@@ -302,7 +296,7 @@ export class SaleRecordFormComponent implements OnInit {
       createdAt: new Date(),
       totalAmount: this.taxableAmount,
       discount: this.discountTotal,
-      taxAmount: this.estimatedTax,
+      taxAmount: 0,
       roundOff: 0,
       grandTotal: this.grandTotal,
       paymentStatus: this.paymentStatus,

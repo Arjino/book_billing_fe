@@ -112,6 +112,13 @@ export class LedgerComponent implements OnInit, OnDestroy {
   get showingStart(): number { return this.filteredResults.length === 0 ? 0 : this.currentPage * this.pageSize + 1; }
   get showingEnd(): number   { return Math.min((this.currentPage + 1) * this.pageSize, this.filteredResults.length); }
 
+  /** Total turnover (debits + credits) across the currently filtered view — distinct from
+   * lastBalance, which is the party's running balance as of the latest entry. A getter so it
+   * stays in sync with the type-filter dropdown without a re-fetch. */
+  get totalAmount(): number {
+    return this.filteredResults.reduce((sum, r) => sum + (Number(r.debit) || 0) + (Number(r.credit) || 0), 0);
+  }
+
   goToPage(page: number) { this.currentPage = Math.max(0, Math.min(page, this.totalPages - 1)); }
 
   onEntryTypeChange() { this.currentPage = 0; }
@@ -166,7 +173,6 @@ export class LedgerComponent implements OnInit, OnDestroy {
 
   results: any[] = [];
   lastBalance: number = 0;
-  totalAmount: number = 0;
 
   constructor(
     private route: ActivatedRoute,
@@ -244,7 +250,6 @@ export class LedgerComponent implements OnInit, OnDestroy {
     } else {
       this.results = [];
       this.lastBalance = 0;
-      this.totalAmount = 0;
     }
   }
 
@@ -292,7 +297,6 @@ export class LedgerComponent implements OnInit, OnDestroy {
       this.partyId = null;
       this.results = [];
       this.lastBalance = 0;
-      this.totalAmount = 0;
     }
 
     this.openPartyDropdown();
@@ -516,14 +520,11 @@ export class LedgerComponent implements OnInit, OnDestroy {
       this.results = data || [];
       // Server returns entries ordered by date desc; last updated balance is first item's balance
       this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
-      // update totalAmount or Last Balance display accordingly
-      this.totalAmount = this.lastBalance;
       this.loadingService.hide();
     }, err => {
       console.error('Failed to load ledger for party:', err);
       this.results = [];
       this.lastBalance = 0;
-      this.totalAmount = 0;
       this.loadingService.hide();
       this.snackBar.open('Failed to load ledger entries for this party. Please try again.', 'Close', {
         duration: 5000,
@@ -563,13 +564,11 @@ export class LedgerComponent implements OnInit, OnDestroy {
       this.results = data || [];
       // Calculate last balance from results
       this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
-      this.totalAmount = this.lastBalance;
       this.loadingService.hide();
     }, err => {
       console.error('Failed to load ledger:', err);
       this.results = [];
       this.lastBalance = 0;
-      this.totalAmount = 0;
       this.loadingService.hide();
       this.snackBar.open('Failed to filter ledger entries. Please try again.', 'Close', {
         duration: 5000,

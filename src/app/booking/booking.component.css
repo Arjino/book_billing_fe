@@ -672,6 +672,39 @@ tbody tr:hover {
   color: var(--color-text);
 }
 
+.stock-date-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  margin: 0 0 14px;
+}
+
+.stock-date-filter label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.stock-date-filter input {
+  height: 40px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 0 12px;
+  background: var(--color-white);
+  color: var(--color-text);
+  font-size: 13px;
+}
+
+.stock-date-filter .secondary-action {
+  height: 40px;
+}
+
 .empty-note {
   color: var(--color-text-muted);
   font-size: 13px;

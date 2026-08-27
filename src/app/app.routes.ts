@@ -63,8 +63,13 @@ export const routes: Routes = [
     // Company / RBAC management (Super Admin, with Employees sharing the approvals queue)
     { path: 'company/settings', loadComponent: () => import('./features/company/company-settings.component').then(m => m.CompanySettingsComponent), canActivate: [AuthGuard, RoleGuard], data: { roles: ['ROLE_SUPER_ADMIN'] } },
     { path: 'company/employees', loadComponent: () => import('./features/company/employee-management.component').then(m => m.EmployeeManagementComponent), canActivate: [AuthGuard, RoleGuard], data: { roles: ['ROLE_SUPER_ADMIN'] } },
+    { path: 'company/active-parties', loadComponent: () => import('./features/company/active-parties.component').then(m => m.ActivePartiesComponent), canActivate: [AuthGuard, RoleGuard], data: { roles: ['ROLE_SUPER_ADMIN'] } },
     { path: 'company/approvals', loadComponent: () => import('./features/company/pending-approvals.component').then(m => m.PendingApprovalsComponent), canActivate: [AuthGuard, RoleGuard], data: { roles: STAFF_ROLES } },
 
     // Supplier/Consumer read-only self-service
     { path: 'my-ledger', loadComponent: () => import('./features/my-account/my-ledger.component').then(m => m.MyLedgerComponent), canActivate: [AuthGuard, RoleGuard], data: { roles: ['ROLE_USER'] } }
+    ,
+    // Catch-all: without this, any unmatched path (e.g. a stale/bad deep link) matches nothing
+    // and the router renders blank instead of falling back to the app shell.
+    { path: '**', redirectTo: '' }
 ];
