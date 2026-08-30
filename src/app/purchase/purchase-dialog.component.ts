@@ -587,10 +587,27 @@ export class PurchaseDialogComponent implements OnInit, OnDestroy {
       if (!state.options.length) {
         this.resetAndFetchBooks(index, state.search.trim());
       } else {
+        // Re-filter the cached page against current selections on every open, so a book
+        // freed up by removing another line reappears here without a fresh fetch (bug #5).
+        state.options = this.excludeUsedBooks(state.options, index);
+        state.activeIndex = selectedBookId != null ? state.options.findIndex((b) => b.id === selectedBookId) : -1;
         this.setupBookObserver(index);
         this.scrollActiveBookIntoView(index);
       }
     }
+  }
+
+  /** Excludes books already selected on other item rows, so the same book can't be picked
+   *  twice in one PO (bug #5). The row's own current selection is never excluded. */
+  private excludeUsedBooks(options: Book[], currentIndex: number): Book[] {
+    const usedElsewhere = new Set(
+      (this.data.items || [])
+        .filter((_, idx) => idx !== currentIndex)
+        .map((it: any) => it?.book?.id)
+        .filter((id: any) => id !== null && id !== undefined)
+        .map((id: any) => Number(id))
+    );
+    return options.filter((b) => !usedElsewhere.has(Number(b.id)));
   }
 
   closeBookDropdown(index: number, restoreInput = true): void {
@@ -790,7 +807,8 @@ export class PurchaseDialogComponent implements OnInit, OnDestroy {
             return true;
           });
 
-          state.options = replace ? incoming : [...state.options, ...incoming];
+          const merged = replace ? incoming : [...state.options, ...incoming];
+          state.options = this.excludeUsedBooks(merged, index);
           state.page = response?.number ?? page;
           state.last = response?.last ?? true;
           state.loading = false;

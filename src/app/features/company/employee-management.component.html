@@ -18,6 +18,7 @@
 
     @if (showForm) {
       <form class="em-card em-form" [formGroup]="form" (ngSubmit)="createEmployee()">
+        <div class="em-fields-grid">
         <div class="em-field">
           <label for="username">Username</label>
           <input
@@ -119,7 +120,10 @@
             <span class="em-field-error">Address is required</span>
           } @else if (form.get('address')?.hasError('minlength') && form.get('address')?.touched) {
             <span class="em-field-error">Address must be at least 5 characters</span>
+          } @else {
+            <span class="em-field-hint">At least 5 characters</span>
           }
+        </div>
         </div>
         <button type="submit" class="em-btn-submit" [disabled]="form.invalid">Create employee</button>
       </form>

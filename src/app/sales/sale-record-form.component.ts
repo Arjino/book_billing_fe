@@ -72,6 +72,9 @@ export class SaleRecordFormComponent implements OnInit {
 
   lines: SaleLine[] = [emptyLine()];
 
+  /** Value typed into the "apply to all lines" bulk-discount control (bug #13). */
+  bulkDiscountPercent: number | null = null;
+
   parties: Party[] = [];
   books: Book[] = [];
 
@@ -172,6 +175,35 @@ export class SaleRecordFormComponent implements OnInit {
     return this.lineSubtotal(line) - this.lineDiscountAmount(line);
   }
 
+  /** Clamps a discount% entry to [0, 100] (bug #11) — a discount can't exceed the item's own price. */
+  private clampDiscountPercent(value: number | string | null): number | null {
+    if (value === null || value === '' || value === undefined) return null;
+    const num = Number(value);
+    if (!Number.isFinite(num)) return null;
+    return Math.min(Math.max(num, 0), 100);
+  }
+
+  onDiscountInput(line: SaleLine, value: number | string | null): void {
+    line.discPercent = this.clampDiscountPercent(value);
+    this.cdr.markForCheck();
+  }
+
+  /** Lines whose discount% is somehow still out of [0, 100] (e.g. pasted in) — kept as a
+   *  save-blocking safety net alongside the live-clamping onDiscountInput (bug #11). */
+  get invalidDiscountLines(): SaleLine[] {
+    return this.lines.filter((l) => l.book && ((Number(l.discPercent) || 0) > 100 || (Number(l.discPercent) || 0) < 0));
+  }
+
+  /** Applies one discount% to every line that has a book selected (bug #13). */
+  applyBulkDiscount(): void {
+    const clamped = this.clampDiscountPercent(this.bulkDiscountPercent);
+    if (clamped === null) return;
+    this.lines.forEach((line) => {
+      if (line.book) line.discPercent = clamped;
+    });
+    this.cdr.markForCheck();
+  }
+
   addLines(count: number): void {
     for (let i = 0; i < count; i++) {
       this.lines.push(emptyLine());
@@ -262,6 +294,7 @@ export class SaleRecordFormComponent implements OnInit {
     if (!this.validLines.length) return false;
     if (!this.party) return false;
     if (this.hasStockErrors) return false;
+    if (this.invalidDiscountLines.length) return false;
 
     if (this.isReturn) {
       return !!this.originalInvoiceNo.trim() && !!this.returnReason.trim();

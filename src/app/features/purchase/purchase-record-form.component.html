@@ -84,7 +84,7 @@
           <span class="line-index">#{{ i + 1 }}</span>
           <app-searchable-select
             class="book-select"
-            [options]="bookOptions"
+            [options]="bookOptionsFor(line)"
             [ngModel]="line.book?.id ?? null"
             (ngModelChange)="onBookSelected(line, $event)"
             [disabled]="recordType === 'RECEIVING_ORDER' && !!poNumber"
@@ -152,6 +152,14 @@
             <div class="field">
               <label>Rejected</label>
               <input type="number" min="0" [(ngModel)]="line.rejectedQty" placeholder="0" />
+            </div>
+            <div class="field">
+              <label>Disc %</label>
+              <input type="text" [value]="(lineDiscountPercent(line) ?? 0) + '%'" readonly />
+            </div>
+            <div class="field">
+              <label>Line Total</label>
+              <div class="line-total">₹{{ lineTotal(line) | number:'1.0-0' }}</div>
             </div>
           </div>
           <div class="line-qty-error" *ngIf="lineHasQtyMismatch(line)">

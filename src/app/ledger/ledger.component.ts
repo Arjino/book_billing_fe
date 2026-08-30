@@ -511,15 +511,14 @@ export class LedgerComponent implements OnInit, OnDestroy {
 
   fetchLedgerForParty(partyId: any) {
     if (!partyId) return;
-    
+
     // Load all ledger entries without date filter initially
     const params: any = { partyId: partyId };
-    
+
     this.loadingService.show('Loading ledger...');
     this.ledgerService.getLedgerForPartyByDateRange(params).subscribe(data => {
       this.results = data || [];
-      // Server returns entries ordered by date desc; last updated balance is first item's balance
-      this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
+      this.lastBalance = this.computeLastBalance(this.results);
       this.loadingService.hide();
     }, err => {
       console.error('Failed to load ledger for party:', err);
@@ -562,8 +561,7 @@ export class LedgerComponent implements OnInit, OnDestroy {
     this.loadingService.show('Filtering ledger...');
     this.ledgerService.getLedgerForPartyByDateRange(params).subscribe(data => {
       this.results = data || [];
-      // Calculate last balance from results
-      this.lastBalance = (this.results && this.results.length) ? (this.results[0].balance || 0) : 0;
+      this.lastBalance = this.computeLastBalance(this.results);
       this.loadingService.hide();
     }, err => {
       console.error('Failed to load ledger:', err);
@@ -642,6 +640,23 @@ export class LedgerComponent implements OnInit, OnDestroy {
         this.loadingService.hide();
       }
     );
+  }
+
+  /** Balance as of the chronologically latest entry (bug #7). GET /ledger/entries/filter
+   *  actually returns entries oldest-first (ORDER BY id ASC on the backend), so the old
+   *  "results[0] is the latest" assumption picked the OLDEST entry's balance instead —
+   *  found the entry with the max (createdAt, id) explicitly instead of trusting order. */
+  private computeLastBalance(entries: any[]): number {
+    if (!entries || !entries.length) return 0;
+    const latest = entries.reduce((best, entry) => {
+      if (!best) return entry;
+      const bestTime = new Date(best.createdAt).getTime();
+      const entryTime = new Date(entry.createdAt).getTime();
+      if (entryTime > bestTime) return entry;
+      if (entryTime === bestTime && Number(entry.id) > Number(best.id)) return entry;
+      return best;
+    }, null as any);
+    return latest?.balance || 0;
   }
 
   getLedgerDateTime(entry: any): Date | null {

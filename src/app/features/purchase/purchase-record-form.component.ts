@@ -46,6 +46,8 @@ interface FormLine {
   remainingQty?: number | null;
   acceptedQty?: number | null;
   rejectedQty?: number | null;
+  /** Supplier discount% copied from the source PO item, for RECEIVING_ORDER lines (bug #3). */
+  supplierDiscountPercent?: number | null;
 }
 
 const QUICK_ADD_COUNTS = [1, 5, 20] as const;
@@ -178,29 +180,35 @@ export class PurchaseRecordFormComponent implements OnInit {
   onSupplierSelected(): void {
     this.allowedBookIds = null;
     this.discountByBookId.clear();
-    if (this.recordType !== 'PURCHASE_ORDER' || !this.supplier?.id) {
+    // Purchase Returns also need the supplier-publisher discount% (bug #12) — only Receiving
+    // Orders skip this, since their supplier is fixed by the selected PO instead.
+    if ((this.recordType !== 'PURCHASE_ORDER' && this.recordType !== 'PURCHASE_RETURN') || !this.supplier?.id) {
       this.cdr.markForCheck();
       return;
     }
 
     const supplierId = this.supplier.id;
+    const restrictToMappedBooks = this.recordType === 'PURCHASE_ORDER';
     this.purchaseService.getSupplierBooks(Number(supplierId)).subscribe({
       next: (mappings) => {
         // Only apply if the supplier hasn't changed again while this request was in flight.
         if (this.supplier?.id !== supplierId) return;
-        this.allowedBookIds = new Set((mappings || []).map((m) => Number(m.bookId)).filter((id) => !!id));
+        const mappedBookIds = new Set((mappings || []).map((m) => Number(m.bookId)).filter((id) => !!id));
         (mappings || []).forEach((m) => {
           if (m.bookId && m.applicableDiscountPercentage !== null && m.applicableDiscountPercentage !== undefined) {
             this.discountByBookId.set(Number(m.bookId), Number(m.applicableDiscountPercentage));
           }
         });
-        // Drop any already-selected lines whose book isn't actually mapped to this supplier.
-        this.lines.forEach((line) => {
-          if (line.book && !this.allowedBookIds!.has(line.book.id)) {
-            line.book = null;
-            line.rate = null;
-          }
-        });
+        if (restrictToMappedBooks) {
+          this.allowedBookIds = mappedBookIds;
+          // Drop any already-selected lines whose book isn't actually mapped to this supplier.
+          this.lines.forEach((line) => {
+            if (line.book && !this.allowedBookIds!.has(line.book.id)) {
+              line.book = null;
+              line.rate = null;
+            }
+          });
+        }
         this.cdr.markForCheck();
       },
       error: () => {
@@ -212,14 +220,21 @@ export class PurchaseRecordFormComponent implements OnInit {
     });
   }
 
-  /** Discount% readonly display for a PO/PRN line (bug #3). */
+  /** Discount% readonly display for a PO/RO/PRN line (bug #2, #3, #12). */
   lineDiscountPercent(line: FormLine): number | null {
     if (!line.book) return null;
     if (this.recordType === 'PURCHASE_ORDER') {
       return this.discountByBookId.get(line.book.id) ?? null;
     }
+    if (this.recordType === 'RECEIVING_ORDER') {
+      return line.supplierDiscountPercent ?? null;
+    }
     if (this.recordType === 'PURCHASE_RETURN') {
-      return this.originalInvoiceDiscountByBookId.get(line.book.id) ?? null;
+      // Prefer the live supplier-publisher discount mapping; fall back to whatever
+      // discount% was actually applied on the original invoice being returned against.
+      return this.discountByBookId.get(line.book.id)
+        ?? this.originalInvoiceDiscountByBookId.get(line.book.id)
+        ?? null;
     }
     return null;
   }
@@ -269,7 +284,8 @@ export class PurchaseRecordFormComponent implements OnInit {
           orderedQty: ordered,
           remainingQty: remaining,
           acceptedQty: remaining,
-          rejectedQty: 0
+          rejectedQty: 0,
+          supplierDiscountPercent: item.supplierPercentageDiscount ?? null
         } as FormLine;
       })
       .filter((line): line is FormLine => !!line);
@@ -293,14 +309,22 @@ export class PurchaseRecordFormComponent implements OnInit {
     }));
   }
 
-  get bookOptions(): SearchableSelectOption<number>[] {
+  /** Book options for one line: excludes books already picked on other lines, so the same
+   *  book can't be selected twice (bug #5) — the currently-picked book on this line stays
+   *  listed so re-opening the dropdown doesn't appear to hide the current selection. */
+  bookOptionsFor(line: FormLine): SearchableSelectOption<number>[] {
     // For PO creation, once the supplier's book mapping has loaded, only offer books
     // that are actually supplied by them — prevents the "book not mapped" save error
     // from ever happening in the common case (bug #2).
     const source = this.recordType === 'PURCHASE_ORDER' && this.allowedBookIds
       ? this.books.filter((b) => this.allowedBookIds!.has(b.id))
       : this.books;
-    return source.map((book) => ({ value: book.id, label: this.bookLabel(book) }));
+    const usedElsewhere = new Set(
+      this.lines.filter((l) => l !== line && l.book).map((l) => l.book!.id)
+    );
+    return source
+      .filter((book) => !usedElsewhere.has(book.id))
+      .map((book) => ({ value: book.id, label: this.bookLabel(book) }));
   }
 
   get poNumberOptions(): SearchableSelectOption<string>[] {
@@ -339,8 +363,13 @@ export class PurchaseRecordFormComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
+  /** Discounted line total (bugs #2, #3): gross qty*rate less the applicable discount%.
+   *  Receiving Orders are billed on acceptedQty only, matching the backend (bug #3). */
   lineTotal(line: FormLine): number {
-    return (Number(line.qty) || 0) * (Number(line.rate) || 0);
+    const qty = this.recordType === 'RECEIVING_ORDER' ? (Number(line.acceptedQty) || 0) : (Number(line.qty) || 0);
+    const gross = qty * (Number(line.rate) || 0);
+    const discountPercent = this.lineDiscountPercent(line) ?? 0;
+    return gross - (gross * discountPercent) / 100;
   }
 
   addLines(count: number): void {

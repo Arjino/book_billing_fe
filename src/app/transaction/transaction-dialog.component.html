@@ -50,7 +50,7 @@
             <mat-label>{{ referenceLabel }}</mat-label>
             <mat-select [(ngModel)]="data.invoiceNo" name="referenceNo" required #referenceModel="ngModel" (selectionChange)="fetchDetails()">
               <mat-option *ngIf="isLoadingSaleInvoices" [value]="''" disabled>Loading...</mat-option>
-              <mat-option *ngFor="let invoice of saleInvoices" [value]="invoice">{{ invoice }}</mat-option>
+              <mat-option *ngFor="let invoice of saleInvoices" [value]="invoice.invoiceNo">{{ invoice.invoiceNo }} — {{ invoice.partyName }}</mat-option>
             </mat-select>
             <mat-error *ngIf="referenceModel.invalid && (referenceModel.dirty || referenceModel.touched)">
               <span *ngIf="referenceModel.errors?.['required']">Sale invoice is required.</span>

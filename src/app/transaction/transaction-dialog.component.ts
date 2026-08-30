@@ -13,7 +13,7 @@ import { MatMenuModule, MatMenuTrigger } from '@angular/material/menu';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Observable } from 'rxjs';
 import { Transaction } from '../shared/models/transaction.model';
-import { SalesService } from '../services/sales.service';
+import { SalesService, UnpaidInvoiceOption } from '../services/sales.service';
 import { PurchaseService } from '../services/purchase.service';
 import { LoadingService } from '../services/loading.service';
 import { DataStoreService } from '../services/data-store.service';
@@ -42,7 +42,7 @@ export class TransactionDialogComponent implements OnInit {
   isLoadingSaleInvoices = false;
   readonly todayMaxDate = new Date();
   purchaseInvoices: string[] = [];
-  saleInvoices: string[] = [];
+  saleInvoices: UnpaidInvoiceOption[] = [];
   parties: Party[] = [];
   supplierParties: Party[] = [];
   isPartyLocked = false;

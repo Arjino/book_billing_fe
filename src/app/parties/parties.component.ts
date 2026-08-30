@@ -13,6 +13,7 @@ import { PartiesService } from '../services/parties.service';
 import { LoadingService } from '../services/loading.service';
 import { Party } from '../shared/models/party.model';
 import { PARTIES_CONSTANTS } from '../constants/parties.constants';
+import { extractHttpErrorMessage } from '../utils/http.utils';
 import { SidebarNavComponent } from '../shared/ui/sidebar-nav/sidebar-nav.component';
 import { buildAppNavItems } from '../shared/nav-items';
 import { NavBadgeCountsService } from '../shared/nav-badge-counts.service';
@@ -200,10 +201,12 @@ export class PartiesComponent implements OnInit {
           });
           this.loadParties(true);
         },
-        error: (err) => {
+        error: async (err) => {
           this.loadingService.hide();
-          const serverMessage = err?.error || err?.message || 'Unknown error';
-          this.snackBar.open(`${PARTIES_CONSTANTS.MESSAGES.DELETE_ERROR}: ${serverMessage}`, 'Close', { 
+          // err.error is the parsed JSON error body ({ status, error, message }), not a string --
+          // interpolating it directly rendered "[object Object]" instead of the real reason (bug #14).
+          const serverMessage = await extractHttpErrorMessage(err, 'Unknown error');
+          this.snackBar.open(`${PARTIES_CONSTANTS.MESSAGES.DELETE_ERROR}: ${serverMessage}`, 'Close', {
             duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.LONG,
             panelClass: ['error-snackbar']
           });
@@ -229,10 +232,10 @@ export class PartiesComponent implements OnInit {
           });
           this.loadParties(true);
         },
-        error: (err) => {
+        error: async (err) => {
           this.loadingService.hide();
-          const serverMessage = err?.error || err?.message || 'Unknown error';
-          this.snackBar.open(`${PARTIES_CONSTANTS.MESSAGES.ENABLE_ERROR}: ${serverMessage}`, 'Close', { 
+          const serverMessage = await extractHttpErrorMessage(err, 'Unknown error');
+          this.snackBar.open(`${PARTIES_CONSTANTS.MESSAGES.ENABLE_ERROR}: ${serverMessage}`, 'Close', {
             duration: PARTIES_CONSTANTS.SNACKBAR_DURATION.LONG,
             panelClass: ['error-snackbar']
           });
@@ -285,11 +288,19 @@ export class PartiesComponent implements OnInit {
     return 'type-chip type-chip--consumer';
   }
 
-  getBalanceDisplay(_party: Party): string {
-    return '₹0';
+  // Balance sign convention matches the Ledger page: negative = Dr (money owed to us),
+  // positive/zero = Cr (see LedgerPostingPolicyService on the backend) (bug #9).
+  getBalanceDisplay(party: Party): string {
+    const balance = Number(party.currentBalance) || 0;
+    const formatted = Math.abs(balance).toLocaleString('en-IN', { maximumFractionDigits: 2, minimumFractionDigits: 2 });
+    if (balance === 0) return `₹${formatted}`;
+    return `₹${formatted} ${balance < 0 ? 'Dr' : 'Cr'}`;
   }
 
-  getBalanceClass(_party: Party): string {
+  getBalanceClass(party: Party): string {
+    const balance = Number(party.currentBalance) || 0;
+    if (balance < 0) return 'balance-debit';
+    if (balance > 0) return 'balance-credit';
     return 'balance-neutral';
   }
 
@@ -307,10 +318,11 @@ export class PartiesComponent implements OnInit {
       if (!typeMatches) return false;
 
       if (this.selectedBalanceType === 'all') return true;
-      if (this.selectedBalanceType === 'zero') return true;
-
-      // Balance classification is placeholder until ledger summary API is integrated.
-      return false;
+      const balance = Number(party.currentBalance) || 0;
+      if (this.selectedBalanceType === 'zero') return balance === 0;
+      if (this.selectedBalanceType === 'dr') return balance < 0;
+      if (this.selectedBalanceType === 'cr') return balance > 0;
+      return true;
     });
   }
 }

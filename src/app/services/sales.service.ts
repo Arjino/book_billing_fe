@@ -10,6 +10,12 @@ import { enviort } from '../../environments/environment';
 import { toUTCDateTimePlus00 } from '../utils/date.utils';
 import { ReturnRequest } from '../shared/models/return-request.model';
 
+/** invoiceNo + the customer it belongs to, for the payment dialog's Sale Invoice dropdown (bug #10). */
+export interface UnpaidInvoiceOption {
+  invoiceNo: string;
+  partyName: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SalesService {
   constructor(private http: HttpClient, private auth: AuthService) {}
@@ -128,9 +134,9 @@ export class SalesService {
     );
   }
 
-  getUnpaidAndPartialSaleInvoices(): Observable<string[]> {
+  getUnpaidAndPartialSaleInvoices(): Observable<UnpaidInvoiceOption[]> {
     const url = `${enviort.salesUrl}/unpaid-and-partial/invoices`;
-    return this.http.get<string[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
+    return this.http.get<UnpaidInvoiceOption[]>(url, { headers: this.auth.getAuthHeaders() }).pipe(
       catchError((error) => {
         console.error('Error loading unpaid/partial sale invoices:', error);
         return throwError(() => error);

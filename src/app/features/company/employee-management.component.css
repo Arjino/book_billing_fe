@@ -71,10 +71,15 @@
 
 .em-form {
   padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.em-fields-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px 20px;
-  align-items: end;
 }
 
 .em-field {
@@ -176,6 +181,10 @@
   font-weight: 600;
   cursor: pointer;
   height: fit-content;
+}
+
+.em-form > .em-btn-submit {
+  align-self: flex-start;
 }
 
 .em-btn-submit:disabled {

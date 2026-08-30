@@ -299,6 +299,16 @@ tbody tr:hover {
   font-weight: 600;
 }
 
+.balance-debit {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.balance-credit {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
 .actions-wrap {
   display: flex;
   justify-content: flex-end;

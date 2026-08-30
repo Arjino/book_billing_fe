@@ -74,6 +74,25 @@
       </div>
     </div>
 
+    <div class="lines-actions bulk-discount-row">
+      <label for="bulkDiscount">Apply Disc % to all lines</label>
+      <input
+        id="bulkDiscount"
+        type="number"
+        min="0"
+        max="100"
+        [(ngModel)]="bulkDiscountPercent"
+        placeholder="0" />
+      <button type="button" class="chip-btn chip-primary" (click)="applyBulkDiscount()">
+        <span class="material-icons">content_copy</span> Apply to All Lines
+      </button>
+    </div>
+
+    <div class="invalid-qty-banner" *ngIf="invalidDiscountLines.length">
+      <span class="material-icons">error_outline</span>
+      Discount % must be between 0 and 100 — fix the highlighted line{{ invalidDiscountLines.length > 1 ? 's' : '' }} before saving.
+    </div>
+
     <div class="lines-grid">
       <div class="line-card" *ngFor="let line of lines; let i = index">
         <div class="line-card-head">
@@ -109,7 +128,14 @@
           </div>
           <div class="field">
             <label>Disc %</label>
-            <input type="number" min="0" max="100" [(ngModel)]="line.discPercent" placeholder="0" />
+            <input
+              type="number"
+              min="0"
+              max="100"
+              [ngModel]="line.discPercent"
+              (ngModelChange)="onDiscountInput(line, $event)"
+              placeholder="0"
+              [class.has-error]="line.book && ((line.discPercent || 0) > 100 || (line.discPercent || 0) < 0)" />
           </div>
           <div class="field">
             <label>Amount</label>
